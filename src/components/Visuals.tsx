@@ -19,12 +19,11 @@ export function PhotoCarousel({ isDark }: { isDark: boolean }) {
   const [viewMode, setViewMode] = useState('carousel'); 
   const windowWidth = useWindowWidth();
   const photos = [ 
-    { id: 1, src: "/src/assets/portfolio/izzul-1.jpg.png", alt: "Izzul with colleagues" },
-    { id: 2, src: "/src/assets/portfolio/izzul-2.jpg.png", alt: "Izzul working with documents" },
-    { id: 3, src: "/src/assets/portfolio/izzul-3.jpg.png", alt: "MyTax System Presentation" },
-    { id: 4, src: "/src/assets/portfolio/izzul-4.jpg.png", alt: "Izzul behind the camera" },
-    { id: 5, src: "/src/assets/portfolio/izzul-5.jpg.jpeg", alt: "Graduation Side-by-Side" },
-    { id: 6, src: "/src/assets/portfolio/izzul-6.jpg.jpg", alt: "Formal Profile" },
+    { id: 1, src: "/src/assets/portfolio/izzul-1.png", alt: "Izzul grabbing camera" },
+    { id: 2, src: "/src/assets/portfolio/izzul-2.png", alt: "Izzul working with documents" },
+    { id: 3, src: "/src/assets/portfolio/izzul-3.png", alt: "Izzul with colleagues" },
+    { id: 4, src: "/src/assets/portfolio/izzul-4.jpg", alt: "Izzul passport photo" },
+    { id: 5, src: "/src/assets/portfolio/izzul-5.jpeg", alt: "Graduation Side-by-Side" },
   ];
   const imageIndex = Math.abs(page % photos.length);
   const paginate = (newDirection: number) => setPage([page + newDirection, newDirection]);
