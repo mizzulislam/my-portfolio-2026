@@ -1,5 +1,5 @@
-import React from 'react';
-import { Mail, MessageCircle } from 'lucide-react';
+import React, { useState } from 'react';
+import { Mail, MessageCircle, Send, Loader2, CheckCircle } from 'lucide-react';
 import { SectionHeader } from '../UIComponents';
 
 interface ContactProps {
@@ -8,10 +8,54 @@ interface ContactProps {
 }
 
 export function Contact({ isDark, t }: ContactProps) {
+  const [formData, setFormData] = useState({
+    name: '',
+    lastName: '',
+    email: '',
+    message: ''
+  });
+  const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+  const [errorMessage, setErrorMessage] = useState('');
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!formData.name || !formData.email || !formData.message) {
+      setStatus('error');
+      setErrorMessage('Harap isi semua field yang wajib.');
+      return;
+    }
+
+    setStatus('loading');
+    try {
+      const response = await fetch('/api/contact', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData)
+      });
+
+      const data = await response.json();
+      if (response.ok) {
+        setStatus('success');
+        setFormData({ name: '', lastName: '', email: '', message: '' });
+      } else {
+        setStatus('error');
+        setErrorMessage(data.error || 'Gagal mengirim pesan.');
+      }
+    } catch (error) {
+      setStatus('error');
+      setErrorMessage('Terjadi kesalahan koneksi.');
+    }
+  };
+
   return (
     <section id="contact" className="py-20 px-6">
       <SectionHeader title={t.contactHeader} subTitle={t.contactSub} icon={Mail} isDark={isDark} />
-      <div className={`max-w-5xl mx-auto rounded-[40px] p-1 bg-gradient-to-br from-blue-600 to-indigo-900 shadow-2xl`}>
+      <div className={`max-w-5xl mx-auto rounded-[40px] p-1 bg-linear-to-br from-blue-600 to-indigo-900 shadow-2xl`}>
         <div className={`rounded-[39px] p-8 md:p-16 flex flex-col md:flex-row gap-12 ${isDark ? 'bg-[#020617]' : 'bg-white'}`}>
           <div className="md:w-1/2">
             <h2 className={`text-3xl font-bold mb-8 tracking-tighter ${isDark ? 'text-white' : 'text-slate-900'}`}>{t.contactDetailsTitle}</h2>
@@ -30,14 +74,75 @@ export function Contact({ isDark, t }: ContactProps) {
               </a>
             </div>
           </div>
-          <form className="md:w-1/2 space-y-4" onSubmit={(e) => e.preventDefault()}>
+          <form className="md:w-1/2 space-y-4" onSubmit={handleSubmit}>
             <div className="grid grid-cols-2 gap-4">
-              <input type="text" placeholder={t.formName} className={`border rounded-2xl px-6 py-4 outline-none focus:border-blue-500 transition-all ${isDark ? 'bg-white/5 border-white/10 text-white' : 'bg-slate-50 border-slate-200 text-slate-900'}`} />
-              <input type="text" placeholder={t.formLastName} className={`border rounded-2xl px-6 py-4 outline-none focus:border-blue-500 transition-all ${isDark ? 'bg-white/5 border-white/10 text-white' : 'bg-slate-50 border-slate-200 text-slate-900'}`} />
+              <input 
+                name="name"
+                value={formData.name}
+                onChange={handleChange}
+                type="text" 
+                placeholder={t.formName} 
+                className={`border rounded-2xl px-6 py-4 outline-none focus:border-blue-500 transition-all ${isDark ? 'bg-white/5 border-white/10 text-white' : 'bg-slate-50 border-slate-200 text-slate-900'}`} 
+              />
+              <input 
+                name="lastName"
+                value={formData.lastName}
+                onChange={handleChange}
+                type="text" 
+                placeholder={t.formLastName} 
+                className={`border rounded-2xl px-6 py-4 outline-none focus:border-blue-500 transition-all ${isDark ? 'bg-white/5 border-white/10 text-white' : 'bg-slate-50 border-slate-200 text-slate-900'}`} 
+              />
             </div>
-            <input type="email" placeholder={t.formEmail} className={`w-full border rounded-2xl px-6 py-4 outline-none focus:border-blue-500 transition-all ${isDark ? 'bg-white/5 border-white/10 text-white' : 'bg-slate-50 border-slate-200 text-slate-900'}`} />
-            <textarea rows={4} placeholder={t.formMsg} className={`w-full border rounded-2xl px-6 py-4 outline-none focus:border-blue-500 transition-all resize-none ${isDark ? 'bg-white/5 border-white/10 text-white' : 'bg-slate-50 border-slate-200 text-slate-900'}`}></textarea>
-            <button className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-2xl shadow-xl active:scale-[0.98] uppercase tracking-wider text-sm">{t.formBtn}</button>
+            <input 
+              name="email"
+              value={formData.email}
+              onChange={handleChange}
+              type="email" 
+              placeholder={t.formEmail} 
+              className={`w-full border rounded-2xl px-6 py-4 outline-none focus:border-blue-500 transition-all ${isDark ? 'bg-white/5 border-white/10 text-white' : 'bg-slate-50 border-slate-200 text-slate-900'}`} 
+            />
+            <textarea 
+              name="message"
+              value={formData.message}
+              onChange={handleChange}
+              rows={4} 
+              placeholder={t.formMsg} 
+              className={`w-full border rounded-2xl px-6 py-4 outline-none focus:border-blue-500 transition-all resize-none ${isDark ? 'bg-white/5 border-white/10 text-white' : 'bg-slate-50 border-slate-200 text-slate-900'}`}
+            ></textarea>
+            
+            <button 
+              disabled={status === 'loading'}
+              className={`w-full flex items-center justify-center gap-2 font-bold py-4 rounded-2xl shadow-xl active:scale-[0.98] uppercase tracking-wider text-sm transition-all ${
+                status === 'loading' 
+                  ? 'bg-slate-500 cursor-not-allowed text-white' 
+                  : 'bg-blue-600 hover:bg-blue-700 text-white'
+              }`}
+            >
+              {status === 'loading' ? (
+                <>
+                  <Loader2 className="animate-spin" size={18} />
+                  Mengirim...
+                </>
+              ) : (
+                <>
+                  <Send size={18} />
+                  {t.formBtn}
+                </>
+              )}
+            </button>
+
+            {status === 'success' && (
+              <div className="flex items-center gap-2 p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-500 text-xs font-bold animate-in fade-in slide-in-from-top-2">
+                <CheckCircle size={16} />
+                Pesan terkirim! Saya akan segera menghubungi Anda.
+              </div>
+            )}
+
+            {status === 'error' && (
+              <div className="p-4 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-500 text-xs font-bold animate-in fade-in slide-in-from-top-2">
+                {errorMessage}
+              </div>
+            )}
           </form>
         </div>
       </div>
