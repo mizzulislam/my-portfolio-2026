@@ -48,7 +48,7 @@ export function PhotoCarousel({ isDark }: { isDark: boolean }) {
       </button>
       <AnimatePresence mode="wait">
         {viewMode === 'carousel' ? (
-          <motion.div key="carousel" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="w-full h-full relative">
+          <motion.div key="carousel" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 w-full h-full overflow-hidden">
             <AnimatePresence initial={false} custom={direction}>
               <motion.div key={page} custom={direction} variants={variants} initial="enter" animate="center" exit="exit" transition={{ x: { type: "spring", stiffness: 300, damping: 30 }, opacity: { duration: 0.2 } }} className="absolute inset-0 w-full h-full">
                 <img src={photos[imageIndex].src} alt={photos[imageIndex].alt} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
@@ -61,7 +61,7 @@ export function PhotoCarousel({ isDark }: { isDark: boolean }) {
             </div>
           </motion.div>
         ) : (
-          <motion.div key="grid" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="w-full h-full p-4 overflow-y-auto bg-slate-950/20">
+          <motion.div key="grid" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="absolute inset-0 w-full h-full p-6 overflow-y-auto no-scrollbar bg-slate-950/20">
             <div className="grid grid-cols-2 gap-3 pb-4">
               {photos.map((photo, i) => (
                 <motion.div key={photo.id} initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: i * 0.1 }} className="aspect-square rounded-2xl overflow-hidden border border-white/5 relative group/item">
