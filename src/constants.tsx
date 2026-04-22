@@ -178,9 +178,9 @@ export const translations = {
         name: 'Certificate of Appreciation', 
         description: 'Awards and recognitions for tax volunteering, community service, and contributor roles.',
         items: [
-          { title: 'Tax Volunteer Award 2024 - Bronze', image: '/src/assets/certificates/appreciation-relawan-bronze.png', link: '#' },
-          { title: 'Bangkit Academy Contributor 2024', image: '/src/assets/certificates/appreciation-bangkit-2024.png', link: '#' },
-          { title: 'Tax Volunteer Award 2024 - Silver', image: '/src/assets/certificates/appreciation-relawan-silver.png', link: '#' }
+          { title: 'Tax Volunteer Award 2024 - Bronze', image: '/assets/certificates/appreciation-relawan-bronze.png', link: '#' },
+          { title: 'Bangkit Academy Contributor 2024', image: '/assets/certificates/appreciation-bangkit-2024.png', link: '#' },
+          { title: 'Tax Volunteer Award 2024 - Silver', image: '/assets/certificates/appreciation-relawan-silver.png', link: '#' }
         ] 
       },
       { 
@@ -189,19 +189,19 @@ export const translations = {
         name: 'Certificate of Completion', 
         description: 'Professional training and courses completion in tax, data science, and AI.',
         items: [
-          { title: 'Brevet Pajak A/B - Piranha Smart Center', image: '/src/assets/certificates/completion-piranha-brevet.png', link: '#' },
-          { title: 'AI for Research and Insights - Google', image: '/src/assets/certificates/completion-google-ai-research.png', link: '#' },
-          { title: 'AI for Brainstorming and Planning - Google', image: '/src/assets/certificates/completion-google-ai-planning.png', link: '#' },
-          { title: 'Zahir User Certified', image: '/src/assets/certificates/completion-zahir-certified.png', link: '#' },
-          { title: 'Praktik Kerja Lapangan - Mitra Setara Digitax', image: '/src/assets/certificates/completion-msd-pkl.png', link: '#' },
-          { title: 'Introduction to Financial Literacy - Dicoding', image: '/src/assets/certificates/completion-dicoding-finance.png', link: '#' },
-          { title: 'Belajar Dasar SQL - Dicoding', image: '/src/assets/certificates/completion-dicoding-sql.png', link: '#' },
-          { title: 'Belajar Dasar Data Science - Dicoding', image: '/src/assets/certificates/completion-dicoding-ds.png', link: '#' },
-          { title: 'Introduction to Data Science with Python - DQLab', image: '/src/assets/certificates/completion-dqlab-ds-python.png', link: '#' },
-          { title: 'Python Fundamental for Data Science - DQLab', image: '/src/assets/certificates/completion-dqlab-python-fundamental.png', link: '#' },
-          { title: 'Belajar Dasar AI - Dicoding', image: '/src/assets/certificates/completion-dicoding-ai.png', link: '#' },
-          { title: 'Memulai Pemrograman dengan Python - Dicoding', image: '/src/assets/certificates/completion-dicoding-python.png', link: '#' },
-          { title: 'Belajar Machine Learning untuk Pemula - Dicoding', image: '/src/assets/certificates/completion-dicoding-ml.png', link: '#' }
+          { title: 'Brevet Pajak A/B - Piranha Smart Center', image: '/assets/certificates/completion-piranha-brevet.png', link: '#' },
+          { title: 'AI for Research and Insights - Google', image: '/assets/certificates/completion-google-ai-research.png', link: '#' },
+          { title: 'AI for Brainstorming and Planning - Google', image: '/assets/certificates/completion-google-ai-planning.png', link: '#' },
+          { title: 'Zahir User Certified', image: '/assets/certificates/completion-zahir-certified.png', link: '#' },
+          { title: 'Praktik Kerja Lapangan - Mitra Setara Digitax', image: '/assets/certificates/completion-msd-pkl.png', link: '#' },
+          { title: 'Introduction to Financial Literacy - Dicoding', image: '/assets/certificates/completion-dicoding-finance.png', link: '#' },
+          { title: 'Belajar Dasar SQL - Dicoding', image: '/assets/certificates/completion-dicoding-sql.png', link: '#' },
+          { title: 'Belajar Dasar Data Science - Dicoding', image: '/assets/certificates/completion-dicoding-ds.png', link: '#' },
+          { title: 'Introduction to Data Science with Python - DQLab', image: '/assets/certificates/completion-dqlab-ds-python.png', link: '#' },
+          { title: 'Python Fundamental for Data Science - DQLab', image: '/assets/certificates/completion-dqlab-python-fundamental.png', link: '#' },
+          { title: 'Belajar Dasar AI - Dicoding', image: '/assets/certificates/completion-dicoding-ai.png', link: '#' },
+          { title: 'Memulai Pemrograman dengan Python - Dicoding', image: '/assets/certificates/completion-dicoding-python.png', link: '#' },
+          { title: 'Belajar Machine Learning untuk Pemula - Dicoding', image: '/assets/certificates/completion-dicoding-ml.png', link: '#' }
         ] 
       },
       { 
@@ -210,12 +210,12 @@ export const translations = {
         name: 'Certificate of Committee', 
         description: 'Organizational and event management roles in student associations and festivals.',
         items: [
-          { title: 'Coordinator of Talents and Interest - HMPS AKS', image: '/src/assets/certificates/committee-hmps-koordinator.png', link: '#' },
-          { title: 'Event Division - 6th Sharia Accounting Fair', image: '/src/assets/certificates/committee-saf-6.png', link: '#' },
-          { title: 'Event Division - 5th Sharia Accounting Fair', image: '/src/assets/certificates/committee-saf-5.png', link: '#' },
-          { title: 'Committee Member - Language Fest 2023', image: '/src/assets/certificates/committee-langfest-2023.png', link: '#' },
-          { title: 'Committee Member - Language Fest 2022', image: '/src/assets/certificates/committee-langfest-2022.png', link: '#' },
-          { title: 'Equipment Division - Ramadhan Fest 1444H', image: '/src/assets/certificates/committee-ramadhan-fest.png', link: '#' }
+          { title: 'Coordinator of Talents and Interest - HMPS AKS', image: '/assets/certificates/committee-hmps-koordinator.png', link: '#' },
+          { title: 'Event Division - 6th Sharia Accounting Fair', image: '/assets/certificates/committee-saf-6.png', link: '#' },
+          { title: 'Event Division - 5th Sharia Accounting Fair', image: '/assets/certificates/committee-saf-5.png', link: '#' },
+          { title: 'Committee Member - Language Fest 2023', image: '/assets/certificates/committee-langfest-2023.png', link: '#' },
+          { title: 'Committee Member - Language Fest 2022', image: '/assets/certificates/committee-langfest-2022.png', link: '#' },
+          { title: 'Equipment Division - Ramadhan Fest 1444H', image: '/assets/certificates/committee-ramadhan-fest.png', link: '#' }
         ] 
       },
       { 
@@ -224,16 +224,16 @@ export const translations = {
         name: 'Certificate of Competency', 
         description: 'Validation of technical skills in ICT, languages, and specialized accounting practicums.',
         items: [
-          { title: 'ICT Certification (TIK) - Excellent', image: '/src/assets/certificates/competency-tik.jpg', link: '#' },
-          { title: 'Test of English Competence (TOEC)', image: '/src/assets/certificates/competency-toec.jpg', link: '#' },
-          { title: 'Arabic Language Competence', image: '/src/assets/certificates/competency-arabic.jpg', link: '#' },
-          { title: 'Practicum: Basic Sharia Accounting', image: '/src/assets/certificates/competency-sharia-acc.png', link: '#' },
-          { title: 'Practicum: Manufacturing Accounting', image: '/src/assets/certificates/competency-manufacturing-acc.png', link: '#' },
-          { title: 'Practicum: Audit', image: '/src/assets/certificates/competency-audit.png', link: '#' },
-          { title: 'Practicum: Computer Accounting', image: '/src/assets/certificates/competency-computer-acc.png', link: '#' },
-          { title: 'Practicum: Sharia Financial Accounting', image: '/src/assets/certificates/competency-sharia-finance.png', link: '#' },
-          { title: 'Practicum: Intermediate Accounting', image: '/src/assets/certificates/competency-intermediate-acc.png', link: '#' },
-          { title: 'Practicum: Statistics', image: '/src/assets/certificates/competency-statistics.png', link: '#' }
+          { title: 'ICT Certification (TIK) - Excellent', image: '/assets/certificates/competency-tik.jpg', link: '#' },
+          { title: 'Test of English Competence (TOEC)', image: '/assets/certificates/competency-toec.jpg', link: '#' },
+          { title: 'Arabic Language Competence', image: '/assets/certificates/competency-arabic.jpg', link: '#' },
+          { title: 'Practicum: Basic Sharia Accounting', image: '/assets/certificates/competency-sharia-acc.png', link: '#' },
+          { title: 'Practicum: Manufacturing Accounting', image: '/assets/certificates/competency-manufacturing-acc.png', link: '#' },
+          { title: 'Practicum: Audit', image: '/assets/certificates/competency-audit.png', link: '#' },
+          { title: 'Practicum: Computer Accounting', image: '/assets/certificates/competency-computer-acc.png', link: '#' },
+          { title: 'Practicum: Sharia Financial Accounting', image: '/assets/certificates/competency-sharia-finance.png', link: '#' },
+          { title: 'Practicum: Intermediate Accounting', image: '/assets/certificates/competency-intermediate-acc.png', link: '#' },
+          { title: 'Practicum: Statistics', image: '/assets/certificates/competency-statistics.png', link: '#' }
         ] 
       }
     ]
@@ -313,22 +313,22 @@ export const translations = {
       { name: 'Etika Kerja', icon: 'Shield' }
     ],
     technicalTools: [
-      { name: 'MS Word', logo: '/src/assets/tools/word.png' },
-      { name: 'MS Excel', logo: '/src/assets/tools/excel.png' },
-      { name: 'MS PowerPoint', logo: '/src/assets/tools/powerpoint.png' },
-      { name: 'SPSS', logo: '/src/assets/tools/spss.png' },
-      { name: 'Stata', logo: '/src/assets/tools/stata.png' },
-      { name: 'E-Views', logo: '/src/assets/tools/eviews.png' },
-      { name: 'G Suite', logo: '/src/assets/tools/gsuite.png' },
-      { name: 'Python', logo: '/src/assets/tools/python.png' },
-      { name: 'MYOB', logo: '/src/assets/tools/myob.png' },
-      { name: 'Zahir Accounting', logo: '/src/assets/tools/zahir.png' },
-      { name: 'Core Tax', logo: '/src/assets/tools/coretax.png' }
+      { name: 'MS Word', logo: '/assets/tools/word.png' },
+      { name: 'MS Excel', logo: '/assets/tools/excel.png' },
+      { name: 'MS PowerPoint', logo: '/assets/tools/powerpoint.png' },
+      { name: 'SPSS', logo: '/assets/tools/spss.png' },
+      { name: 'Stata', logo: '/assets/tools/stata.png' },
+      { name: 'E-Views', logo: '/assets/tools/eviews.png' },
+      { name: 'G Suite', logo: '/assets/tools/gsuite.png' },
+      { name: 'Python', logo: '/assets/tools/python.png' },
+      { name: 'MYOB', logo: '/assets/tools/myob.png' },
+      { name: 'Zahir Accounting', logo: '/assets/tools/zahir.png' },
+      { name: 'Core Tax', logo: '/assets/tools/coretax.png' }
     ],
     eduData: [
-      { id: 1, institution: "UIN Sunan Kalijaga Yogyakarta", degree: "Sarjana Akuntansi Syariah", period: "Agu 2021 - Jun 2025", gpa: "3.74 / 4.00", logo: "/src/assets/logos/uin-logo.png", details: ["Meraih predikat 'Lulusan Tercepat & Terbaik' Program Studi Akuntansi Syariah dengan IPK 3,74/4,00.", "Menyelesaikan riset skripsi mendalam mengenai pengaruh pengungkapan ESG, karakteristik dewan, dan struktur kepemilikan terhadap kinerja perusahaan.", "Menguasai implementasi sistem akuntansi terkomputerisasi untuk menjamin pelaporan keuangan yang akurat dan efisien."], courses: ["Perpajakan Perusahaan", "PPN", "Tax Planning", "Software Akuntansi"] },
-      { id: 2, institution: "Piranha Smart Center", degree: "Sertifikat Teknisi Perpajakan", period: "Jul 2023 - Sep 2023", gpa: "83.20 / 100.00", logo: "/src/assets/logos/psc-logo.png", details: ["Menyelesaikan pelatihan intensif perpajakan nasional (CTT) yang mencakup PPh, PPN, perencanaan pajak, dan KUP.", "Melakukan simulasi teknis serta praktik penyusunan dan pelaporan SPT Masa serta Tahunan untuk orang pribadi maupun badan.", "Membangun keahlian praktis dalam prosedur penghitungan dan pelaporan pajak sesuai regulasi Indonesia terbaru."], courses: ["PPh Ps 21/23", "PPh Badan", "PPN", "Akuntansi Pajak"] },
-      { id: 'sma', institution: "MAN 3 Sleman", degree: "Lulusan SMA", period: "Jul 2018 - Mei 2021", gpa: "85.43 / 100.00", logo: "/src/assets/logos/man3-logo.png", details: ["Mengembangkan kemampuan analitis dan numerik yang kuat melalui pemecahan masalah kompleks dan mata pelajaran kuantitatif.", "Aktif dalam organisasi sekolah dengan menjaga keseimbangan antara peran kepemimpinan dan catatan akademik yang solid.", "Menjalani studi di jurusan Ilmu Pengetahuan Alam (MIPA) dengan dedikasi untuk membangun dasar pemikiran yang logis dan disiplin."], courses: ["Matematika", "Fisika", "Kimia", "Agama Islam"] }
+      { id: 1, institution: "UIN Sunan Kalijaga Yogyakarta", degree: "Sarjana Akuntansi Syariah", period: "Agu 2021 - Jun 2025", gpa: "3.74 / 4.00", logo: "/assets/logos/uin-logo.png", details: ["Meraih predikat 'Lulusan Tercepat & Terbaik' Program Studi Akuntansi Syariah dengan IPK 3,74/4,00.", "Menyelesaikan riset skripsi mendalam mengenai pengaruh pengungkapan ESG, karakteristik dewan, dan struktur kepemilikan terhadap kinerja perusahaan.", "Menguasai implementasi sistem akuntansi terkomputerisasi untuk menjamin pelaporan keuangan yang akurat dan efisien."], courses: ["Perpajakan Perusahaan", "PPN", "Tax Planning", "Software Akuntansi"] },
+      { id: 2, institution: "Piranha Smart Center", degree: "Sertifikat Teknisi Perpajakan", period: "Jul 2023 - Sep 2023", gpa: "83.20 / 100.00", logo: "/assets/logos/psc-logo.png", details: ["Menyelesaikan pelatihan intensif perpajakan nasional (CTT) yang mencakup PPh, PPN, perencanaan pajak, dan KUP.", "Melakukan simulasi teknis serta praktik penyusunan dan pelaporan SPT Masa serta Tahunan untuk orang pribadi maupun badan.", "Membangun keahlian praktis dalam prosedur penghitungan dan pelaporan pajak sesuai regulasi Indonesia terbaru."], courses: ["PPh Ps 21/23", "PPh Badan", "PPN", "Akuntansi Pajak"] },
+      { id: 'sma', institution: "MAN 3 Sleman", degree: "Lulusan SMA", period: "Jul 2018 - Mei 2021", gpa: "85.43 / 100.00", logo: "/assets/logos/man3-logo.png", details: ["Mengembangkan kemampuan analitis dan numerik yang kuat melalui pemecahan masalah kompleks dan mata pelajaran kuantitatif.", "Aktif dalam organisasi sekolah dengan menjaga keseimbangan antara peran kepemimpinan dan catatan akademik yang solid.", "Menjalani studi di jurusan Ilmu Pengetahuan Alam (MIPA) dengan dedikasi untuk membangun dasar pemikiran yang logis dan disiplin."], courses: ["Matematika", "Fisika", "Kimia", "Agama Islam"] }
     ],
     workData: [
       { id: 1, title: 'Magang Pajak', company: 'PT Mitra Graha Integrasi', period: 'Nov 2025 - Mei 2026', location: 'Kota Bogor, ID', details: ["Mengelola siklus kalkulasi pajak potong pungut (PPh 21, 23, 4(2)) dan penerbitan e-Faktur secara presisi dan tepat waktu.", "Melakukan rekonsiliasi laporan keuangan terhadap objek pajak guna menjamin validitas dan kepatuhan pelaporan SPT.", "Mengimplementasikan sistem pengarsipan dokumen perpajakan yang sistematis guna memitigasi sanksi administratif."] },
@@ -404,9 +404,9 @@ export const translations = {
         name: 'Sertifikat Apresiasi', 
         description: 'Penghargaan atas dedikasi sebagai relawan pajak, pengabdian masyarakat, dan kontributor program.',
         items: [
-          { title: 'Relawan Pajak 2024 - Perunggu', image: '/src/assets/certificates/appreciation-relawan-bronze.png', link: '#' },
-          { title: 'Kontributor Bangkit Academy 2024', image: '/src/assets/certificates/appreciation-bangkit-2024.png', link: '#' },
-          { title: 'Relawan Pajak 2024 - Perak', image: '/src/assets/certificates/appreciation-relawan-silver.png', link: '#' }
+          { title: 'Relawan Pajak 2024 - Perunggu', image: '/assets/certificates/appreciation-relawan-bronze.png', link: '#' },
+          { title: 'Kontributor Bangkit Academy 2024', image: '/assets/certificates/appreciation-bangkit-2024.png', link: '#' },
+          { title: 'Relawan Pajak 2024 - Perak', image: '/assets/certificates/appreciation-relawan-silver.png', link: '#' }
         ] 
       },
       { 
@@ -415,19 +415,19 @@ export const translations = {
         name: 'Sertifikat Penyelesaian', 
         description: 'Penyelesaian pelatihan profesional dan kursus di bidang perpajakan, data science, dan AI.',
         items: [
-          { title: 'Brevet Pajak A/B - Piranha Smart Center', image: '/src/assets/certificates/completion-piranha-brevet.png', link: '#' },
-          { title: 'AI for Research and Insights - Google', image: '/src/assets/certificates/completion-google-ai-research.png', link: '#' },
-          { title: 'AI for Brainstorming and Planning - Google', image: '/src/assets/certificates/completion-google-ai-planning.png', link: '#' },
-          { title: 'Zahir User Certified', image: '/src/assets/certificates/completion-zahir-certified.png', link: '#' },
-          { title: 'Praktik Kerja Lapangan - Mitra Setara Digitax', image: '/src/assets/certificates/completion-msd-pkl.png', link: '#' },
-          { title: 'Introduction to Financial Literacy - Dicoding', image: '/src/assets/certificates/completion-dicoding-finance.png', link: '#' },
-          { title: 'Belajar Dasar SQL - Dicoding', image: '/src/assets/certificates/completion-dicoding-sql.png', link: '#' },
-          { title: 'Belajar Dasar Data Science - Dicoding', image: '/src/assets/certificates/completion-dicoding-ds.png', link: '#' },
-          { title: 'Introduction to Data Science with Python - DQLab', image: '/src/assets/certificates/completion-dqlab-ds-python.png', link: '#' },
-          { title: 'Python Fundamental for Data Science - DQLab', image: '/src/assets/certificates/completion-dqlab-python-fundamental.png', link: '#' },
-          { title: 'Belajar Dasar AI - Dicoding', image: '/src/assets/certificates/completion-dicoding-ai.png', link: '#' },
-          { title: 'Memulai Pemrograman dengan Python - Dicoding', image: '/src/assets/certificates/completion-dicoding-python.png', link: '#' },
-          { title: 'Belajar Machine Learning untuk Pemula - Dicoding', image: '/src/assets/certificates/completion-dicoding-ml.png', link: '#' }
+          { title: 'Brevet Pajak A/B - Piranha Smart Center', image: '/assets/certificates/completion-piranha-brevet.png', link: '#' },
+          { title: 'AI for Research and Insights - Google', image: '/assets/certificates/completion-google-ai-research.png', link: '#' },
+          { title: 'AI for Brainstorming and Planning - Google', image: '/assets/certificates/completion-google-ai-planning.png', link: '#' },
+          { title: 'Zahir User Certified', image: '/assets/certificates/completion-zahir-certified.png', link: '#' },
+          { title: 'Praktik Kerja Lapangan - Mitra Setara Digitax', image: '/assets/certificates/completion-msd-pkl.png', link: '#' },
+          { title: 'Introduction to Financial Literacy - Dicoding', image: '/assets/certificates/completion-dicoding-finance.png', link: '#' },
+          { title: 'Belajar Dasar SQL - Dicoding', image: '/assets/certificates/completion-dicoding-sql.png', link: '#' },
+          { title: 'Belajar Dasar Data Science - Dicoding', image: '/assets/certificates/completion-dicoding-ds.png', link: '#' },
+          { title: 'Introduction to Data Science with Python - DQLab', image: '/assets/certificates/completion-dqlab-ds-python.png', link: '#' },
+          { title: 'Python Fundamental for Data Science - DQLab', image: '/assets/certificates/completion-dqlab-python-fundamental.png', link: '#' },
+          { title: 'Belajar Dasar AI - Dicoding', image: '/assets/certificates/completion-dicoding-ai.png', link: '#' },
+          { title: 'Memulai Pemrograman dengan Python - Dicoding', image: '/assets/certificates/completion-dicoding-python.png', link: '#' },
+          { title: 'Belajar Machine Learning untuk Pemula - Dicoding', image: '/assets/certificates/completion-dicoding-ml.png', link: '#' }
         ] 
       },
       { 
@@ -436,12 +436,12 @@ export const translations = {
         name: 'Sertifikat Kepanitiaan', 
         description: 'Peran dalam organisasi dan manajemen acara di himpunan mahasiswa dan festival.',
         items: [
-          { title: 'Koordinator Minat dan Bakat - HMPS AKS', image: '/src/assets/certificates/committee-hmps-koordinator.png', link: '#' },
-          { title: 'Divisi Acara - 6th Sharia Accounting Fair', image: '/src/assets/certificates/committee-saf-6.png', link: '#' },
-          { title: 'Divisi Acara - 5th Sharia Accounting Fair', image: '/src/assets/certificates/committee-saf-5.png', link: '#' },
-          { title: 'Panitia Pelaksana - Language Fest 2023', image: '/src/assets/certificates/committee-langfest-2023.png', link: '#' },
-          { title: 'Panitia Pelaksana - Language Fest 2022', image: '/src/assets/certificates/committee-langfest-2022.png', link: '#' },
-          { title: 'Divisi Perlengkapan - Ramadhan Fest 1444H', image: '/src/assets/certificates/committee-ramadhan-fest.png', link: '#' }
+          { title: 'Koordinator Minat dan Bakat - HMPS AKS', image: '/assets/certificates/committee-hmps-koordinator.png', link: '#' },
+          { title: 'Divisi Acara - 6th Sharia Accounting Fair', image: '/assets/certificates/committee-saf-6.png', link: '#' },
+          { title: 'Divisi Acara - 5th Sharia Accounting Fair', image: '/assets/certificates/committee-saf-5.png', link: '#' },
+          { title: 'Panitia Pelaksana - Language Fest 2023', image: '/assets/certificates/committee-langfest-2023.png', link: '#' },
+          { title: 'Panitia Pelaksana - Language Fest 2022', image: '/assets/certificates/committee-langfest-2022.png', link: '#' },
+          { title: 'Divisi Perlengkapan - Ramadhan Fest 1444H', image: '/assets/certificates/committee-ramadhan-fest.png', link: '#' }
         ] 
       },
       { 
@@ -450,16 +450,16 @@ export const translations = {
         name: 'Sertifikat Kompetensi', 
         description: 'Validasi keahlian teknis dalam TIK, bahasa, dan berbagai praktikum akuntansi spesialis.',
         items: [
-          { title: 'Sertifikasi TIK - Memuaskan', image: '/src/assets/certificates/competency-tik.jpg', link: '#' },
-          { title: 'Test of English Competence (TOEC)', image: '/src/assets/certificates/competency-toec.jpg', link: '#' },
-          { title: 'Tes Kompetensi Bahasa Arab', image: '/src/assets/certificates/competency-arabic.jpg', link: '#' },
-          { title: 'Praktikum Akuntansi Syariah', image: '/src/assets/certificates/competency-sharia-acc.png', link: '#' },
-          { title: 'Praktikum Akuntansi Manufaktur', image: '/src/assets/certificates/competency-manufacturing-acc.png', link: '#' },
-          { title: 'Praktikum Audit', image: '/src/assets/certificates/competency-audit.png', link: '#' },
-          { title: 'Praktikum Komputer Akuntansi', image: '/src/assets/certificates/competency-computer-acc.png', link: '#' },
-          { title: 'Praktikum Akuntansi Keuangan Syariah', image: '/src/assets/certificates/competency-sharia-finance.png', link: '#' },
-          { title: 'Praktikum Akuntansi Keuangan Menengah', image: '/src/assets/certificates/competency-intermediate-acc.png', link: '#' },
-          { title: 'Praktikum Statistik', image: '/src/assets/certificates/competency-statistics.png', link: '#' }
+          { title: 'Sertifikasi TIK - Memuaskan', image: '/assets/certificates/competency-tik.jpg', link: '#' },
+          { title: 'Test of English Competence (TOEC)', image: '/assets/certificates/competency-toec.jpg', link: '#' },
+          { title: 'Tes Kompetensi Bahasa Arab', image: '/assets/certificates/competency-arabic.jpg', link: '#' },
+          { title: 'Praktikum Akuntansi Syariah', image: '/assets/certificates/competency-sharia-acc.png', link: '#' },
+          { title: 'Praktikum Akuntansi Manufaktur', image: '/assets/certificates/competency-manufacturing-acc.png', link: '#' },
+          { title: 'Praktikum Audit', image: '/assets/certificates/competency-audit.png', link: '#' },
+          { title: 'Praktikum Komputer Akuntansi', image: '/assets/certificates/competency-computer-acc.png', link: '#' },
+          { title: 'Praktikum Akuntansi Keuangan Syariah', image: '/assets/certificates/competency-sharia-finance.png', link: '#' },
+          { title: 'Praktikum Akuntansi Keuangan Menengah', image: '/assets/certificates/competency-intermediate-acc.png', link: '#' },
+          { title: 'Praktikum Statistik', image: '/assets/certificates/competency-statistics.png', link: '#' }
         ] 
       }
     ]

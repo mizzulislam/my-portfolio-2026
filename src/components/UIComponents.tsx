@@ -715,10 +715,10 @@ export function CertCategoryCarousel({ categories, descriptions, isDark, viewCer
   };
 
   const categoryBackgrounds: any = {
-    appreciation: '/src/assets/certificates/appreciation-relawan-silver.png',
-    completion: '/src/assets/certificates/completion-piranha-brevet.png',
-    committee: '/src/assets/certificates/committee-hmps-koordinator.png',
-    competency: '/src/assets/certificates/competency-tik.jpg'
+    appreciation: '/assets/certificates/appreciation-relawan-silver.png',
+    completion: '/assets/certificates/completion-piranha-brevet.png',
+    committee: '/assets/certificates/committee-hmps-koordinator.png',
+    competency: '/assets/certificates/competency-tik.jpg'
   };
 
   return (
