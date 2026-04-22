@@ -20,9 +20,17 @@ async function startServer() {
       return res.status(400).json({ error: "Missing required fields" });
     }
 
+    // ✅ Cek credentials PERTAMA
+    if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
+      console.warn("SMTP credentials not provided.");
+      return res.status(500).json({
+        error:
+          "Server configuration error. Contact form is currently disabled.",
+        details: "Missing SMTP credentials in environment variables.",
+      });
+    }
+
     try {
-      // Configuration for SMTP
-      // This requires SMTP credentials in environment variables
       const transporter = nodemailer.createTransport({
         host: process.env.SMTP_HOST || "smtp.gmail.com",
         port: parseInt(process.env.SMTP_PORT || "587"),
@@ -34,32 +42,27 @@ async function startServer() {
       });
 
       const mailOptions = {
-        from: `"${name} ${lastName}" <${email}>`,
+        from: `"Portfolio Contact" <${process.env.SMTP_USER}>`, // ✅ pakai SMTP user
+        replyTo: `"${name} ${lastName}" <${email}>`, // ✅ reply ke pengirim
         to: "mizzulislam.id@gmail.com",
         subject: `New Portfolio Message from ${name}`,
         text: `Name: ${name} ${lastName}\nEmail: ${email}\n\nMessage:\n${message}`,
         html: `
-          <h3>New Message from Portfolio</h3>
-          <p><strong>Name:</strong> ${name} ${lastName}</p>
-          <p><strong>Email:</strong> ${email}</p>
-          <p><strong>Message:</strong></p>
-          <p>${message.replace(/\n/g, '<br>')}</p>
-        `,
+        <h3>New Message from Portfolio</h3>
+        <p><strong>Name:</strong> ${name} ${lastName}</p>
+        <p><strong>Email:</strong> ${email}</p>
+        <p><strong>Message:</strong></p>
+        <p>${message.replace(/\n/g, "<br>")}</p>
+      `,
       };
-
-      if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
-        console.warn("SMTP credentials not provided. Email not sent.");
-        return res.status(500).json({ 
-          error: "Server configuration error. Contact form is currently disabled.",
-          details: "Missing SMTP credentials in environment variables."
-        });
-      }
 
       await transporter.sendMail(mailOptions);
       res.status(200).json({ message: "Email sent successfully!" });
     } catch (error: any) {
       console.error("Error sending email:", error);
-      res.status(500).json({ error: "Failed to send email", details: error.message });
+      res
+        .status(500)
+        .json({ error: "Failed to send email", details: error.message });
     }
   });
 
