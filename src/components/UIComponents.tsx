@@ -157,7 +157,7 @@ export function EducationCard({ edu, idx, labels, isDark }: any) {
       <div className="p-8 md:p-10">
         <div className="flex flex-col md:flex-row justify-between gap-5 md:gap-4 mb-8 items-start">
           <div className="flex items-start gap-4 w-full md:w-auto flex-1">
-            <div className={`w-12 h-12 md:w-14 md:h-14 rounded-2xl flex items-center justify-center shrink-0 border transition-all overflow-hidden ${isDark ? 'bg-white/5 border-white/10' : 'bg-white border-slate-200 shadow-sm'}`}>
+            <div className={`w-12 h-12 md:w-14 md:h-14 rounded-2xl flex items-center justify-center shrink-0 border transition-all overflow-hidden ${isDark ? 'bg-white border-white/10' : 'bg-white border-slate-200 shadow-sm'}`}>
               {edu.logo ? (
                 <img src={edu.logo} alt={edu.institution} className="w-full h-full object-contain p-1.5 md:p-2" referrerPolicy="no-referrer" />
               ) : (

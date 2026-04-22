@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Briefcase, Calendar, CheckCircle2 } from 'lucide-react';
+import { Briefcase, Calendar, CheckCircle2, Users } from 'lucide-react';
 import { SectionHeader, ExperienceRoadmap } from '../UIComponents';
 
 interface ExperienceProps {
@@ -38,17 +38,28 @@ export function Experience({ isDark, t, activeTab, setActiveTab, lang }: Experie
                 }}
                 className={`group p-5 sm:p-6 md:p-8 rounded-[2rem] sm:rounded-3xl border transition-all shadow-xl ${isDark ? 'bg-slate-900/50 border-white/5 hover:border-blue-500/30' : 'bg-white border-slate-200 hover:border-blue-500/30'}`}
               >
-                <div className="flex flex-col sm:flex-row justify-between items-start gap-4 mb-4">
-                  <div className="w-full sm:flex-1">
-                    <h3 className={`text-base sm:text-lg md:text-xl font-bold transition-colors mb-0.5 sm:mb-1 ${isDark ? 'text-white group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r group-hover:from-blue-400 group-hover:to-cyan-300' : 'text-slate-900 group-hover:text-blue-600'}`}>{item.title}</h3>
-                    <p className={`text-[10px] sm:text-xs md:text-sm font-semibold capitalize ${isDark ? 'text-white' : 'text-slate-900'}`}>{item.company || item.category}</p>
+                <div className="flex flex-col md:flex-row justify-between items-start gap-4 mb-8">
+                  <div className="flex items-start gap-4 w-full md:w-auto flex-1">
+                    <div className={`w-12 h-12 md:w-14 md:h-14 rounded-2xl flex items-center justify-center shrink-0 border transition-all overflow-hidden ${isDark ? 'bg-white border-white/10' : 'bg-white border-slate-200 shadow-sm'}`}>
+                      {item.logo ? (
+                        <img src={item.logo} alt={item.company || item.category} className="w-full h-full object-contain p-1.5 md:p-2" referrerPolicy="no-referrer" />
+                      ) : (
+                        <div className={`w-full h-full flex items-center justify-center ${isDark ? 'text-blue-500' : 'text-blue-600'}`}>
+                          {activeTab === 'work' ? <Briefcase size={20} className="md:w-6 md:h-6" /> : <Users size={20} className="md:w-6 md:h-6" />}
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex flex-col flex-1">
+                      <h3 className={`text-lg md:text-xl font-bold transition-colors mb-1 ${isDark ? 'text-white group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r group-hover:from-blue-400 group-hover:to-cyan-300' : 'text-slate-900 group-hover:text-blue-600'}`}>{item.title}</h3>
+                      <p className={`text-[11px] md:text-sm font-semibold capitalize ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>{item.company || item.category}</p>
+                    </div>
                   </div>
-                  <div className="flex flex-row items-center gap-2 sm:gap-3 shrink-0 sm:ml-auto">
-                    <span className={`text-[8px] sm:text-[9px] md:text-[10px] font-mono px-3 py-1 rounded-full border ${isDark ? 'bg-white/5 text-slate-500 border-white/5' : 'bg-slate-100 text-slate-500 border-slate-200'}`}>
+                  <div className="flex flex-row md:flex-col items-center md:items-end justify-between md:justify-start w-full md:w-auto gap-2 md:gap-1.5 shrink-0">
+                    <span className={`inline-block px-3 py-1 border rounded-full text-[10px] font-mono font-bold uppercase tracking-wider whitespace-nowrap ${isDark ? 'bg-white/5 border-white/10 text-blue-400' : 'bg-blue-50 border-blue-100 text-blue-600'}`}>
                       {item.period || 'Project'}
                     </span>
                     {item.location && (
-                      <p className={`text-[8px] sm:text-[9px] font-bold uppercase tracking-tighter whitespace-nowrap ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+                      <p className={`text-[10px] font-bold uppercase tracking-tighter md:pr-3 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
                         {item.location}
                       </p>
                     )}
