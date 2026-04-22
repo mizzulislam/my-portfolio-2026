@@ -85,7 +85,7 @@ export default function App() {
       <audio 
         ref={audioRef} 
         loop 
-        src="src/assets/portfolio/perunggu-gemilang.mp3"
+        src="/assets/portfolio/perunggu-gemilang.mp3"
       />
       
       <CustomCursor isDark={isDark} />

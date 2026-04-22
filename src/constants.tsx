@@ -87,22 +87,22 @@ export const translations = {
       { name: 'Work Ethic', icon: 'Shield' }
     ],
     technicalTools: [
-      { name: 'MS Word', logo: '/src/assets/tools/word.png' },
-      { name: 'MS Excel', logo: '/src/assets/tools/excel.png' },
-      { name: 'MS PowerPoint', logo: '/src/assets/tools/powerpoint.png' },
-      { name: 'SPSS', logo: '/src/assets/tools/spss.png' },
-      { name: 'Stata', logo: '/src/assets/tools/stata.png' },
-      { name: 'E-Views', logo: '/src/assets/tools/eviews.png' },
-      { name: 'G Suite', logo: '/src/assets/tools/gsuite.png' },
-      { name: 'Python', logo: '/src/assets/tools/python.png' },
-      { name: 'MYOB', logo: '/src/assets/tools/myob.png' },
-      { name: 'Zahir Accounting', logo: '/src/assets/tools/zahir.png' },
-      { name: 'Core Tax', logo: '/src/assets/tools/coretax.png' }
+      { name: 'MS Word', logo: '/assets/tools/word.png' },
+      { name: 'MS Excel', logo: '/assets/tools/excel.png' },
+      { name: 'MS PowerPoint', logo: '/assets/tools/powerpoint.png' },
+      { name: 'SPSS', logo: '/assets/tools/spss.png' },
+      { name: 'Stata', logo: '/assets/tools/stata.png' },
+      { name: 'E-Views', logo: '/assets/tools/eviews.png' },
+      { name: 'G Suite', logo: '/assets/tools/gsuite.png' },
+      { name: 'Python', logo: '/assets/tools/python.png' },
+      { name: 'MYOB', logo: '/assets/tools/myob.png' },
+      { name: 'Zahir Accounting', logo: '/assets/tools/zahir.png' },
+      { name: 'Core Tax', logo: '/assets/tools/coretax.png' }
     ],
     eduData: [
-      { id: 1, institution: "State Islamic University Sunan Kalijaga Yogyakarta", degree: "Bachelor of Islamic Accounting", period: "Aug 2021 - Jun 2025", gpa: "3.74 / 4.00", logo: "/src/assets/logos/uin-logo.png", details: ["Graduated with honors as the Highest & Most Accelerated Graduate of the Sharia Accounting Department.", "Authored an undergraduate thesis analyzing the correlation between ESG disclosures, board characteristics, and firm performance.", "Mastered computerized accounting systems and financial reporting standards to ensure high-accuracy data management."], courses: ["Corporate Tax", "VAT", "Tax Planning", "Accounting Software"] },
-      { id: 2, institution: "Piranha Smart Center", degree: "Certificate in Tax Technician", period: "Jul 2023 - Sep 2023", gpa: "83.20 / 100.00", logo: "/src/assets/logos/psc-logo.png", details: ["Completed intensive certification in Indonesian taxation covering PPh, VAT, tax planning, and General Tax Provisions (KUP).", "Executed hands-on simulations for the preparation and reporting of monthly and annual tax returns (SPT).", "Developed technical proficiency in tax calculations and compliance procedures according to national regulations."], courses: ["PPh Art 21/23", "Corporate Tax", "VAT", "Tax Accounting"] },
-      { id: 'sma', institution: "MAN 3 Sleman", degree: "Senior High School Graduate", period: "Jul 2018 - May 2021", gpa: "85.43 / 100.00", logo: "/src/assets/logos/man3-logo.png", details: ["Developed strong analytical and numerical skills through problem-solving and quantitative subjects.", "Active in student organizations, maintaining a balance between leadership roles and a strong academic record.", "Pursued the Natural Sciences (MIPA) curriculum with dedication to building a solid logical and disciplined foundation."], courses: ["Mathematics", "Physics", "Chemistry", "Biology", "English", "Islamic Studies"] }
+      { id: 1, institution: "State Islamic University Sunan Kalijaga Yogyakarta", degree: "Bachelor of Islamic Accounting", period: "Aug 2021 - Jun 2025", gpa: "3.74 / 4.00", logo: "/assets/logos/uin-logo.png", details: ["Graduated with honors as the Highest & Most Accelerated Graduate of the Sharia Accounting Department.", "Authored an undergraduate thesis analyzing the correlation between ESG disclosures, board characteristics, and firm performance.", "Mastered computerized accounting systems and financial reporting standards to ensure high-accuracy data management."], courses: ["Corporate Tax", "VAT", "Tax Planning", "Accounting Software"] },
+      { id: 2, institution: "Piranha Smart Center", degree: "Certificate in Tax Technician", period: "Jul 2023 - Sep 2023", gpa: "83.20 / 100.00", logo: "/assets/logos/psc-logo.png", details: ["Completed intensive certification in Indonesian taxation covering PPh, VAT, tax planning, and General Tax Provisions (KUP).", "Executed hands-on simulations for the preparation and reporting of monthly and annual tax returns (SPT).", "Developed technical proficiency in tax calculations and compliance procedures according to national regulations."], courses: ["PPh Art 21/23", "Corporate Tax", "VAT", "Tax Accounting"] },
+      { id: 'sma', institution: "MAN 3 Sleman", degree: "Senior High School Graduate", period: "Jul 2018 - May 2021", gpa: "85.43 / 100.00", logo: "/assets/logos/man3-logo.png", details: ["Developed strong analytical and numerical skills through problem-solving and quantitative subjects.", "Active in student organizations, maintaining a balance between leadership roles and a strong academic record.", "Pursued the Natural Sciences (MIPA) curriculum with dedication to building a solid logical and disciplined foundation."], courses: ["Mathematics", "Physics", "Chemistry", "Biology", "English", "Islamic Studies"] }
     ],
     workData: [
       { id: 1, title: 'Tax Intern', company: 'PT Mitra Graha Integrasi', period: 'Nov 2025 - May 2026', location: 'Bogor City, ID', details: ["Managed precision withholding tax (PPh 21, 23, 4(2)) calculations and timely e-Faktur issuance.", "Successfully reconciled financial statements with specific tax objects to ensure error-free SPT filings.", "Architected a systematic archival system for tax documentation to mitigate administrative penalty risks."] },
@@ -127,7 +127,7 @@ export const translations = {
           'Real-time financial dashboard & trend visualization.',
           'E2E accounting cycle automation (Journal to Closing).'
         ],
-        image: '/src/assets/projects/budget.png',
+        image: '/assets/projects/budget.png',
         link: '#'
       },
       { 
@@ -140,7 +140,7 @@ export const translations = {
           'Reduced errors in tax calculation procedures.',
           'Optimized transaction data recording efficiency.'
         ],
-        image: '/src/assets/projects/mytax.png',
+        image: '/assets/projects/mytax.png',
         link: '#'
       },
       {
@@ -153,7 +153,7 @@ export const translations = {
           'Improved financial transparency for MSMEs.',
           'Simplified reporting for the revenue cycle.'
         ],
-        image: '/src/assets/projects/msme.png',
+        image: '/assets/projects/msme.png',
         link: 'https://docs.google.com/document/d/1nj12Dc6jyAIoUKxwXbTt2EQNe4-ziUit/edit#heading=h.trynm77i2zu6'
       },
       {
@@ -167,7 +167,7 @@ export const translations = {
           'Responsive and interactive design',
           'Performance and animation optimization'
         ],
-        image: '/src/assets/projects/portfolio.png',
+        image: '/assets/projects/portfolio.png',
         link: '#'
       }
     ],
