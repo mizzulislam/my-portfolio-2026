@@ -716,7 +716,7 @@ export function CertCategoryCarousel({ categories, descriptions, isDark, viewCer
 
   const categoryBackgrounds: any = {
     appreciation: '/assets/certificates/appreciation-relawan-silver.png',
-    completion: '/assets/certificates/completion-piranha-brevet.png',
+    completion: '/assets/certificates/completion-google-ai-data.jpg',
     committee: '/assets/certificates/committee-hmps-koordinator.png',
     competency: '/assets/certificates/competency-tik.jpg'
   };

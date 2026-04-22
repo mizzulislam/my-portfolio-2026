@@ -50,10 +50,10 @@ export const translations = {
     certSub: 'Validating my expertise through recognized professional bodies and academies.',
     seeMoreBtn: 'See More',
     certDescriptions: {
-      appreciation: 'Recognition for contributions as a tax volunteer and active involvement in academic organizations.',
-      completion: 'Professional training and academic courses completed with excellence in accounting and taxation.',
-      committee: 'Leadership and organizational roles in national seminars and major institutional accounting events.',
-      competency: 'Professional certifications validating specialized technical skills in tax law and financial tools.'
+      appreciation: 'Official recognition for dedication, active contribution, and outstanding achievements across various organizational and professional activities.',
+      completion: 'Formal certification of successful completion of a self-development program and specialized skills training.',
+      committee: 'Certification of dedication and active involvement in organizing committees and managerial responsibilities across a range of professional activities.',
+      competency: 'Recognition of specific competencies attained through standardized professional examinations in various technical fields.'
     },
     contactHeader: "Let's Connect",
     contactSub: 'Interested in working together? Reach out via email or the form below.',
@@ -128,7 +128,7 @@ export const translations = {
           'E2E accounting cycle automation (Journal to Closing).'
         ],
         image: '/assets/projects/budget.png',
-        link: '#'
+        link: 'https://docs.google.com/spreadsheets/d/1z8M98-ZcEEL1PGuQpNhuWxqzlB_J-0wE9UCl3fwLxx0/edit?usp=sharing'
       },
       { 
         id: 2, 
@@ -141,7 +141,7 @@ export const translations = {
           'Optimized transaction data recording efficiency.'
         ],
         image: '/assets/projects/mytax.png',
-        link: '#'
+        link: 'https://drive.google.com/drive/folders/1wCL99KqfPhOClrDTsUkVTvkDYXfwdJAQ?usp=sharing'
       },
       {
         id: 3,
@@ -168,7 +168,7 @@ export const translations = {
           'Performance and animation optimization'
         ],
         image: '/assets/projects/portfolio.png',
-        link: '#'
+        link: 'https://izzuls-portfolio.vercel.app/'
       }
     ],
     certsCategories: [
@@ -189,10 +189,12 @@ export const translations = {
         name: 'Certificate of Completion', 
         description: 'Professional training and courses completion in tax, data science, and AI.',
         items: [
-          { title: 'Brevet Pajak A/B - Piranha Smart Center', image: '/assets/certificates/completion-piranha-brevet.png', link: '#' },
+          { title: 'Google AI Professional Certificates - Google', image: '/assets/certificates/completion-google-ai-professional.jpg', link: '#' },
+          { title: 'AI for Data Analysis - Google', image: '/assets/certificates/completion-google-ai-data.jpg', link: '#' },
+          { title: 'AI for Content Creation - Google', image: '/assets/certificates/completion-google-ai-content.jpg', link: '#' },
+          { title: 'AI for Writing and Communicating - Google', image: '/assets/certificates/completion-google-ai-writing.jpg', link: '#' },
           { title: 'AI for Research and Insights - Google', image: '/assets/certificates/completion-google-ai-research.png', link: '#' },
           { title: 'AI for Brainstorming and Planning - Google', image: '/assets/certificates/completion-google-ai-planning.png', link: '#' },
-          { title: 'Zahir User Certified', image: '/assets/certificates/completion-zahir-certified.png', link: '#' },
           { title: 'Praktik Kerja Lapangan - Mitra Setara Digitax', image: '/assets/certificates/completion-msd-pkl.png', link: '#' },
           { title: 'Introduction to Financial Literacy - Dicoding', image: '/assets/certificates/completion-dicoding-finance.png', link: '#' },
           { title: 'Belajar Dasar SQL - Dicoding', image: '/assets/certificates/completion-dicoding-sql.png', link: '#' },
@@ -224,6 +226,8 @@ export const translations = {
         name: 'Certificate of Competency', 
         description: 'Validation of technical skills in ICT, languages, and specialized accounting practicums.',
         items: [
+          { title: 'Zahir User Certified', image: '/assets/certificates/competency-zahir-certified.png', link: '#' },
+          { title: 'Certified Tax Technician (CTT)', image: '/assets/certificates/competency-piranha-brevet.png', link: '#' },
           { title: 'ICT Certification (TIK) - Excellent', image: '/assets/certificates/competency-tik.jpg', link: '#' },
           { title: 'Test of English Competence (TOEC)', image: '/assets/certificates/competency-toec.jpg', link: '#' },
           { title: 'Arabic Language Competence', image: '/assets/certificates/competency-arabic.jpg', link: '#' },
@@ -276,10 +280,10 @@ export const translations = {
     certSub: 'Validasi keahlian saya melalui badan profesional dan akademi yang diakui.',
     seeMoreBtn: 'Lihat selengkapnya',
     certDescriptions: {
-      appreciation: 'Penghargaan atas kontribusi sebagai relawan pajak dan keterlibatan aktif dalam organisasi akademik.',
-      completion: 'Pelatihan profesional dan kursus akademik yang diselesaikan dengan predikat memuaskan di bidang akuntansi dan pajak.',
-      committee: 'Peran kepemimpinan dan organisasi dalam seminar nasional dan acara akuntansi institusi besar.',
-      competency: 'Sertifikasi profesional yang memvalidasi keahlian teknis khusus dalam hukum pajak dan alat keuangan.'
+      appreciation: 'Penghargaan resmi atas dedikasi, kontribusi aktif, serta prestasi yang diraih dalam berbagai kegiatan organisasi dan profesional.',
+      completion: 'Sertifikasi formal atas keberhasilan menyelesaikan program pengembangan diri dan pelatihan berbasis keahlian khusus.',
+      committee: 'Sertifikasi atas dedikasi dan keterlibatan aktif dalam kepanitiaan dan tanggung jawab manajerial di berbagai skala kegiatan profesional.',
+      competency: 'Pengakuan atas kompetensi spesifik yang diraih melalui pengujian standar profesional di berbagai bidang keahlian teknis.'
     },
     contactHeader: "Mari Terhubung",
     contactSub: 'Tertarik untuk bekerja sama? Hubungi saya melalui email atau formulir di bawah.',
@@ -354,7 +358,7 @@ export const translations = {
           'Otomasi siklus akuntansi E2E (Jurnal hingga Penutupan).'
         ],
         image: '/src/assets/projects/budget.png',
-        link: '#'
+        link: 'https://docs.google.com/spreadsheets/d/1z8M98-ZcEEL1PGuQpNhuWxqzlB_J-0wE9UCl3fwLxx0/edit?usp=sharing'
       },
       { 
         id: 2, 
@@ -367,7 +371,7 @@ export const translations = {
           'Optimalkan efisiensi pencatatan data transaksi.'
         ],
         image: '/src/assets/projects/mytax.png',
-        link: '#'
+        link: 'https://drive.google.com/drive/folders/1wCL99KqfPhOClrDTsUkVTvkDYXfwdJAQ?usp=sharing'
       },
       {
         id: 3,
@@ -394,7 +398,7 @@ export const translations = {
           'Optimasi performa dan animasi'
         ],
         image: '/src/assets/projects/portfolio.png',
-        link: '#'
+        link: 'https://izzuls-portfolio.vercel.app/'
       }
     ],
     certsCategories: [
@@ -415,10 +419,12 @@ export const translations = {
         name: 'Sertifikat Penyelesaian', 
         description: 'Penyelesaian pelatihan profesional dan kursus di bidang perpajakan, data science, dan AI.',
         items: [
-          { title: 'Brevet Pajak A/B - Piranha Smart Center', image: '/assets/certificates/completion-piranha-brevet.png', link: '#' },
+          { title: 'Google AI Professional Certificates - Google', image: '/assets/certificates/completion-google-ai-professional.jpg', link: '#' },
+          { title: 'AI for Data Analysis - Google', image: '/assets/certificates/completion-google-ai-data.jpg', link: '#' },
+          { title: 'AI for Content Creation - Google', image: '/assets/certificates/completion-google-ai-content.jpg', link: '#' },
+          { title: 'AI for Writing and Communicating - Google', image: '/assets/certificates/completion-google-ai-writing.jpg', link: '#' },
           { title: 'AI for Research and Insights - Google', image: '/assets/certificates/completion-google-ai-research.png', link: '#' },
           { title: 'AI for Brainstorming and Planning - Google', image: '/assets/certificates/completion-google-ai-planning.png', link: '#' },
-          { title: 'Zahir User Certified', image: '/assets/certificates/completion-zahir-certified.png', link: '#' },
           { title: 'Praktik Kerja Lapangan - Mitra Setara Digitax', image: '/assets/certificates/completion-msd-pkl.png', link: '#' },
           { title: 'Introduction to Financial Literacy - Dicoding', image: '/assets/certificates/completion-dicoding-finance.png', link: '#' },
           { title: 'Belajar Dasar SQL - Dicoding', image: '/assets/certificates/completion-dicoding-sql.png', link: '#' },
@@ -450,6 +456,8 @@ export const translations = {
         name: 'Sertifikat Kompetensi', 
         description: 'Validasi keahlian teknis dalam TIK, bahasa, dan berbagai praktikum akuntansi spesialis.',
         items: [
+          { title: 'Pengguna Zahir Bersertifikat', image: '/assets/certificates/competency-zahir-certified.png', link: '#' },
+          { title: 'Teknisi Pajak Bersertifikat - Piranha Smart Center', image: '/assets/certificates/competency-piranha-brevet.png', link: '#' },
           { title: 'Sertifikasi TIK - Memuaskan', image: '/assets/certificates/competency-tik.jpg', link: '#' },
           { title: 'Test of English Competence (TOEC)', image: '/assets/certificates/competency-toec.jpg', link: '#' },
           { title: 'Tes Kompetensi Bahasa Arab', image: '/assets/certificates/competency-arabic.jpg', link: '#' },
