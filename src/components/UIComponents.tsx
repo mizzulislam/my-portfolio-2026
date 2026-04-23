@@ -824,7 +824,7 @@ export function CertCategoryCarousel({ categories, descriptions, isDark, viewCer
                </motion.p>
                
                {/* 3 Grid Carousel / Gallery */}
-               <div className="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-10">
+               <div className="flex md:grid md:grid-cols-3 gap-6 md:gap-10 overflow-x-auto md:overflow-x-visible no-scrollbar snap-x snap-mandatory px-2 pb-6 -mx-4 md:mx-0">
                  {activeCategory.items.map((item: any, idx: number) => (
                    <motion.div
                      key={idx}
@@ -833,7 +833,7 @@ export function CertCategoryCarousel({ categories, descriptions, isDark, viewCer
                      transition={{ delay: 0.2 + (idx * 0.1), duration: 0.4 }}
                      whileHover={{ y: -10 }}
                      onClick={() => setZoomedItemIndex(idx)}
-                     className={`group relative aspect-[4/3] rounded-xl overflow-hidden border cursor-pointer transition-all duration-300 ${isDark ? 'border-white/10 bg-slate-800' : 'border-slate-200 bg-slate-50 shadow-md'}`}
+                     className={`group relative aspect-[4/3] w-[85%] sm:w-[60%] md:w-auto flex-shrink-0 snap-center rounded-xl overflow-hidden border cursor-pointer transition-all duration-300 ${isDark ? 'border-white/10 bg-slate-800' : 'border-slate-200 bg-slate-50 shadow-md'}`}
                    >
                      <img 
                        src={item.image} 
@@ -841,12 +841,19 @@ export function CertCategoryCarousel({ categories, descriptions, isDark, viewCer
                        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                        referrerPolicy="no-referrer"
                      />
-                     <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-300 flex flex-col justify-end items-start p-4 md:p-5 text-left">
-                        <div className="transform translate-y-2 group-hover:translate-y-0 transition-transform duration-500 w-full">
+                     <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/20 to-transparent opacity-0 md:group-hover:opacity-100 transition-all duration-300 flex flex-col justify-end items-start p-4 md:p-5 text-left md:group-hover:translate-y-0 translate-y-0 opacity-100 md:opacity-0 md:group-hover:opacity-100">
+                        <div className="transform translate-y-0 md:translate-y-2 group-hover:translate-y-0 transition-transform duration-500 w-full">
                           <h5 className="text-white text-[10px] sm:text-xs md:text-sm font-bold leading-tight tracking-normal capitalize line-clamp-2 px-1">{item.title}</h5>
-                                                  </div>
+                        </div>
                      </div>
                    </motion.div>
+                 ))}
+               </div>
+
+               {/* Mobile Swipe Indicator */}
+               <div className="flex md:hidden justify-center gap-1.5 mt-2">
+                 {activeCategory.items.map((_: any, i: number) => (
+                   <div key={i} className="w-1.5 h-1.5 rounded-full bg-blue-500/30"></div>
                  ))}
                </div>
             </div>
