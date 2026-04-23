@@ -72,7 +72,7 @@ async function startServer() {
                     <!-- Header with Gradient and Logo -->
                     <tr>
                       <td align="center" style="padding: 50px 40px; background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 50%, #0ea5e9 100%);">
-                        <img src="<img src="https://drive.google.com/uc?export=view&id=1mLqeBiZsKS6JyxWgrOM95YAU4gRnMbmv" alt="Portfolio Logo" width="180" style="display: block; margin-bottom: 24px; filter: drop-shadow(0 8px 12px rgba(0,0,0,0.2));">
+                        <img src="https://izzuls-portfolio.vercel.app/portfolio-logo.png" alt="Portfolio Logo" width="180" style="display: block; margin-bottom: 24px; filter: drop-shadow(0 8px 12px rgba(255,255,255,1));">
                         <h1 style="color: #ffffff; margin: 0; font-size: 32px; font-weight: 800; letter-spacing: -0.04em; line-height: 1.1;">New Message Request</h1>
                         <p style="color: rgba(255,255,255,0.9); margin: 12px 0 0; font-size: 15px; font-weight: 500;">Someone Just Messaged You</p>
                       </td>
