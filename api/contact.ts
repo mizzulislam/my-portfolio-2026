@@ -106,10 +106,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     // Tangani error teknis lainnya
+    // PERBAIKAN: error.message dihapus dari response agar tidak
+    // membocorkan detail teknis internal server ke pengguna
     console.error("Error:", error);
     return res.status(500).json({
-      error: "Gagal mengirim email.",
-      details: error.message,
+      error: "Gagal mengirim pesan. Silakan coba lagi nanti.",
     });
   }
 }
