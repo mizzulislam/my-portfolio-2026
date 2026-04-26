@@ -44,7 +44,7 @@ async function startServer() {
       });
 
       const mailOptions = {
-        from: `"Izzul's Portfolio" <${process.env.SMTP_USER}>`,
+        from: `"Perungguy" <${process.env.SMTP_USER}>`,
         replyTo: email,
         to: "mizzulislam.id@gmail.com",
         subject: `🚀 New Connection: Message from ${name} ${lastName}`,

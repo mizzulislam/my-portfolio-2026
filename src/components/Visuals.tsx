@@ -51,7 +51,7 @@ export function PhotoCarousel({ isDark }: { isDark: boolean }) {
           <motion.div key="carousel" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 w-full h-full overflow-hidden">
             <AnimatePresence initial={false} custom={direction}>
               <motion.div key={page} custom={direction} variants={variants} initial="enter" animate="center" exit="exit" transition={{ x: { type: "spring", stiffness: 300, damping: 30 }, opacity: { duration: 0.2 } }} className="absolute inset-0 w-full h-full">
-                <img src={photos[imageIndex].src} alt={photos[imageIndex].alt} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                <img src={photos[imageIndex].src} alt={photos[imageIndex].alt} loading="lazy" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
                 <div className={`absolute inset-0 bg-gradient-to-t ${isDark ? 'from-[#020617]' : 'from-slate-200'} via-transparent to-transparent opacity-60`}></div>
               </motion.div>
             </AnimatePresence>
@@ -65,7 +65,7 @@ export function PhotoCarousel({ isDark }: { isDark: boolean }) {
             <div className="grid grid-cols-2 gap-3 pb-4">
               {photos.map((photo, i) => (
                 <motion.div key={photo.id} initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: i * 0.1 }} className="aspect-square rounded-2xl overflow-hidden border border-white/5 relative group/item">
-                  <img src={photo.src} alt={photo.alt} className="w-full h-full object-cover transition-transform duration-500 group-hover/item:scale-110" referrerPolicy="no-referrer" />
+                  <img src={photo.src} alt={photo.alt} loading="lazy" className="w-full h-full object-cover transition-transform duration-500 group-hover/item:scale-110" referrerPolicy="no-referrer" />
                   <div className="absolute inset-0 bg-blue-600/20 opacity-0 group-hover/item:opacity-100 transition-opacity" />
                 </motion.div>
               ))}

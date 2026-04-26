@@ -527,6 +527,21 @@ export function ProjectFolders({ projects, isDark, labels }: any) {
             : "bg-white border-slate-200 shadow-2xl shadow-blue-500/10"
         } p-6 md:p-14 overflow-hidden`}
       >
+        {/* Project Image */}
+        {activeProject.image && (
+          <div className="absolute inset-0 z-0 overflow-hidden rounded-tl-3xl rounded-tr-3xl rounded-b-3xl">
+            <img
+              src={activeProject.image}
+              alt={activeProject.title}
+              className="w-full h-full object-cover opacity-30"
+              referrerPolicy="no-referrer"
+            />
+            <div className="absolute inset-0 bg-gradient-to-r from-[#0B0E14]/95 via-[#0B0E14]/80 to-[#0B0E14]/60" />
+          </div>
+        )}
+
+        {/* Subtle Inner Glow */}
+        <div className="absolute inset-0 pointer-events-none bg-gradient-to-br from-blue-600/[0.04] to-transparent z-[1]" />
         {/* Subtle Inner Glow */}
         <div className="absolute inset-0 pointer-events-none bg-gradient-to-br from-blue-600/[0.04] to-transparent z-[1]" />
 
@@ -1058,7 +1073,7 @@ export function CertCategoryCarousel({
                     <img
                       src={categoryBackgrounds[cat.id]}
                       alt=""
-                      className={`w-full h-full object-cover opacity-[0.14] blur-[1.5px] transition-transform duration-700 ${isActive ? "scale-110" : "scale-100"}`}
+                      className={`w-full h-full object-cover opacity-[0.90                                                                                                                                                                                                                                                                                                                                                                                                              ] blur-[2px] transition-transform duration-700 ${isActive ? "scale-110" : "scale-100"}`}
                       referrerPolicy="no-referrer"
                     />
                     <div

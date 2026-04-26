@@ -4,6 +4,9 @@
  */
 
 import React, { useState, useEffect, useRef } from 'react';
+import { Routes, Route } from "react-router-dom";
+import Login from "./components/Login";
+import Admin from "./components/Admin";
 import { AnimatePresence } from 'motion/react';
 import { translations } from './constants';
 
@@ -77,6 +80,10 @@ export default function App() {
   };
 
   return (
+  <Routes>
+    <Route path="/login" element={<Login />} />
+    <Route path="/admin" element={<Admin />} />
+    <Route path="/" element={
     <div className={`min-h-screen w-full overflow-x-hidden font-sans transition-colors duration-500 md:cursor-none ${isDark ? 'bg-[#020617] text-slate-200' : 'bg-slate-50 text-slate-900'}`}>
       <AnimatePresence>
         {showIntro && <IntroLoader onComplete={() => setShowIntro(false)} />}
@@ -127,7 +134,7 @@ export default function App() {
           setActiveTab={setActiveTab} 
           lang={lang} 
         />
-        <Projects isDark={isDark} t={t} />
+        <Projects isDark={isDark} t={t} lang={lang} />
         <Skills 
           isDark={isDark}
           t={t}
@@ -153,9 +160,11 @@ export default function App() {
             <MusicPlayingIndicator isDark={isDark} />
           </div>
         )}
-      </AnimatePresence>
-    </div>
-  );
+        </AnimatePresence>
+      </div>
+    } />
+  </Routes>
+  )
 }
 
 function MusicPlayingIndicator({ isDark }: { isDark: boolean }) {
