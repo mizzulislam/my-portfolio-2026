@@ -120,9 +120,30 @@ function useWindowWidth() {
   return width;
 }
 
-import { SectionHeaderProps, EducationCardProps, ExperienceRoadmapProps, ProjectFoldersProps, TechnicalToolsProps, SoftSkillsGridProps, CertZoomCarouselProps } from '../types';
+import {
+  SectionHeaderProps,
+  EducationCardProps,
+  ExperienceRoadmapProps,
+  ProjectFoldersProps,
+  TechnicalToolsProps,
+  SoftSkillsGridProps,
+  CertZoomCarouselProps,
+  Milestone,
+  ProjectItem,
+  TechnicalTool,
+  SoftSkill,
+  HardSkill,
+  CertCategory,
+  CertDescriptions,
+  CertItem,
+} from "../types";
 
-export function SectionHeader({ title, subTitle, icon: Icon, isDark }: SectionHeaderProps) {
+export function SectionHeader({
+  title,
+  subTitle,
+  icon: Icon,
+  isDark,
+}: SectionHeaderProps) {
   return (
     <div className="flex flex-col items-center text-center mb-16 w-full px-4">
       <h2
@@ -168,7 +189,12 @@ export function AnimatedCounter({
   return <span ref={ref}>{count}</span>;
 }
 
-export function EducationCard({ edu, idx, labels, isDark }: EducationCardProps) {
+export function EducationCard({
+  edu,
+  idx,
+  labels,
+  isDark,
+}: EducationCardProps) {
   const [isOpen, setIsOpen] = useState(false);
   return (
     <motion.div
@@ -333,7 +359,7 @@ export function ExperienceRoadmap({ labels, isDark }: ExperienceRoadmapProps) {
         </div>
 
         <div className="w-full space-y-16 relative z-10 py-6">
-          {milestones.map((m: any, i: number) => {
+          {milestones.map((m: Milestone, i: number) => {
             const NodeIcon = m.icon;
             const isLeft = i % 2 === 0;
 
@@ -375,7 +401,7 @@ export function ExperienceRoadmap({ labels, isDark }: ExperienceRoadmapProps) {
                   </span>
                   <div className="h-[1px] w-6 bg-blue-600/40 mb-2" />
                   <p className="text-[10px] font-medium text-white leading-tight text-left line-clamp-3">
-                    {m.detail || m.event}
+                    {m.event}
                   </p>
                 </motion.div>
               </div>
@@ -398,7 +424,7 @@ export function ExperienceRoadmap({ labels, isDark }: ExperienceRoadmapProps) {
           </div>
 
           <div className="flex justify-between items-center w-full relative z-10">
-            {milestones.map((m: any, i: number) => {
+            {milestones.map((m: Milestone, i: number) => {
               const NodeIcon = m.icon;
               const isUp = i % 2 === 0;
 
@@ -428,7 +454,7 @@ export function ExperienceRoadmap({ labels, isDark }: ExperienceRoadmapProps) {
                       </span>
                       <div className="h-[2px] w-10 bg-blue-600/40 mb-3" />
                       <p className="text-sm font-medium text-white leading-relaxed text-left whitespace-normal line-clamp-3 overflow-hidden">
-                        {m.detail || m.event}
+                        {m.event}
                       </p>
                     </motion.div>
                   </div>
@@ -466,7 +492,11 @@ export function ExperienceRoadmap({ labels, isDark }: ExperienceRoadmapProps) {
   );
 }
 
-export function ProjectFolders({ projects, isDark, labels }: ProjectFoldersProps) {
+export function ProjectFolders({
+  projects,
+  isDark,
+  labels,
+}: ProjectFoldersProps) {
   const [activeIndex, setActiveIndex] = useState(0);
   const activeProject = projects[activeIndex];
 
@@ -474,12 +504,13 @@ export function ProjectFolders({ projects, isDark, labels }: ProjectFoldersProps
     <div className="w-full max-w-6xl mx-auto mt-16 px-4">
       {/* Folder Tab Navigation */}
       <div className="flex items-end overflow-x-auto no-scrollbar pt-6 pb-[1px] mx-5 px-1">
-        {projects.map((project: any, idx: number) => {
+        {projects.map((project: ProjectItem, idx: number) => {
           const isActive = activeIndex === idx;
           return (
             <button
               key={project.id}
               onClick={() => setActiveIndex(idx)}
+              aria-label={`View details for project: ${project.title}`}
               className={`relative flex-shrink-0 flex flex-col group transition-all duration-300 mr-1.5 ${
                 isActive ? "z-20" : "z-10"
               }`}
@@ -648,34 +679,56 @@ export function ProjectFolders({ projects, isDark, labels }: ProjectFoldersProps
   );
 }
 
+interface SkillLogoBoxProps {
+  skill: TechnicalTool | SoftSkill | HardSkill;
+  isDark: boolean;
+  type: "tech" | "soft" | "hard";
+  beamX?: number | null;
+  parentRef?: React.RefObject<HTMLDivElement | null> | null;
+}
+
 export function SkillLogoBox({
   skill,
   isDark,
   type,
   beamX = null,
   parentRef = null,
-}: any) {
+}: SkillLogoBoxProps) {
   const boxRef = useRef<HTMLDivElement>(null);
   const [isRevealed, setIsRevealed] = useState(false);
+  const cachedX = useRef<number | null>(null);
+
+  // Cache position on mount and resize instead of every mouse move
+  useEffect(() => {
+    const updateCache = () => {
+      if (type === "tech" && boxRef.current && parentRef?.current) {
+        const boxRect = boxRef.current.getBoundingClientRect();
+        const parentRect = parentRef.current.getBoundingClientRect();
+        cachedX.current = (boxRect.left + boxRect.right) / 2 + window.scrollX;
+      }
+    };
+
+    updateCache();
+    window.addEventListener("resize", updateCache);
+    return () => window.removeEventListener("resize", updateCache);
+  }, [type, parentRef]);
 
   useEffect(() => {
-    if (
-      type === "tech" &&
-      beamX !== null &&
-      boxRef.current &&
-      parentRef?.current
-    ) {
-      const boxRect = boxRef.current.getBoundingClientRect();
-      const parentRect = parentRef.current.getBoundingClientRect();
-      const boxCenterX = (boxRect.left + boxRect.right) / 2 - parentRect.left;
-      const distance = Math.abs(boxCenterX - beamX);
-      setIsRevealed(distance < 55);
-    } else {
+    if (type !== "tech" || beamX === null || cachedX.current === null) {
       setIsRevealed(false);
+      return;
     }
-  }, [beamX, type, parentRef]);
+    const distance = Math.abs(cachedX.current - beamX);
+    const revealed = distance < 55;
+    if (revealed !== isRevealed) {
+      setIsRevealed(revealed);
+    }
+  }, [beamX, type, isRevealed]);
 
-  const getStyle = (name: any, skillType: string) => {
+  const getStyle = (
+    name: string | TechnicalTool | SoftSkill | HardSkill,
+    skillType: string,
+  ) => {
     const skillName = typeof name === "object" ? name.name : name;
     const n = skillName.toLowerCase();
 
@@ -770,13 +823,17 @@ export function SkillLogoBox({
                 : "bg-white border-blue-400 shadow-md"
             }`}
           >
-            <img
-              src={tool.logo}
-              alt={tool.name}
-              className="w-full h-full object-contain"
-              loading="lazy"
-              referrerPolicy="no-referrer"
-            />
+            {(tool as TechnicalTool).logo ? (
+              <img
+                src={(tool as TechnicalTool).logo}
+                alt={(tool as TechnicalTool).name}
+                className="w-full h-full object-contain"
+                loading="lazy"
+                referrerPolicy="no-referrer"
+              />
+            ) : (
+              <IconComponent size={28} />
+            )}
           </div>
         </motion.div>
         <div className="h-6 mt-1 flex items-center justify-center overflow-visible">
@@ -806,7 +863,7 @@ export function SkillLogoBox({
         <span
           className={`text-xs font-bold tracking-tight transition-colors ${isDark ? "text-slate-200" : "text-slate-800"}`}
         >
-          {skill}
+          {skill.name}
         </span>
       </motion.div>
     );
@@ -829,32 +886,41 @@ export function SkillLogoBox({
       <span
         className={`text-[10px] md:text-[11px] font-bold uppercase tracking-tight leading-tight ${isDark ? "text-slate-200" : "text-slate-800"}`}
       >
-        {skill}
+        {skill.name}
       </span>
     </motion.div>
   );
 }
 
-export function UFOScanner({ isDark, mouseX, mouseY, isHovering }: any) {
+export function UFOScanner({
+  isDark,
+  mouseX,
+  mouseY,
+  isHovering,
+}: {
+  isDark: boolean;
+  mouseX: number;
+  mouseY: number;
+  isHovering: boolean;
+}) {
   return (
     <motion.div
       initial={{ opacity: 0, scale: 0 }}
       animate={{
         opacity: 1,
         scale: 1,
-        x: mouseX,
-        y: mouseY,
       }}
       exit={{ opacity: 0, scale: 0.5 }}
       transition={{
         opacity: { duration: 0.4 },
         scale: { type: "spring", stiffness: 200, damping: 15 },
-        x: isHovering
-          ? { type: "spring", stiffness: 450, damping: 30 }
-          : { duration: 0.2 },
-        y: { type: "spring", stiffness: 450, damping: 30 },
       }}
-      style={{ translateX: "-50%", translateY: "-50%" }}
+      style={{
+        x: mouseX,
+        y: mouseY,
+        translateX: "-50%",
+        translateY: "-50%",
+      }}
       className="absolute z-[100] pointer-events-none w-14 h-3.5"
     >
       <div className="relative">
@@ -899,34 +965,29 @@ export function TechnicalCarousel({
   isDark,
   isScannerActive,
   globalMouseX,
-}: any) {
+}: {
+  tools: TechnicalTool[];
+  isDark: boolean;
+  isScannerActive: boolean;
+  globalMouseX: number;
+}) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const [localBeamX, setLocalBeamX] = useState<number | null>(null);
 
-  useEffect(() => {
-    if (isScannerActive && containerRef.current) {
-      const rect = containerRef.current.getBoundingClientRect();
-      // Calculate cursor position relative to this container
-      const x = globalMouseX - rect.left - window.scrollX;
-      setLocalBeamX(x);
-    } else {
-      setLocalBeamX(null);
-    }
-  }, [globalMouseX, isScannerActive]);
-
+  // We'll pass the globalMouseX directly since we can handle the relative
+  // calculation more efficiently inside SkillLogoBox or via transforms
   return (
     <div
       ref={containerRef}
       className={`relative select-none min-h-[250px] w-full flex flex-col items-center justify-start transition-all duration-700 ${isScannerActive ? "cursor-crosshair" : "cursor-default"}`}
     >
       <div className="grid grid-cols-3 md:grid-cols-5 lg:grid-cols-4 place-items-center gap-y-10 gap-x-6 relative z-20 w-full max-w-4xl mx-auto">
-        {tools.map((tool: any, idx: number) => (
+        {tools.map((tool: TechnicalTool, idx: number) => (
           <SkillLogoBox
             key={idx}
             skill={tool}
             isDark={isDark}
             type="tech"
-            beamX={localBeamX}
+            beamX={isScannerActive ? globalMouseX : null}
             parentRef={containerRef}
           />
         ))}
@@ -935,7 +996,10 @@ export function TechnicalCarousel({
   );
 }
 
-const IconMap: any = {
+const IconMap: Record<
+  string,
+  ComponentType<{ size?: number; className?: string }>
+> = {
   Award,
   Trophy,
   Medal,
@@ -943,13 +1007,21 @@ const IconMap: any = {
   FileBadge,
 };
 
+import { ComponentType } from "react";
+
 export function CertCategoryCarousel({
   categories,
   descriptions,
   isDark,
   viewCertBtnText,
   seeMoreBtnText,
-}: any) {
+}: {
+  categories: CertCategory[];
+  descriptions: CertDescriptions;
+  isDark: boolean;
+  viewCertBtnText: string;
+  seeMoreBtnText: string;
+}) {
   const [index, setIndex] = useState(0);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [zoomedItemIndex, setZoomedItemIndex] = useState<number | null>(null);
@@ -1011,7 +1083,7 @@ export function CertCategoryCarousel({
     }
   };
 
-  const categoryBackgrounds: any = {
+  const categoryBackgrounds: Record<string, string> = {
     appreciation: "/assets/certificates/appreciation-bangkit-2024.webp",
     completion: "/assets/certificates/completion-google-ai-professional.webp",
     committee: "/assets/certificates/committee-hmps-koordinator.webp",
@@ -1039,7 +1111,7 @@ export function CertCategoryCarousel({
 
         <div className="flex items-center justify-center relative w-full h-full">
           <AnimatePresence initial={false}>
-            {categories.map((cat: any, i: number) => {
+            {categories.map((cat: CertCategory, i: number) => {
               const isActive = i === index;
               const diff = i - index;
               let offset = diff;
@@ -1157,7 +1229,7 @@ export function CertCategoryCarousel({
                     transition={{ delay: 0.15, duration: 0.3 }}
                     className={`text-xs sm:text-sm md:text-base lg:text-lg leading-relaxed text-left font-medium opacity-90 ${isDark ? "text-slate-200" : "text-slate-700"}`}
                   >
-                    {descriptions[expandedId] || ""}
+                    {descriptions[expandedId as keyof CertDescriptions] || ""}
                   </motion.p>
                 </div>
               </div>
@@ -1168,7 +1240,7 @@ export function CertCategoryCarousel({
                 onScroll={handleScroll}
                 className="flex md:grid md:grid-cols-3 gap-6 md:gap-10 overflow-x-auto md:overflow-x-visible no-scrollbar snap-x snap-mandatory px-2 pb-6 -mx-4 md:mx-0"
               >
-                {activeCategory.items.map((item: any, idx: number) => (
+                {activeCategory.items.map((item: CertItem, idx: number) => (
                   <motion.div
                     key={idx}
                     initial={{ opacity: 0, y: 20 }}
@@ -1198,7 +1270,7 @@ export function CertCategoryCarousel({
 
               {/* Swipe Indicator - Mobile Only */}
               <div className="flex md:hidden justify-center gap-2 mt-6 pb-2">
-                {activeCategory.items.map((_: any, i: number) => {
+                {activeCategory.items.map((_: CertItem, i: number) => {
                   const isActive = i === activeSubItemIndex;
                   return (
                     <motion.button
@@ -1305,7 +1377,11 @@ export function CertCategoryCarousel({
   );
 }
 
-export function CertZoomCarousel({ items, isDark, viewCertBtnText }: CertZoomCarouselProps) {
+export function CertZoomCarousel({
+  items,
+  isDark,
+  viewCertBtnText,
+}: CertZoomCarouselProps) {
   const [index, setIndex] = useState(0);
   const windowWidth = useWindowWidth();
   const next = () => setIndex((prev) => (prev + 1) % items.length);
@@ -1322,7 +1398,7 @@ export function CertZoomCarousel({ items, isDark, viewCertBtnText }: CertZoomCar
         </button>
         <div className="flex items-center justify-center relative w-full h-[220px] md:h-[450px]">
           <AnimatePresence initial={false}>
-            {items.map((cert: any, i: number) => {
+            {items.map((cert: CertItem, i: number) => {
               const isCenter = i === index;
               const isVisible =
                 Math.abs(i - index) <= 1 ||

@@ -257,6 +257,8 @@ export interface TechnicalToolsProps {
   tools: TechnicalTool[];
   isDark: boolean;
   detailText: string;
+  globalMouseX?: number;
+  isScannerActive?: boolean;
 }
 
 export interface SoftSkillsGridProps {
