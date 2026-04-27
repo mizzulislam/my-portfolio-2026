@@ -120,7 +120,9 @@ function useWindowWidth() {
   return width;
 }
 
-export function SectionHeader({ title, subTitle, icon: Icon, isDark }: any) {
+import { SectionHeaderProps, EducationCardProps, ExperienceRoadmapProps, ProjectFoldersProps, TechnicalToolsProps, SoftSkillsGridProps, CertZoomCarouselProps } from '../types';
+
+export function SectionHeader({ title, subTitle, icon: Icon, isDark }: SectionHeaderProps) {
   return (
     <div className="flex flex-col items-center text-center mb-16 w-full px-4">
       <h2
@@ -166,7 +168,7 @@ export function AnimatedCounter({
   return <span ref={ref}>{count}</span>;
 }
 
-export function EducationCard({ edu, idx, labels, isDark }: any) {
+export function EducationCard({ edu, idx, labels, isDark }: EducationCardProps) {
   const [isOpen, setIsOpen] = useState(false);
   return (
     <motion.div
@@ -193,6 +195,7 @@ export function EducationCard({ edu, idx, labels, isDark }: any) {
                   src={edu.logo}
                   alt={edu.institution}
                   className="w-full h-full object-contain p-1.5 md:p-2"
+                  loading="lazy"
                   referrerPolicy="no-referrer"
                 />
               ) : (
@@ -297,7 +300,7 @@ export function EducationCard({ edu, idx, labels, isDark }: any) {
   );
 }
 
-export function ExperienceRoadmap({ labels, isDark }: any) {
+export function ExperienceRoadmap({ labels, isDark }: ExperienceRoadmapProps) {
   const milestones = labels.milestones || [];
   const containerRef = useRef(null);
   const isInView = useInView(containerRef, { once: false, margin: "-100px" });
@@ -463,7 +466,7 @@ export function ExperienceRoadmap({ labels, isDark }: any) {
   );
 }
 
-export function ProjectFolders({ projects, isDark, labels }: any) {
+export function ProjectFolders({ projects, isDark, labels }: ProjectFoldersProps) {
   const [activeIndex, setActiveIndex] = useState(0);
   const activeProject = projects[activeIndex];
 
@@ -534,6 +537,7 @@ export function ProjectFolders({ projects, isDark, labels }: any) {
               src={activeProject.image}
               alt={activeProject.title}
               className="w-full h-full object-cover opacity-30"
+              loading="lazy"
               referrerPolicy="no-referrer"
             />
             <div className="absolute inset-0 bg-gradient-to-r from-[#0B0E14]/95 via-[#0B0E14]/80 to-[#0B0E14]/60" />
@@ -770,6 +774,7 @@ export function SkillLogoBox({
               src={tool.logo}
               alt={tool.name}
               className="w-full h-full object-contain"
+              loading="lazy"
               referrerPolicy="no-referrer"
             />
           </div>
@@ -1007,10 +1012,10 @@ export function CertCategoryCarousel({
   };
 
   const categoryBackgrounds: any = {
-    appreciation: "/assets/certificates/appreciation-bangkit-2024.png",
-    completion: "/assets/certificates/completion-google-ai-professional.jpg",
-    committee: "/assets/certificates/committee-hmps-koordinator.png",
-    competency: "/assets/certificates/competency-piranha-brevet.png",
+    appreciation: "/assets/certificates/appreciation-bangkit-2024.webp",
+    completion: "/assets/certificates/completion-google-ai-professional.webp",
+    committee: "/assets/certificates/committee-hmps-koordinator.webp",
+    competency: "/assets/certificates/competency-piranha-brevet.webp",
   };
 
   return (
@@ -1074,6 +1079,7 @@ export function CertCategoryCarousel({
                       src={categoryBackgrounds[cat.id]}
                       alt=""
                       className={`w-full h-full object-cover opacity-[0.90                                                                                                                                                                                                                                                                                                                                                                                                              ] blur-[2px] transition-transform duration-700 ${isActive ? "scale-110" : "scale-100"}`}
+                      loading="lazy"
                       referrerPolicy="no-referrer"
                     />
                     <div
@@ -1176,6 +1182,7 @@ export function CertCategoryCarousel({
                       src={item.image}
                       alt={item.title}
                       className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                      loading="lazy"
                       referrerPolicy="no-referrer"
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/20 to-transparent opacity-0 md:group-hover:opacity-100 transition-all duration-300 flex flex-col justify-end items-start p-4 md:p-5 text-left md:group-hover:translate-y-0 translate-y-0 opacity-100 md:opacity-0 md:group-hover:opacity-100">
@@ -1278,6 +1285,7 @@ export function CertCategoryCarousel({
                     activeCategory.items[zoomedItemIndex].title || "Certificate"
                   }
                   className="w-full h-auto max-h-[80vh] md:max-h-[85vh] object-contain mx-auto"
+                  loading="lazy"
                   referrerPolicy="no-referrer"
                 />
 
@@ -1297,7 +1305,7 @@ export function CertCategoryCarousel({
   );
 }
 
-export function CertZoomCarousel({ items, isDark, viewCertBtnText }: any) {
+export function CertZoomCarousel({ items, isDark, viewCertBtnText }: CertZoomCarouselProps) {
   const [index, setIndex] = useState(0);
   const windowWidth = useWindowWidth();
   const next = () => setIndex((prev) => (prev + 1) % items.length);
@@ -1339,6 +1347,7 @@ export function CertZoomCarousel({ items, isDark, viewCertBtnText }: any) {
                     src={cert.image}
                     alt={cert.title}
                     className="w-full h-full object-cover"
+                    loading="lazy"
                     referrerPolicy="no-referrer"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-transparent to-transparent flex flex-col justify-end items-start p-4 md:p-6 text-left">

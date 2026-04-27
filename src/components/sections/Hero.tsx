@@ -10,11 +10,11 @@ import {
 } from "lucide-react";
 import { InteractiveGrid } from "../UIComponents";
 import { AIRobot } from "../Visuals";
+import { SectionProps } from "../../types";
 
-interface HeroProps {
-  isDark: boolean;
-  t: any;
-}
+// SectionProps sudah berisi { isDark: boolean; t: Translation }
+// Tidak perlu tulis ulang — cukup pakai alias dari types.ts
+type HeroProps = SectionProps;
 
 export function Hero({ isDark, t }: HeroProps) {
   return (

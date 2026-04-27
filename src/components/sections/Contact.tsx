@@ -1,13 +1,13 @@
 import React, { useState } from "react";
 import { Mail, MessageCircle, Send, Loader2, CheckCircle } from "lucide-react";
 import { SectionHeader } from "../UIComponents";
+import { SectionProps } from "../../types";
 
-interface ContactProps {
-  isDark: boolean;
-  t: any;
+interface ContactProps extends SectionProps {
+  lang: "en" | "id";
 }
 
-export function Contact({ isDark, t }: ContactProps) {
+export function Contact({ isDark, t, lang }: ContactProps) {
   // 1. Gabungkan semua data input ke dalam satu state agar rapi
   const [formData, setFormData] = useState({
     name: "",
@@ -21,6 +21,50 @@ export function Contact({ isDark, t }: ContactProps) {
   >("idle");
   const [honeypot, setHoneypot] = useState(""); // Cukup pakai satu ini untuk jebakan bot
   const [errorMessage, setErrorMessage] = useState("");
+  // State untuk melacak field mana yang sudah pernah disentuh user
+  // Validasi hanya tampil setelah user menyentuh field tersebut
+  const [touched, setTouched] = useState({
+    name: false,
+    email: false,
+    message: false,
+  });
+  // Fungsi validasi — mengembalikan pesan error per field
+  const getFieldError = (field: string, value: string): string => {
+    const msg = {
+      name: {
+        en: "Name is required.",
+        id: "Nama tidak boleh kosong.",
+      },
+      emailRequired: {
+        en: "Email is required.",
+        id: "Email tidak boleh kosong.",
+      },
+      emailInvalid: {
+        en: "Invalid email format.",
+        id: "Format email tidak valid.",
+      },
+      message: {
+        en: "Message must be at least 10 characters.",
+        id: "Pesan minimal 10 karakter.",
+      },
+    };
+
+    if (field === "name" && value.trim() === "") return msg.name[lang];
+    if (field === "email") {
+      if (value.trim() === "") return msg.emailRequired[lang];
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value))
+        return msg.emailInvalid[lang];
+    }
+    if (field === "message" && value.length < 10) return msg.message[lang];
+    return "";
+  };
+  // Dipanggil saat user keluar dari sebuah field (on-blur)
+  const handleBlur = (
+    e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>,
+  ) => {
+    const { name } = e.target;
+    setTouched((prev) => ({ ...prev, [name]: true }));
+  };
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
@@ -41,9 +85,15 @@ export function Contact({ isDark, t }: ContactProps) {
 
     // LANGKAH B: Validasi di Sisi User (Frontend)
     // Ini supaya user langsung dilarang kirim kalau pesan < 10 karakter
-    if (formData.message.length < 10) {
+    setTouched({ name: true, email: true, message: true });
+
+    const nameError = getFieldError("name", formData.name);
+    const emailError = getFieldError("email", formData.email);
+    const messageError = getFieldError("message", formData.message);
+
+    if (nameError || emailError || messageError) {
       setStatus("error");
-      setErrorMessage("Pesan Anda terlalu pendek! Minimal harus 10 karakter.");
+      setErrorMessage(nameError || emailError || messageError);
       return;
     }
 
@@ -136,14 +186,28 @@ export function Contact({ isDark, t }: ContactProps) {
           {/* Form Kanan */}
           <form className="md:w-1/2 space-y-4" onSubmit={handleSubmit}>
             <div className="grid grid-cols-2 gap-4">
-              <input
-                name="name"
-                value={formData.name}
-                onChange={handleChange}
-                placeholder={t.formName}
-                required
-                className={`border rounded-2xl px-6 py-4 outline-none ${isDark ? "bg-white/5 border-white/10 text-white" : "bg-slate-50 border-slate-200"}`}
-              />
+              <div className="flex flex-col gap-1">
+                <input
+                  name="name"
+                  value={formData.name}
+                  onChange={handleChange}
+                  onBlur={handleBlur}
+                  placeholder={t.formName}
+                  required
+                  className={`border rounded-2xl px-6 py-4 outline-none ${
+                    touched.name && getFieldError("name", formData.name)
+                      ? "border-rose-500"
+                      : isDark
+                        ? "border-white/10"
+                        : "border-slate-200"
+                  } ${isDark ? "bg-white/5 text-white" : "bg-slate-50"}`}
+                />
+                {touched.name && getFieldError("name", formData.name) && (
+                  <span className="text-rose-500 text-xs px-2">
+                    {getFieldError("name", formData.name)}
+                  </span>
+                )}
+              </div>
               <input
                 name="lastName"
                 value={formData.lastName}
@@ -153,25 +217,54 @@ export function Contact({ isDark, t }: ContactProps) {
               />
             </div>
 
-            <input
-              name="email"
-              type="email"
-              value={formData.email}
-              onChange={handleChange}
-              placeholder={t.formEmail}
-              required
-              className={`w-full border rounded-2xl px-6 py-4 outline-none ${isDark ? "bg-white/5 border-white/10 text-white" : "bg-slate-50 border-slate-200"}`}
-            />
+            <div className="flex flex-col gap-1">
+              <input
+                name="email"
+                type="email"
+                value={formData.email}
+                onChange={handleChange}
+                onBlur={handleBlur}
+                placeholder={t.formEmail}
+                required
+                className={`w-full border rounded-2xl px-6 py-4 outline-none ${
+                  touched.email && getFieldError("email", formData.email)
+                    ? "border-rose-500"
+                    : isDark
+                      ? "border-white/10"
+                      : "border-slate-200"
+                } ${isDark ? "bg-white/5 text-white" : "bg-slate-50"}`}
+              />
+              {touched.email && getFieldError("email", formData.email) && (
+                <span className="text-rose-500 text-xs px-2">
+                  {getFieldError("email", formData.email)}
+                </span>
+              )}
+            </div>
 
-            <textarea
-              name="message"
-              value={formData.message}
-              onChange={handleChange}
-              rows={4}
-              placeholder={t.formMsg}
-              required
-              className={`w-full border rounded-2xl px-6 py-4 outline-none resize-none ${isDark ? "bg-white/5 border-white/10 text-white" : "bg-slate-50 border-slate-200"}`}
-            />
+            <div className="flex flex-col gap-1">
+              <textarea
+                name="message"
+                value={formData.message}
+                onChange={handleChange}
+                onBlur={handleBlur}
+                rows={4}
+                placeholder={t.formMsg}
+                required
+                className={`w-full border rounded-2xl px-6 py-4 outline-none resize-none ${
+                  touched.message && getFieldError("message", formData.message)
+                    ? "border-rose-500"
+                    : isDark
+                      ? "border-white/10"
+                      : "border-slate-200"
+                } ${isDark ? "bg-white/5 text-white" : "bg-slate-50"}`}
+              />
+              {touched.message &&
+                getFieldError("message", formData.message) && (
+                  <span className="text-rose-500 text-xs px-2">
+                    {getFieldError("message", formData.message)}
+                  </span>
+                )}
+            </div>
 
             {/* INPUT JEBAKAN BOT (PENTING: Harus di dalam form) */}
             <input

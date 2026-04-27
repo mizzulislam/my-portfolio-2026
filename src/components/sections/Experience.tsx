@@ -3,10 +3,11 @@ import { motion, AnimatePresence } from "motion/react";
 import { Briefcase, Calendar, CheckCircle2, Users } from "lucide-react";
 import { SectionHeader, ExperienceRoadmap } from "../UIComponents";
 import { supabase } from "../../lib/supabase";
+import { Translation } from "../../types";
 
 interface ExperienceProps {
   isDark: boolean;
-  t: any;
+  t: Translation; // ← diganti dari any ke Translation
   activeTab: "work" | "org";
   setActiveTab: (tab: "work" | "org") => void;
   lang: string;
@@ -173,6 +174,7 @@ export function Experience({
                             src={item.logo}
                             alt={item.company}
                             className="w-full h-full object-contain p-1.5 md:p-2"
+                            loading="lazy"
                             referrerPolicy="no-referrer"
                           />
                         ) : (

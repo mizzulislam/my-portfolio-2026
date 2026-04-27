@@ -80,91 +80,98 @@ export default function App() {
   };
 
   return (
-  <Routes>
-    <Route path="/login" element={<Login />} />
-    <Route path="/admin" element={<Admin />} />
-    <Route path="/" element={
-    <div className={`min-h-screen w-full overflow-x-hidden font-sans transition-colors duration-500 md:cursor-none ${isDark ? 'bg-[#020617] text-slate-200' : 'bg-slate-50 text-slate-900'}`}>
-      <AnimatePresence>
-        {showIntro && <IntroLoader onComplete={() => setShowIntro(false)} />}
-      </AnimatePresence>
+    <Routes>
+      <Route path="/login" element={<Login />} />
+      <Route path="/admin" element={<Admin />} />
+      <Route
+        path="/"
+        element={
+          <div
+            className={`min-h-screen w-full overflow-x-hidden font-sans transition-colors duration-500 md:cursor-none ${isDark ? "bg-[#020617] text-slate-200" : "bg-slate-50 text-slate-900"}`}
+          >
+            <AnimatePresence>
+              {showIntro && (
+                <IntroLoader onComplete={() => setShowIntro(false)} />
+              )}
+            </AnimatePresence>
 
-      <audio 
-        ref={audioRef} 
-        loop 
-        src="/assets/portfolio/perunggu-gemilang.mp3"
-      />
-      
-      <CustomCursor isDark={isDark} />
+            <audio
+              ref={audioRef}
+              loop
+              src="/assets/portfolio/perunggu-gemilang.mp3"
+            />
 
-      <Sidebar 
-        isMenuOpen={isMenuOpen}
-        setIsMenuOpen={setIsMenuOpen}
-        isDark={isDark}
-        setIsDark={setIsDark}
-        lang={lang}
-        setLang={setLang}
-        toggleMusic={toggleMusic}
-        isMusicPlaying={isMusicPlaying}
-        t={t}
-        navEnKeys={navEnKeys}
-      />
+            <CustomCursor isDark={isDark} />
 
-      <Navbar 
-        scrolled={scrolled}
-        isDark={isDark}
-        setIsDark={setIsDark}
-        lang={lang}
-        setLang={setLang}
-        toggleMusic={toggleMusic}
-        isMusicPlaying={isMusicPlaying}
-        setIsMenuOpen={setIsMenuOpen}
-        t={t}
-        navEnKeys={navEnKeys}
-      />
+            <Sidebar
+              isMenuOpen={isMenuOpen}
+              setIsMenuOpen={setIsMenuOpen}
+              isDark={isDark}
+              setIsDark={setIsDark}
+              lang={lang}
+              setLang={setLang}
+              toggleMusic={toggleMusic}
+              isMusicPlaying={isMusicPlaying}
+              t={t}
+              navEnKeys={navEnKeys}
+            />
 
-      <main>
-        <Hero isDark={isDark} t={t} />
-        <About isDark={isDark} t={t} />
-        <Education isDark={isDark} t={t} />
-        <Experience 
-          isDark={isDark} 
-          t={t} 
-          activeTab={activeTab} 
-          setActiveTab={setActiveTab} 
-          lang={lang} 
-        />
-        <Projects isDark={isDark} t={t} lang={lang} />
-        <Skills 
-          isDark={isDark}
-          t={t}
-          skillsSectionRef={skillsSectionRef}
-          handleGlobalMouseMove={handleGlobalMouseMove}
-          isTechnicalScannerActive={isTechnicalScannerActive}
-          setIsTechnicalScannerActive={setIsTechnicalScannerActive}
-          globalMouseX={globalMouseX}
-          globalMouseY={globalMouseY}
-          isSkillsHovering={isSkillsHovering}
-          setIsSkillsHovering={setIsSkillsHovering}
-        />
-        <Certifications isDark={isDark} t={t} />
-        <Contact isDark={isDark} t={t} />
-      </main>
+            <Navbar
+              scrolled={scrolled}
+              isDark={isDark}
+              setIsDark={setIsDark}
+              lang={lang}
+              setLang={setLang}
+              toggleMusic={toggleMusic}
+              isMusicPlaying={isMusicPlaying}
+              setIsMenuOpen={setIsMenuOpen}
+              t={t}
+              navEnKeys={navEnKeys}
+            />
 
-      <Footer isDark={isDark} />
+            <main>
+              <Hero isDark={isDark} t={t} />
+              <About isDark={isDark} t={t} />
+              <Education isDark={isDark} t={t} />
+              <Experience
+                isDark={isDark}
+                t={t}
+                activeTab={activeTab}
+                setActiveTab={setActiveTab}
+                lang={lang}
+              />
+              <Projects isDark={isDark} t={t} lang={lang} />
+              <Skills
+                isDark={isDark}
+                t={t}
+                skillsSectionRef={skillsSectionRef}
+                handleGlobalMouseMove={handleGlobalMouseMove}
+                isTechnicalScannerActive={isTechnicalScannerActive}
+                setIsTechnicalScannerActive={setIsTechnicalScannerActive}
+                globalMouseX={globalMouseX}
+                globalMouseY={globalMouseY}
+                isSkillsHovering={isSkillsHovering}
+                setIsSkillsHovering={setIsSkillsHovering}
+              />
+              <Certifications isDark={isDark} t={t} />
+              <Contact isDark={isDark} t={t} lang={lang} />
+            </main>
 
-      {/* Music Notifier at Bottom Right */}
-      <AnimatePresence>
-        {isMusicPlaying && (
-          <div className="fixed bottom-6 right-6 z-[100]">
-            <MusicPlayingIndicator isDark={isDark} />
+            <Footer isDark={isDark} />
+
+            {/* Music Notifier at Bottom Right */}
+            <AnimatePresence>
+              {isMusicPlaying && (
+                <div className="fixed bottom-6 right-6 z-[100]">
+                  <MusicPlayingIndicator isDark={isDark} />
+                </div>
+              )}
+            </AnimatePresence>
           </div>
-        )}
-        </AnimatePresence>
-      </div>
-    } />
-  </Routes>
-  )
+        }
+      />
+    </Routes>
+  );
 }
 
 function MusicPlayingIndicator({ isDark }: { isDark: boolean }) {
