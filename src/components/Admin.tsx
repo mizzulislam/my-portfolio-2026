@@ -21,13 +21,13 @@ import {
   rectSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { 
-  Folder, 
-  MessageSquare, 
-  Award, 
-  Briefcase, 
-  Zap, 
-  LogOut, 
+import {
+  Folder,
+  MessageSquare,
+  Award,
+  Briefcase,
+  Zap,
+  LogOut,
   LayoutDashboard,
   Plus,
   Trash2,
@@ -39,8 +39,12 @@ import {
   Calendar,
   Building2,
   User as UserIcon,
-  Tag
-} from 'lucide-react'
+  Tag,
+  Filter,
+  ChevronDown,
+  Eye,
+  GripVertical,
+} from "lucide-react";
 
 // ─── Types ───────────────────────────────────────────
 interface Project {
@@ -67,12 +71,20 @@ interface Message {
   created_at: string
 }
 
-interface Certification {
-  id?: string
-  title: string
-  issuer: string
-  date: string
-  credential_url: string
+interface CertificationItem {
+  id?: string;
+  category_id: string;
+  title: string;
+  title_id: string;
+  issuer: string;
+  issue_month: string;
+  issue_year: string;
+  expiry_month: string;
+  expiry_year: string;
+  credential_id: string;
+  image_url: string;
+  link: string;
+  order: number;
 }
 
 interface Experience {
@@ -104,13 +116,18 @@ function ImageUpload({
   value,
   onChange,
   label = "Upload Image",
+  resetKey,
 }: {
   value: string;
   onChange: (url: string) => void;
   label?: string;
+  resetKey?: number;
 }) {
   const [uploading, setUploading] = useState(false);
   const [preview, setPreview] = useState(value);
+  useEffect(() => {
+    setPreview(value);
+  }, [resetKey, value]);
   const inputRef = React.useRef<HTMLInputElement>(null);
 
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -266,20 +283,43 @@ function AdminTextArea({ ...props }: React.TextareaHTMLAttributes<HTMLTextAreaEl
   )
 }
 
-function AdminBtn({ children, variant = 'primary', ...props }: { children: React.ReactNode, variant?: 'primary' | 'secondary' | 'danger', onClick?: () => void, disabled?: boolean, type?: 'button' | 'submit' }) {
+function AdminBtn({
+  children,
+  variant = "primary",
+  size = "normal", // Tambahkan parameter size
+  ...props
+}: {
+  children: React.ReactNode;
+  variant?: "primary" | "secondary" | "danger" | "ghost"; // Tambah 'ghost'
+  size?: "normal" | "icon"; // Tambah tipe size
+  onClick?: () => void;
+  disabled?: boolean;
+  type?: "button" | "submit";
+  title?: string;
+}) {
   const styles = {
-    primary: "bg-blue-600 hover:bg-blue-700 text-white shadow-[0_0_20px_rgba(37,99,235,0.3)]",
-    secondary: "bg-slate-800/80 border border-white/10 text-slate-300 hover:bg-slate-700",
-    danger: "bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500/20"
-  }
+    primary:
+      "bg-blue-600 hover:bg-blue-700 text-white shadow-[0_0_20px_rgba(37,99,235,0.3)]",
+    secondary:
+      "bg-slate-800/80 border border-white/10 text-slate-300 hover:bg-slate-700",
+    danger:
+      "bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500/20",
+    ghost:
+      "bg-white/5 border border-white/10 text-slate-400 hover:text-blue-400 hover:border-blue-500/30",
+  };
+
+  // Jika size='icon', padding dibuat sama sisi (square)
+  const sizeStyles =
+    size === "icon" ? "p-2.5 rounded-xl" : "px-6 py-3 rounded-2xl";
+
   return (
-    <button 
-      {...props} 
-      className={`px-6 py-3 rounded-2xl font-bold text-xs tracking-widest uppercase transition-all duration-300 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed ${styles[variant]}`}
+    <button
+      {...props}
+      className={`${sizeStyles} font-bold text-xs tracking-widest uppercase transition-all duration-300 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed ${styles[variant]}`}
     >
       {children}
     </button>
-  )
+  );
 }
 
 // ─── Main Component ───────────────────────────────────
@@ -326,7 +366,7 @@ export default function Admin() {
   const menus = [
     { key: 'projects', label: 'Projects', icon: Folder },
     { key: 'messages', label: 'Messages', icon: MessageSquare },
-    { key: 'certifications', label: 'Certs', icon: Award },
+    { key: 'certifications', label: 'Certificate', icon: Award },
     { key: 'experience', label: 'Experience', icon: Briefcase },
     { key: 'skills', label: 'Skills', icon: Zap },
   ]
@@ -958,95 +998,1202 @@ function MessagesManager() {
 }
 
 // ─── Certifications Manager ───────────────────────────
-function CertificationsManager() {
-  const [items, setItems] = useState<Certification[]>([])
-  const [form, setForm] = useState<Certification>({ title: '', issuer: '', date: '', credential_url: '' })
-  const [editId, setEditId] = useState<string | null>(null)
+function SortableCertCard({
+  item,
+  onEdit,
+  onDelete,
+  isDraggable,
+  categoryName,
+  categoryColor,
+}: {
+  item: CertificationItem;
+  onEdit: (item: CertificationItem) => void;
+  onDelete: (id: string) => void;
+  isDraggable: boolean;
+  categoryName?: string;
+  categoryColor?: string;
+}) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: item.id! });
 
-  useEffect(() => { fetchItems() }, [])
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition: transition || "transform 200ms ease",
+    opacity: isDragging ? 0.3 : 1,
+    zIndex: isDragging ? 999 : 1,
+  };
+
+  // Warna otomatis berdasarkan index atau fallback
+  const colorPalette = [
+    "text-yellow-400 bg-yellow-500/10 border-yellow-500/20",
+    "text-blue-400 bg-blue-500/10 border-blue-500/20",
+    "text-emerald-400 bg-emerald-500/10 border-emerald-500/20",
+    "text-purple-400 bg-purple-500/10 border-purple-500/20",
+    "text-pink-400 bg-pink-500/10 border-pink-500/20",
+    "text-orange-400 bg-orange-500/10 border-orange-500/20",
+  ];
+
+  const meta = {
+    label: categoryName || item.category_id,
+    color: categoryColor || colorPalette[0],
+  };
+
+  // Format tanggal untuk tampilan
+  const issuedDate = [item.issue_month, item.issue_year]
+    .filter(Boolean)
+    .join(" ");
+  const expiryDate = [item.expiry_month, item.expiry_year]
+    .filter(Boolean)
+    .join(" ");
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={`p-5 rounded-3xl border bg-slate-900/40 backdrop-blur-xl group transition-all duration-200 relative flex gap-5 items-start ${
+        isDragging
+          ? "border-blue-500 shadow-[0_0_30px_rgba(59,130,246,0.4)] cursor-grabbing"
+          : "border-white/5 hover:border-blue-500/30 cursor-default"
+      }`}
+    >
+      {/* Drag Handle */}
+      {isDraggable && (
+        <div
+          {...attributes}
+          {...listeners}
+          className="absolute top-4 right-4 p-2 rounded-xl bg-white/5 cursor-grab active:cursor-grabbing text-slate-500 hover:text-blue-400 hover:bg-blue-500/10 transition-all"
+          title="Geser untuk mengubah urutan"
+        >
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
+            <circle cx="5" cy="4" r="1.5" />
+            <circle cx="11" cy="4" r="1.5" />
+            <circle cx="5" cy="8" r="1.5" />
+            <circle cx="11" cy="8" r="1.5" />
+            <circle cx="5" cy="12" r="1.5" />
+            <circle cx="11" cy="12" r="1.5" />
+          </svg>
+        </div>
+      )}
+
+      {/* Thumbnail */}
+      <div className="w-28 h-20 rounded-2xl bg-slate-800 border border-white/5 overflow-hidden shrink-0">
+        {item.image_url ? (
+          <img
+            src={item.image_url}
+            alt={item.title}
+            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+            referrerPolicy="no-referrer"
+          />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center text-slate-600 text-xs font-bold">
+            No Image
+          </div>
+        )}
+      </div>
+
+      {/* Info */}
+      <div className="flex-1 min-w-0 pr-32">
+        <span
+          className={`inline-block px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-widest border mb-2 ${meta.color}`}
+        >
+          {meta.label}
+        </span>
+        <h3 className="text-sm font-black text-white tracking-tight leading-snug line-clamp-2 mb-1">
+          {item.title}
+        </h3>
+        {/* Issuer & Date */}
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 mt-1">
+          {item.issuer && (
+            <span className="text-[10px] text-blue-400 font-bold">
+              {item.issuer}
+            </span>
+          )}
+          {issuedDate && (
+            <span className="text-[10px] text-slate-500 font-mono">
+              Issued: {issuedDate}
+              {expiryDate ? ` · Expires: ${expiryDate}` : " · No Expiration"}
+            </span>
+          )}
+        </div>
+        {item.credential_id && (
+          <p className="text-[9px] text-slate-600 font-mono mt-0.5">
+            ID: {item.credential_id}
+          </p>
+        )}
+        {/* Terjemahan ID */}
+        {item.title_id && (
+          <p className="text-[10px] text-slate-500 line-clamp-1 mt-1">
+            {item.title_id}
+          </p>
+        )}
+      </div>
+
+      {/* Tombol Aksi Box Icon */}
+      <div className="absolute bottom-5 right-5 flex gap-2 opacity-0 group-hover:opacity-100 transition-all duration-300 translate-y-2 group-hover:translate-y-0">
+        <AdminBtn
+          variant="ghost"
+          size="icon"
+          onClick={() => window.open(item.link, "_blank")}
+          title="View Detail"
+        >
+          <Eye size={16} />
+        </AdminBtn>
+        <AdminBtn
+          variant="secondary"
+          size="icon"
+          onClick={() => onEdit(item)}
+          title="Edit"
+        >
+          <Edit2 size={16} />
+        </AdminBtn>
+        <AdminBtn
+          variant="danger"
+          size="icon"
+          onClick={() => onDelete(item.id!)}
+          title="Delete"
+        >
+          <Trash2 size={16} />
+        </AdminBtn>
+      </div>
+
+      {isDraggable && (
+        <div
+          {...attributes}
+          {...listeners}
+          className="absolute top-4 right-4 p-2 text-slate-600 hover:text-blue-400 cursor-grab"
+        >
+          <GripVertical size={18} />
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Urutan bulan untuk keperluan sorting
+  const MONTH_ORDER: Record<string, number> = {
+    Jan: 1,
+    Feb: 2,
+    Mar: 3,
+    Apr: 4,
+    May: 5,
+    Jun: 6,
+    Jul: 7,
+    Aug: 8,
+    Sep: 9,
+    Oct: 10,
+    Nov: 11,
+    Dec: 12,
+  };
+  function toSortValue(year: string, month: string): number {
+    const y = parseInt(year) || 0;
+    const m = MONTH_ORDER[month] || 0;
+    return y * 100 + m; // contoh: Jun 2024 → 202406
+  }
+
+// ─── Manager Utama ────────────────────────────────────────────
+function CertificationsManager() {
+  const EMPTY_FORM: CertificationItem = {
+    category_id: "",
+    title: "",
+    title_id: "",
+    issuer: "",
+    issue_month: "",
+    issue_year: "",
+    expiry_month: "",
+    expiry_year: "",
+    credential_id: "",
+    image_url: "",
+    link: "",
+    order: 0,
+  };
+
+  const EMPTY_CAT = { name: "", icon: "", description: "" };
+
+  const [items, setItems] = useState<CertificationItem[]>([]);
+  const [form, setForm] = useState<CertificationItem>(EMPTY_FORM);
+  const [editId, setEditId] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isReordering, setIsReordering] = useState(false);
+  const [pendingOrder, setPendingOrder] = useState<CertificationItem[]>([]);
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [dragSuccess, setDragSuccess] = useState(false);
+  const [filterCategory, setFilterCategory] = useState<string>("all");
+  const [dbCategories, setDbCategories] = useState<
+    { id: string; name: string; icon: string; description: string }[]
+  >([]);
+  const [imageResetKey, setImageResetKey] = useState(0);
+  const [catForm, setCatForm] = useState(EMPTY_CAT);
+  const [catEditId, setCatEditId] = useState<string | null>(null);
+  const [isAddingCat, setIsAddingCat] = useState(false);
+
+  const [isIconDropdownOpen, setIsIconDropdownOpen] = useState(false);
+  const [isCatDropdownOpen, setIsCatDropdownOpen] = useState(false);
+  const [isIssueMonthOpen, setIsIssueMonthOpen] = useState(false);
+  const [isIssueYearOpen, setIsIssueYearOpen] = useState(false);
+  const [isExpiryMonthOpen, setIsExpiryMonthOpen] = useState(false);
+  const [isExpiryYearOpen, setIsExpiryYearOpen] = useState(false);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    }),
+  );
+
+  useEffect(() => {
+    fetchItems();
+    fetchCategories();
+  }, []);
+
+  const fetchCategories = async () => {
+    const { data } = await supabase
+      .from("cert_categories")
+      .select("id, name, icon, description")
+      .order("order", { ascending: true });
+    if (data) setDbCategories(data);
+  };
 
   const fetchItems = async () => {
-    const { data } = await supabase.from('certifications').select('*').order('created_at', { ascending: false })
-    if (data) setItems(data)
-  }
+    const { data } = await supabase
+      .from("certifications")
+      .select("*")
+      // ✅ FIX 1: Tambah secondary sort by id agar urutan konsisten
+      // saat dua item punya nilai order yang sama
+      .order("order", { ascending: true })
+      .order("created_at", { ascending: true });
+
+    if (data) {
+      // Sort berdasarkan issue_year DESC, lalu issue_month DESC
+      // sehingga sertifikat terbaru muncul di atas
+      const sorted = [...data].sort((a, b) => {
+        const va = toSortValue(a.issue_year, a.issue_month);
+        const vb = toSortValue(b.issue_year, b.issue_month);
+        return vb - va; // DESC: terbaru di atas
+      });
+      setItems(sorted);
+    }
+  };
+
+  const handleSaveCategory = async () => {
+    if (!catForm.name.trim()) return alert("Nama kategori wajib diisi!");
+    setIsAddingCat(true);
+    try {
+      const name_id = await translateToIndonesian(catForm.name);
+      const description_id = await translateToIndonesian(catForm.description);
+
+      if (catEditId) {
+        // Mode edit: UPDATE
+        await supabase
+          .from("cert_categories")
+          .update({
+            name: catForm.name,
+            name_id,
+            icon: catForm.icon,
+            description: catForm.description,
+            description_id,
+          })
+          .eq("id", catEditId);
+      } else {
+        // Mode tambah: INSERT
+        const maxOrder =
+          dbCategories.length > 0
+            ? Math.max(...dbCategories.map((_, i) => i)) + 1
+            : 1;
+        await supabase.from("cert_categories").insert({
+          name: catForm.name,
+          name_id,
+          icon: catForm.icon,
+          description: catForm.description,
+          description_id,
+          order: maxOrder,
+        });
+      }
+
+      setCatForm(EMPTY_CAT);
+      setCatEditId(null);
+      setIsIconDropdownOpen(false);
+      fetchCategories();
+    } finally {
+      setIsAddingCat(false);
+    }
+  };
+
+  const handleEditCategory = (cat: {
+    id: string;
+    name: string;
+    icon: string;
+    description: string;
+  }) => {
+    setCatEditId(cat.id);
+    setCatForm({
+      name: cat.name,
+      icon: cat.icon,
+      description: cat.description || "",
+    }); // ← ambil description dari DB
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const handleDeleteCategory = async (id: string) => {
+    if (
+      confirm(
+        "Hapus kategori ini? Semua sertifikat di dalamnya akan ikut terhapus!",
+      )
+    ) {
+      await supabase.from("cert_categories").delete().eq("id", id);
+      fetchCategories();
+      fetchItems();
+    }
+  };
 
   const handleSave = async () => {
-    if (editId) {
-      await supabase.from('certifications').update(form).eq('id', editId)
-    } else {
-      await supabase.from('certifications').insert(form)
+    if (!form.title.trim() || !form.category_id) {
+      alert("Judul dan kategori wajib diisi!");
+      return;
     }
-    setForm({ title: '', issuer: '', date: '', credential_url: '' })
-    setEditId(null)
-    fetchItems()
-  }
 
-  const handleEdit = (item: Certification) => { setForm(item); setEditId(item.id!) }
-  const handleDelete = async (id: string) => {
-    if (confirm('Delete this certification?')) {
-      await supabase.from('certifications').delete().eq('id', id)
-      fetchItems()
+    setIsSubmitting(true);
+    try {
+      const title_id = form.title_id.trim()
+        ? form.title_id
+        : await translateToIndonesian(form.title);
+
+      const dataToSave = { ...form, title_id };
+
+      if (editId) {
+        await supabase
+          .from("certifications")
+          .update(dataToSave)
+          .eq("id", editId);
+      } else {
+        const maxOrder =
+          items.length > 0 ? Math.max(...items.map((i) => i.order)) + 1 : 1;
+        await supabase
+          .from("certifications")
+          .insert({ ...dataToSave, order: maxOrder });
+      }
+
+      resetForm();
+      fetchItems();
+    } finally {
+      setIsSubmitting(false);
     }
-  }
+  };
+
+  const resetForm = () => {
+    setForm(EMPTY_FORM);
+    setEditId(null);
+    setImageResetKey((prev) => prev + 1);
+  };
+
+  const handleEdit = (item: CertificationItem) => {
+    setForm(item);
+    setEditId(item.id!);
+    setImageResetKey((prev) => prev + 1);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const handleDelete = async (id: string) => {
+    if (confirm("Hapus sertifikat ini secara permanen?")) {
+      await supabase.from("certifications").delete().eq("id", id);
+      fetchItems();
+    }
+  };
+
+  // ── Drag & Drop ──
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+
+    const sourceList = filteredItems;
+    const oldIndex = sourceList.findIndex((i) => i.id === active.id);
+    const newIndex = sourceList.findIndex((i) => i.id === over.id);
+    const reordered = arrayMove(sourceList, oldIndex, newIndex);
+
+    setPendingOrder(reordered);
+
+    // Update tampilan lokal dengan urutan baru
+    setItems((prev) => {
+      const otherItems = prev.filter(
+        (i) => !reordered.some((r) => r.id === i.id),
+      );
+      return [...otherItems, ...reordered].sort((a, b) => {
+        const aIdx = reordered.findIndex((r) => r.id === a.id);
+        const bIdx = reordered.findIndex((r) => r.id === b.id);
+        if (aIdx !== -1 && bIdx !== -1) return aIdx - bIdx;
+        return 0;
+      });
+    });
+  };
+
+  const handleConfirmOrder = async () => {
+    await Promise.all(
+      pendingOrder.map((item, index) =>
+        supabase
+          .from("certifications")
+          .update({ order: index + 1 })
+          .eq("id", item.id!),
+      ),
+    );
+    setPendingOrder([]);
+    setShowConfirm(false);
+    setIsReordering(false);
+    setDragSuccess(true);
+    await fetchItems();
+    setTimeout(() => setDragSuccess(false), 3000);
+  };
+
+  const handleDiscardOrder = () => {
+    fetchItems();
+    setPendingOrder([]);
+    setIsReordering(false);
+  };
+
+  const filteredItems =
+    filterCategory === "all"
+      ? items
+      : items.filter((i) => i.category_id === filterCategory);
+
+  const iconEmoji: Record<string, string> = {
+    Trophy: "🏆",
+    Medal: "🎖️",
+    Users: "👥",
+    FileBadge: "📋",
+    Award: "🏅",
+    Star: "⭐",
+    Zap: "⚡",
+  };
+
+  const categoryOptions = dbCategories.map((cat) => ({
+    value: cat.id,
+    label: `${iconEmoji[cat.icon] || "📄"} ${cat.name}`,
+  }));
+
+  // Bulan untuk dropdown
+  const months = [
+    "Jan",
+    "Feb",
+    "Mar",
+    "Apr",
+    "May",
+    "Jun",
+    "Jul",
+    "Aug",
+    "Sep",
+    "Oct",
+    "Nov",
+    "Dec",
+  ];
+  // Tahun dari 2015 sampai tahun sekarang + 5
+  const currentYear = new Date().getFullYear();
+  const years = Array.from({ length: currentYear - 2014 + 5 }, (_, i) =>
+    String(2015 + i),
+  );
 
   return (
     <div className="space-y-10">
-      <AdminCard title="Protocol Achievement" icon={Award}>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6">
+      {/* ── Kelola Kategori ── */}
+      <AdminCard title="Manage Categories" icon={Award}>
+        <p className="text-slate-400 text-sm mt-[-15px] mb-10">
+          Add or delete a certificate category. Deleting a category will remove
+          all certificates within it.
+        </p>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 mb-4">
+          <div>
+            <label className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-400 mb-2 block px-2">
+              {catEditId ? "Edit Category Name (EN)" : "New Category Name (EN)"}
+            </label>
+            <AdminInput
+              placeholder="Certificate of Appreciation..."
+              value={catForm.name}
+              onChange={(e) => setCatForm({ ...catForm, name: e.target.value })}
+            />
+          </div>
+          <div className="relative">
+            <label className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-400 mb-2 block px-2">
+              Icon
+            </label>
+            <button
+              type="button"
+              onClick={() => setIsIconDropdownOpen(!isIconDropdownOpen)}
+              className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-3.5 text-left flex items-center justify-between hover:border-blue-500/50 transition-all"
+            >
+              <span
+                className={catForm.icon ? "text-slate-200" : "text-slate-500"}
+              >
+                {catForm.icon || "Select Icon"}
+              </span>
+
+              <ChevronDown
+                size={18}
+                className={`text-slate-400 transition-transform duration-300 ${isIconDropdownOpen ? "rotate-180" : ""}`}
+              />
+            </button>
+
+            <AnimatePresence>
+              {isIconDropdownOpen && (
+                <motion.div
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  className="absolute z-20 mt-2 w-full bg-[#050a18] border border-blue-500/50 rounded-2xl py-2 shadow-2xl overflow-hidden"
+                >
+                  <div className="grid grid-cols-1 gap-0.5">
+                    {[
+                      "🏆 Trophy",
+                      "🎖️ Medal",
+                      "🏅 Award",
+                      "📋 FileBadge",
+                      "👥 Users",
+                      "⭐ Star",
+                      "⚡ Zap",
+                    ].map((icon) => (
+                      <button
+                        key={icon}
+                        type="button"
+                        onClick={() => {
+                          setCatForm({ ...catForm, icon: icon });
+                          setIsIconDropdownOpen(false);
+                        }}
+                        className={`w-full text-left px-5 py-2.5 transition-all flex items-center gap-3 ${
+                          catForm.icon === icon
+                            ? "bg-blue-500/20 text-blue-400"
+                            : "text-slate-300 hover:bg-white/5"
+                        }`}
+                      >
+                        {icon}
+                      </button>
+                    ))}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
           <div className="col-span-full">
-            <label className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-400 mb-2 block px-2">Certification Title</label>
-            <AdminInput placeholder="AWS Certified..." value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} />
-          </div>
-          <div className="col-span-full md:col-span-1">
-            <label className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-400 mb-2 block px-2">Issuing Authority</label>
-            <AdminInput placeholder="Amazon Web Services..." value={form.issuer} onChange={e => setForm({ ...form, issuer: e.target.value })} />
-          </div>
-          <div className="col-span-full md:col-span-1">
-            <label className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-400 mb-2 block px-2">Issuance Date</label>
-            <AdminInput placeholder="Jan 2024" value={form.date} onChange={e => setForm({ ...form, date: e.target.value })} />
-          </div>
-          <div className="col-span-full">
-            <label className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-400 mb-2 block px-2">Credential URL</label>
-            <AdminInput placeholder="https://..." value={form.credential_url} onChange={e => setForm({ ...form, credential_url: e.target.value })} />
+            <label className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-400 mb-2 block px-2">
+              Description (EN)
+            </label>
+            <AdminInput
+              placeholder="Awards and recognitions for..."
+              value={catForm.description}
+              onChange={(e) =>
+                setCatForm({ ...catForm, description: e.target.value })
+              }
+            />
           </div>
         </div>
-        <div className="flex gap-4 mt-4">
-          <AdminBtn onClick={handleSave}>{editId ? 'Verify Update' : 'Authorize Entry'}</AdminBtn>
+
+        <div className="flex gap-3 mb-8">
+          <AdminBtn onClick={handleSaveCategory} disabled={isAddingCat}>
+            {isAddingCat ? (
+              <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+            ) : catEditId ? (
+              <Check size={16} />
+            ) : (
+              <Plus size={16} />
+            )}
+            {catEditId ? "Save Changes" : "Add Category"}
+          </AdminBtn>
+          {catEditId && (
+            <AdminBtn
+              variant="secondary"
+              onClick={() => {
+                setCatEditId(null);
+                setCatForm(EMPTY_CAT);
+              }}
+            >
+              <X size={16} /> Cancel
+            </AdminBtn>
+          )}
+        </div>
+
+        {/* List kategori */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {dbCategories.map((cat, i) => (
+            <div
+              key={cat.id}
+              className={`flex items-center justify-between p-4 rounded-2xl border transition-all ${
+                catEditId === cat.id
+                  ? "bg-blue-500/10 border-blue-500/30"
+                  : "bg-white/5 border-white/5 hover:border-white/15"
+              }`}
+            >
+              <div className="flex items-center gap-3">
+                <span className="text-xl">{iconEmoji[cat.icon] || "📄"}</span>
+                <div>
+                  <p className="text-white text-sm font-bold leading-tight">
+                    {cat.name}
+                  </p>
+                  <p className="text-slate-500 text-[10px] font-mono uppercase tracking-widest mt-0.5">
+                    {items.filter((i) => i.category_id === cat.id).length}{" "}
+                    certificates
+                  </p>
+                </div>
+              </div>
+              <div className="flex gap-2 shrink-0">
+                <button
+                  onClick={() => handleEditCategory(cat)}
+                  className="p-2 rounded-xl bg-white/5 text-slate-400 hover:text-blue-400 hover:bg-blue-500/10 transition-all"
+                  title="Edit category"
+                >
+                  <Edit2 size={14} />
+                </button>
+                <button
+                  onClick={() => handleDeleteCategory(cat.id)}
+                  className="p-2 rounded-xl bg-red-500/5 text-red-900 hover:text-red-400 hover:bg-red-500/15 transition-all"
+                  title="Delete category"
+                >
+                  <Trash2 size={14} />
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      </AdminCard>
+      {/* Modern Category Dropdown */}
+      <AdminCard title="Add / Edit Certificate" icon={Plus}>
+        <div className="space-y-6">
+          <div className="relative">
+            <label className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-400 mb-2 block px-2">
+              Certificate Category
+            </label>
+            <button
+              type="button"
+              onClick={() => setIsCatDropdownOpen(!isCatDropdownOpen)}
+              className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-3.5 text-left flex items-center justify-between hover:border-blue-500/50 transition-all"
+            >
+              <span
+                className={
+                  form.category_id ? "text-slate-200" : "text-slate-500"
+                }
+              >
+                {categoryOptions.find((opt) => opt.value === form.category_id)
+                  ?.label || "Select Category"}
+              </span>
+
+              <ChevronDown
+                size={18}
+                className={`text-slate-400 transition-transform duration-300 ${isCatDropdownOpen ? "rotate-180" : ""}`}
+              />
+            </button>
+            <AnimatePresence>
+              {isCatDropdownOpen && (
+                <motion.div
+                  initial={{ opacity: 1, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  className="absolute z-10 mt-2 w-full bg-[#050a18] border border-blue-500/50 rounded-2xl py-2"
+                >
+                  {categoryOptions.map((opt) => (
+                    <button
+                      key={opt.value}
+                      onClick={() => {
+                        setForm({ ...form, category_id: opt.value });
+                        setIsCatDropdownOpen(false);
+                      }}
+                      className="w-full text-left px-5 py-2 text-slate-300 hover:bg-blue-500/10 transition-all"
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+
+          {/* ── Baris 2: Judul EN & ID (✅ FIX 2: grid sejajar dengan min-h label) ── */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6">
+            <div>
+              <div className="min-h-[32px] flex items-end mb-2 px-2">
+                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-400">
+                  Certificate Title (EN)
+                </label>
+              </div>
+              <AdminInput
+                placeholder="Google AI Professional Certificate..."
+                value={form.title}
+                onChange={(e) => setForm({ ...form, title: e.target.value })}
+              />
+            </div>
+            <div>
+              <div className="min-h-[32px] flex items-end mb-2 px-2">
+                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-400 leading-tight">
+                  Certificate Title (ID){" "}
+                  <span className="text-slate-500 normal-case tracking-normal font-medium text-[9px]">
+                    — Leave blank for auto-translate
+                  </span>
+                </label>
+              </div>
+              <AdminInput
+                placeholder="Sertifikat Profesional Google AI..."
+                value={form.title_id}
+                onChange={(e) => setForm({ ...form, title_id: e.target.value })}
+              />
+            </div>
+          </div>
+
+          {/* ── Baris 3: Issuing Organization (full width) ── */}
+          <div>
+            <label className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-400 mb-2 block px-2">
+              Issuing Organization
+            </label>
+            <AdminInput
+              placeholder="Google, Dicoding, Coursera, DQLab..."
+              value={form.issuer}
+              onChange={(e) => setForm({ ...form, issuer: e.target.value })}
+            />
+          </div>
+
+          {/* ── Baris 4: Issue Date & Expiration Date ── */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6">
+            {/* ISSUE DATE */}
+            <div>
+              <label className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-400 mb-2 block px-2">
+                Issue Date
+              </label>
+              <div className="grid grid-cols-2 gap-3">
+                {/* Month Dropdown */}
+                <div className="relative">
+                  <button
+                    type="button"
+                    onClick={() => setIsIssueMonthOpen(!isIssueMonthOpen)}
+                    className="w-full bg-white/5 border border-white/10 rounded-2xl px-4 py-3.5 text-left flex items-center justify-between hover:border-blue-500/50 transition-all"
+                  >
+                    <span
+                      className={
+                        form.issue_month ? "text-slate-200" : "text-slate-500"
+                      }
+                    >
+                      {form.issue_month || "Month"}
+                    </span>
+                    <ChevronDown
+                      size={16}
+                      className={`text-slate-400 transition-transform ${isIssueMonthOpen ? "rotate-180" : ""}`}
+                    />
+                  </button>
+                  <AnimatePresence>
+                    {isIssueMonthOpen && (
+                      <motion.div
+                        initial={{ opacity: 0, y: -10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -10 }}
+                        className="absolute z-20 mt-2 w-full bg-[#050a18] border border-blue-500/50 rounded-2xl py-2 max-h-60 overflow-y-auto"
+                      >
+                        {months.map((m) => (
+                          <button
+                            key={m}
+                            onClick={() => {
+                              setForm({ ...form, issue_month: m });
+                              setIsIssueMonthOpen(false);
+                            }}
+                            className="w-full text-left px-5 py-2 text-slate-300 hover:bg-blue-500/10 transition-all"
+                          >
+                            {m}
+                          </button>
+                        ))}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+
+                {/* Year Dropdown */}
+                <div className="relative">
+                  <button
+                    type="button"
+                    onClick={() => setIsIssueYearOpen(!isIssueYearOpen)}
+                    className="w-full bg-white/5 border border-white/10 rounded-2xl px-4 py-3.5 text-left flex items-center justify-between hover:border-blue-500/50 transition-all"
+                  >
+                    <span
+                      className={
+                        form.issue_year ? "text-slate-200" : "text-slate-500"
+                      }
+                    >
+                      {form.issue_year || "Year"}
+                    </span>
+                    <ChevronDown
+                      size={16}
+                      className={`text-slate-400 transition-transform ${isIssueYearOpen ? "rotate-180" : ""}`}
+                    />
+                  </button>
+                  <AnimatePresence>
+                    {isIssueYearOpen && (
+                      <motion.div
+                        initial={{ opacity: 0, y: -10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -10 }}
+                        className="absolute z-20 mt-2 w-full bg-[#050a18] border border-blue-500/50 rounded-2xl py-2 max-h-60 overflow-y-auto shadow-2xl"
+                      >
+                        {years.map((y) => (
+                          <button
+                            key={y}
+                            onClick={() => {
+                              setForm({ ...form, issue_year: y });
+                              setIsIssueYearOpen(false);
+                            }}
+                            className="w-full text-left px-5 py-2 text-slate-300 hover:bg-blue-500/10 transition-all"
+                          >
+                            {y}
+                          </button>
+                        ))}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              </div>
+            </div>
+
+            {/* EXPIRATION DATE */}
+            <div>
+              <label className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-400 mb-2 block px-2">
+                Expiration Date{" "}
+                <span className="text-slate-500 normal-case tracking-normal font-medium text-[9px]">
+                  {" "}
+                  — Leave blank if none
+                </span>
+              </label>
+              <div className="grid grid-cols-2 gap-3">
+                {/* Expiry Month */}
+                <div className="relative">
+                  <button
+                    type="button"
+                    onClick={() => setIsExpiryMonthOpen(!isExpiryMonthOpen)}
+                    className="w-full bg-white/5 border border-white/10 rounded-2xl px-4 py-3.5 text-left flex items-center justify-between hover:border-blue-500/50 transition-all"
+                  >
+                    <span
+                      className={
+                        form.expiry_month ? "text-slate-200" : "text-slate-500"
+                      }
+                    >
+                      {form.expiry_month || "Month"}
+                    </span>
+                    <ChevronDown
+                      size={16}
+                      className={`text-slate-400 transition-transform ${isExpiryMonthOpen ? "rotate-180" : ""}`}
+                    />
+                  </button>
+                  <AnimatePresence>
+                    {isExpiryMonthOpen && (
+                      <motion.div
+                        initial={{ opacity: 0, y: -10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -10 }}
+                        className="absolute z-20 mt-2 w-full bg-[#050a18] border border-blue-500/50 rounded-2xl py-2 max-h-60 overflow-y-auto"
+                      >
+                        <button
+                          onClick={() => {
+                            setForm({ ...form, expiry_month: "" });
+                            setIsExpiryMonthOpen(false);
+                          }}
+                          className="w-full text-left px-5 py-2 text-slate-500 hover:bg-white/5 italic"
+                        >
+                          None
+                        </button>
+                        {months.map((m) => (
+                          <button
+                            key={m}
+                            onClick={() => {
+                              setForm({ ...form, expiry_month: m });
+                              setIsExpiryMonthOpen(false);
+                            }}
+                            className="w-full text-left px-5 py-2 text-slate-300 hover:bg-blue-500/10 transition-all"
+                          >
+                            {m}
+                          </button>
+                        ))}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+
+                {/* Expiry Year */}
+                <div className="relative">
+                  <button
+                    type="button"
+                    onClick={() => setIsExpiryYearOpen(!isExpiryYearOpen)}
+                    className="w-full bg-white/5 border border-white/10 rounded-2xl px-4 py-3.5 text-left flex items-center justify-between hover:border-blue-500/50 transition-all"
+                  >
+                    <span
+                      className={
+                        form.expiry_year ? "text-slate-200" : "text-slate-500"
+                      }
+                    >
+                      {form.expiry_year || "Year"}
+                    </span>
+                    <ChevronDown
+                      size={16}
+                      className={`text-slate-400 transition-transform ${isExpiryYearOpen ? "rotate-180" : ""}`}
+                    />
+                  </button>
+                  <AnimatePresence>
+                    {isExpiryYearOpen && (
+                      <motion.div
+                        initial={{ opacity: 0, y: -10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -10 }}
+                        className="absolute z-20 mt-2 w-full bg-[#050a18] border border-blue-500/50 rounded-2xl py-2 max-h-60 overflow-y-auto"
+                      >
+                        <button
+                          onClick={() => {
+                            setForm({ ...form, expiry_year: "" });
+                            setIsExpiryYearOpen(false);
+                          }}
+                          className="w-full text-left px-5 py-2 text-slate-500 hover:bg-white/5 italic"
+                        >
+                          None
+                        </button>
+                        {years.map((y) => (
+                          <button
+                            key={y}
+                            onClick={() => {
+                              setForm({ ...form, expiry_year: y });
+                              setIsExpiryYearOpen(false);
+                            }}
+                            className="w-full text-left px-5 py-2 text-slate-300 hover:bg-blue-500/10 transition-all"
+                          >
+                            {y}
+                          </button>
+                        ))}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* ── Baris 5: Credential ID & Credential URL ── */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6">
+            <div>
+              <label className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-400 mb-2 block px-2">
+                Credential ID
+              </label>
+              <AdminInput
+                placeholder="ABCD-1234-EFGH-5678"
+                value={form.credential_id}
+                onChange={(e) =>
+                  setForm({ ...form, credential_id: e.target.value })
+                }
+              />
+            </div>
+            <div>
+              <label className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-400 mb-2 block px-2">
+                Credential URL
+              </label>
+              <AdminInput
+                placeholder="https://www.credly.com/badges/..."
+                value={form.link}
+                onChange={(e) => setForm({ ...form, link: e.target.value })}
+              />
+            </div>
+          </div>
+
+          {/* ── Baris 6: Upload Gambar ── */}
+          <div>
+            <label className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-400 mb-2 block px-2">
+              Certificate Image
+            </label>
+            <ImageUpload
+              value={form.image_url}
+              onChange={(url) => setForm({ ...form, image_url: url })}
+              label="Upload Certificate Image"
+              resetKey={imageResetKey}
+            />
+          </div>
+        </div>
+
+        {/* Tombol Simpan & Batal */}
+        <div className="flex gap-4 mt-6">
+          <AdminBtn onClick={handleSave} disabled={isSubmitting}>
+            {isSubmitting ? (
+              <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+            ) : editId ? (
+              <Check size={18} />
+            ) : (
+              <Plus size={18} />
+            )}
+            {editId ? "Save Changes" : "Add Certificate"}
+          </AdminBtn>
           {editId && (
-            <AdminBtn variant="secondary" onClick={() => { setEditId(null); setForm({ title: '', issuer: '', date: '', credential_url: '' }) }}>
-              Cancel
+            <AdminBtn variant="secondary" onClick={resetForm}>
+              <X size={18} /> Cancel
             </AdminBtn>
           )}
         </div>
       </AdminCard>
 
-      <div className="space-y-4">
-        {items.map(item => (
-          <div key={item.id} className="p-6 md:px-8 bg-slate-900/40 border border-white/5 rounded-3xl flex flex-col md:flex-row md:items-center justify-between gap-6 hover:border-blue-500/20 transition-all">
-            <div className="flex items-start gap-4">
-              <div className="w-12 h-12 rounded-2xl bg-blue-500/10 flex items-center justify-center shrink-0 border border-blue-500/20">
-                <Award className="text-blue-500" size={24} />
-              </div>
-              <div>
-                <h3 className="text-lg font-black text-white tracking-tight uppercase leading-snug">{item.title}</h3>
-                <p className="text-blue-400 text-[10px] font-bold uppercase tracking-widest">{item.issuer}</p>
-                <p className="text-slate-500 text-xs font-mono mt-1">{item.date}</p>
-              </div>
+      {/* ── Filter + Tombol Reorder ── */}
+      <div className="flex flex-col gap-4">
+        {/* Baris atas: label + Edit Order button */}
+        <div className="flex items-center justify-between">
+          <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">
+            Filter by Category
+          </span>
+          <div className="flex gap-3 shrink-0">
+            {isReordering ? (
+              <>
+                {pendingOrder.length > 0 && (
+                  <AdminBtn onClick={() => setShowConfirm(true)}>
+                    <Check size={16} /> Save Order
+                  </AdminBtn>
+                )}
+                <AdminBtn variant="secondary" onClick={handleDiscardOrder}>
+                  <X size={16} /> Cancel
+                </AdminBtn>
+              </>
+            ) : (
+              <AdminBtn
+                variant="secondary"
+                onClick={() => setIsReordering(true)}
+              >
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 16 16"
+                  fill="currentColor"
+                >
+                  <circle cx="5" cy="4" r="1.5" />
+                  <circle cx="11" cy="4" r="1.5" />
+                  <circle cx="5" cy="8" r="1.5" />
+                  <circle cx="11" cy="8" r="1.5" />
+                  <circle cx="5" cy="12" r="1.5" />
+                  <circle cx="11" cy="12" r="1.5" />
+                </svg>
+                Edit Order
+              </AdminBtn>
+            )}
+          </div>
+        </div>
+
+        {/* Baris bawah: filter pills */}
+        <div className="flex flex-wrap gap-2">
+          <button
+            onClick={() => setFilterCategory("all")}
+            className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border ${
+              filterCategory === "all"
+                ? "bg-blue-600 border-blue-500 text-white shadow-[0_0_15px_rgba(37,99,235,0.3)]"
+                : "bg-white/5 border-white/10 text-slate-400 hover:text-white hover:border-white/20 hover:bg-white/10"
+            }`}
+          >
+            All ({items.length})
+          </button>
+          {categoryOptions.map((opt: any) => {
+            const count = items.filter(
+              (i) => i.category_id === opt.value,
+            ).length;
+            const isActive = filterCategory === opt.value;
+            return (
+              <button
+                key={opt.value}
+                onClick={() => setFilterCategory(opt.value)}
+                className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border flex items-center gap-1.5 ${
+                  isActive
+                    ? "bg-blue-600 border-blue-500 text-white shadow-[0_0_15px_rgba(37,99,235,0.3)]"
+                    : "bg-white/5 border-white/10 text-slate-400 hover:text-white hover:border-white/20 hover:bg-white/10"
+                }`}
+              >
+                <span>{opt.label}</span>
+                <span
+                  className={`px-1.5 py-0.5 rounded-md text-[9px] font-black ${
+                    isActive ? "bg-white/20" : "bg-white/5"
+                  }`}
+                >
+                  {count}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* ── Daftar Sertifikat ── */}
+      {filteredItems.length === 0 ? (
+        <div className="text-center py-16 bg-white/5 rounded-[2.5rem] border border-dashed border-white/10">
+          <Award className="mx-auto text-slate-700 mb-4" size={48} />
+          <p className="text-slate-500 font-bold uppercase tracking-widest text-sm">
+            No certificates in this category yet.
+          </p>
+        </div>
+      ) : (
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          onDragEnd={isReordering ? handleDragEnd : () => {}}
+        >
+          <SortableContext
+            items={filteredItems.map((i) => i.id!)}
+            strategy={rectSortingStrategy}
+          >
+            <div className="space-y-3">
+              {filteredItems.map((item) => {
+                const catIndex = dbCategories.findIndex(
+                  (c) => c.id === item.category_id,
+                );
+                const colorPalette = [
+                  "text-yellow-400 bg-yellow-500/10 border-yellow-500/20",
+                  "text-blue-400 bg-blue-500/10 border-blue-500/20",
+                  "text-emerald-400 bg-emerald-500/10 border-emerald-500/20",
+                  "text-purple-400 bg-purple-500/10 border-purple-500/20",
+                  "text-pink-400 bg-pink-500/10 border-pink-500/20",
+                  "text-orange-400 bg-orange-500/10 border-orange-500/20",
+                ];
+                return (
+                  <SortableCertCard
+                    key={item.id}
+                    item={item}
+                    onEdit={handleEdit}
+                    onDelete={handleDelete}
+                    isDraggable={isReordering}
+                    categoryName={
+                      dbCategories.find((c) => c.id === item.category_id)?.name
+                    }
+                    categoryColor={colorPalette[catIndex % colorPalette.length]}
+                  />
+                );
+              })}
             </div>
-            <div className="flex items-center gap-3">
-              {item.credential_url && (
-                <a href={item.credential_url} target="_blank" rel="noreferrer" className="p-3 bg-slate-800 text-slate-400 rounded-xl hover:text-white transition-all">
-                  <ExternalLink size={18} />
-                </a>
-              )}
-              <AdminBtn variant="secondary" onClick={() => handleEdit(item)}><Edit2 size={14} /></AdminBtn>
-              <AdminBtn variant="danger" onClick={() => handleDelete(item.id!)}><Trash2 size={14} /></AdminBtn>
+          </SortableContext>
+        </DndContext>
+      )}
+
+      {/* ── Popup Konfirmasi ── */}
+      {showConfirm && (
+        <div className="fixed inset-0 z-[999] flex items-end justify-center pb-12 px-4 bg-black/50 backdrop-blur-sm">
+          <div className="bg-slate-900 border border-white/10 rounded-3xl p-8 shadow-2xl max-w-md w-full">
+            <h3 className="text-white font-black text-lg uppercase tracking-tight mb-2">
+              Save New Order?
+            </h3>
+            <p className="text-slate-400 text-sm mb-6">
+              The certificate order will be updated and immediately reflected on
+              the portfolio page.
+            </p>
+            <div className="flex gap-3">
+              <AdminBtn onClick={handleConfirmOrder}>
+                <Check size={16} /> Yes, Save
+              </AdminBtn>
+              <AdminBtn
+                variant="secondary"
+                onClick={() => setShowConfirm(false)}
+              >
+                <X size={16} /> Cancel
+              </AdminBtn>
             </div>
           </div>
-        ))}
-      </div>
+        </div>
+      )}
+
+      {/* ── Notifikasi Sukses ── */}
+      {dragSuccess && (
+        <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-[999] bg-green-500/20 border border-green-500/40 text-green-400 px-8 py-4 rounded-2xl font-bold text-sm backdrop-blur-xl shadow-2xl flex items-center gap-3">
+          <Check size={18} /> Order saved successfully!
+        </div>
+      )}
     </div>
-  )
+  );
 }
 
 // ─── Experience Manager ───────────────────────────────
@@ -1069,61 +2216,87 @@ function SortableExperienceCard({ item, onEdit, onDelete, isDraggable = false }:
     <div
       ref={setNodeRef}
       style={style}
-      className={`p-8 bg-slate-900/40 border rounded-[2.5rem] relative group overflow-hidden transition-all duration-200 ${isDragging ? 'border-blue-500 shadow-[0_0_30px_rgba(59,130,246,0.4)]' : 'border-white/5'}`}
+      className={`p-8 bg-slate-900/40 border rounded-[2.5rem] relative group overflow-hidden transition-all duration-200 ${isDragging ? "border-blue-500 shadow-[0_0_30px_rgba(59,130,246,0.4)]" : "border-white/5"}`}
     >
       {isDraggable && (
         <div
           {...attributes}
           {...listeners}
           className="absolute top-4 left-4 p-2 rounded-xl bg-white/5 cursor-grab active:cursor-grabbing text-slate-500 hover:text-blue-400 hover:bg-blue-500/10 transition-all"
-          title="Geser untuk mengubah urutan"
+          title="Drag to reorder"
         >
           <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-            <circle cx="5" cy="4" r="1.5"/><circle cx="11" cy="4" r="1.5"/>
-            <circle cx="5" cy="8" r="1.5"/><circle cx="11" cy="8" r="1.5"/>
-            <circle cx="5" cy="12" r="1.5"/><circle cx="11" cy="12" r="1.5"/>
+            <circle cx="5" cy="4" r="1.5" />
+            <circle cx="11" cy="4" r="1.5" />
+            <circle cx="5" cy="8" r="1.5" />
+            <circle cx="11" cy="8" r="1.5" />
+            <circle cx="5" cy="12" r="1.5" />
+            <circle cx="11" cy="12" r="1.5" />
           </svg>
         </div>
       )}
 
       <div className="absolute top-0 right-0 p-8 flex gap-2">
-        <AdminBtn variant="secondary" onClick={() => onEdit(item)}><Edit2 size={14} /></AdminBtn>
-        <AdminBtn variant="danger" onClick={() => onDelete(item.id!)}><Trash2 size={14} /></AdminBtn>
+        <AdminBtn variant="secondary" onClick={() => onEdit(item)}>
+          <Edit2 size={14} />
+        </AdminBtn>
+        <AdminBtn variant="danger" onClick={() => onDelete(item.id!)}>
+          <Trash2 size={14} />
+        </AdminBtn>
       </div>
 
       <div className="flex items-center gap-4 mb-4 pl-8">
-        <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 border ${item.type === 'work' ? 'bg-blue-500/10 border-blue-500/20 text-blue-500' : 'bg-emerald-500/10 border-emerald-500/20 text-emerald-500'}`}>
-          {item.type === 'work' ? <Briefcase size={24} /> : <Building2 size={24} />}
+        <div
+          className={`w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 border ${item.type === "work" ? "bg-blue-500/10 border-blue-500/20 text-blue-500" : "bg-emerald-500/10 border-emerald-500/20 text-emerald-500"}`}
+        >
+          {item.type === "work" ? (
+            <Briefcase size={24} />
+          ) : (
+            <Building2 size={24} />
+          )}
         </div>
         <div>
-          <h3 className="text-xl font-black text-white tracking-tighter uppercase leading-none mb-1">{item.role}</h3>
-          <p className="text-slate-400 text-sm font-bold tracking-tight uppercase">{item.company}</p>
+          <h3 className="text-xl font-black text-white tracking-tighter uppercase leading-none mb-1">
+            {item.role}
+          </h3>
+          <p className="text-slate-400 text-sm font-bold tracking-tight uppercase">
+            {item.company}
+          </p>
         </div>
       </div>
 
       <div className="space-y-2 pl-8">
         <div className="flex items-center gap-2">
-          <span className={`px-3 py-1 rounded-full text-[9px] font-mono font-black uppercase tracking-widest ${item.type === 'work' ? 'bg-blue-600/20 text-blue-400' : 'bg-emerald-600/20 text-emerald-400'}`}>
-            {item.type === 'work' ? 'Professional' : 'Organizational'}
+          <span
+            className={`px-3 py-1 rounded-full text-[9px] font-mono font-black uppercase tracking-widest ${item.type === "work" ? "bg-blue-600/20 text-blue-400" : "bg-emerald-600/20 text-emerald-400"}`}
+          >
+            {item.type === "work" ? "Professional" : "Organizational"}
           </span>
-          <span className="text-[10px] font-mono font-bold text-slate-500">{item.start_date} — {item.end_date}</span>
+          <span className="text-[10px] font-mono font-bold text-slate-500">
+            {item.start_date} — {item.end_date}
+          </span>
         </div>
         {Array.isArray(item.details) && item.details.length > 0 && (
           <ul className="space-y-1 mt-2">
             {item.details.slice(0, 2).map((point: string, i: number) => (
-              <li key={i} className="text-slate-400 text-xs flex items-start gap-2">
+              <li
+                key={i}
+                className="text-slate-400 text-xs flex items-start gap-2"
+              >
                 <span className="text-blue-500 mt-0.5">•</span>
                 <span className="line-clamp-1">{point}</span>
               </li>
             ))}
             {item.details.length > 2 && (
-              <li className="text-slate-600 text-xs">+{item.details.length - 2} more...</li>
+              <li className="text-slate-600 text-xs">
+                +{item.details.length - 2} more...
+              </li>
             )}
           </ul>
         )}
       </div>
     </div>
-  )
+  );
 }
 function ExperienceManager() {
   const [isReordering, setIsReordering] = useState(false);

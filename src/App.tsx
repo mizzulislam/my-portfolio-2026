@@ -153,7 +153,7 @@ export default function App() {
                 isSkillsHovering={isSkillsHovering}
                 setIsSkillsHovering={setIsSkillsHovering}
               />
-              <Certifications isDark={isDark} t={t} />
+              <Certifications isDark={isDark} t={t} lang={lang} />
               <Contact isDark={isDark} t={t} lang={lang} />
             </main>
 

@@ -92,11 +92,7 @@ export function Skills({
               <div className="grid grid-cols-2 gap-y-10 gap-x-6">
                 {t.softSkills.map((skill: any, idx: number) => (
                   <div key={idx} className={idx % 2 === 0 ? "-ml-2.5" : ""}>
-                    <SkillLogoBox
-                      skill={skill.name}
-                      isDark={isDark}
-                      type="soft"
-                    />
+                    <SkillLogoBox skill={skill} isDark={isDark} type="soft" />
                   </div>
                 ))}
               </div>

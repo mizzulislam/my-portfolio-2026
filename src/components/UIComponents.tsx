@@ -1015,12 +1015,14 @@ export function CertCategoryCarousel({
   isDark,
   viewCertBtnText,
   seeMoreBtnText,
+  t,
 }: {
   categories: CertCategory[];
   descriptions: CertDescriptions;
   isDark: boolean;
   viewCertBtnText: string;
   seeMoreBtnText: string;
+  t: any; // translation function
 }) {
   const [index, setIndex] = useState(0);
   const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -1083,13 +1085,6 @@ export function CertCategoryCarousel({
     }
   };
 
-  const categoryBackgrounds: Record<string, string> = {
-    appreciation: "/assets/certificates/appreciation-bangkit-2024.webp",
-    completion: "/assets/certificates/completion-google-ai-professional.webp",
-    committee: "/assets/certificates/committee-hmps-koordinator.webp",
-    competency: "/assets/certificates/competency-piranha-brevet.webp",
-  };
-
   return (
     <div className="w-full flex flex-col items-center">
       {/* Category Slider Container */}
@@ -1135,64 +1130,100 @@ export function CertCategoryCarousel({
                     filter: isActive ? "blur(0px)" : "blur(2px)",
                   }}
                   transition={{ type: "spring", stiffness: 450, damping: 35 }}
-                  className={`absolute w-[240px] md:w-[320px] p-6 md:p-10 rounded-[2.5rem] border flex flex-col items-center text-center transition-all duration-300 overflow-hidden ${
+                  className={`absolute w-[240px] md:w-[320px] h-[260px] md:h-[320px] rounded-[2.5rem] border flex flex-col items-center justify-center text-center transition-all duration-500 overflow-hidden group ${
                     isActive
-                      ? isDark
-                        ? "bg-slate-900 border-blue-500/50 shadow-[0_0_40px_rgba(255,255,255,0.1),0_0_30px_rgba(59,130,246,0.3)]"
-                        : "bg-white border-blue-400 shadow-[0_0_40px_rgba(255,255,255,0.8),0_0_30px_rgba(59,130,246,0.2)]"
-                      : isDark
-                        ? "bg-slate-900/50 border-white/10"
-                        : "bg-white border-slate-200"
+                      ? "border-blue-500/50 shadow-[0_20px_50px_rgba(0,0,0,0.3),0_0_30px_rgba(59,130,246,0.2)]"
+                      : "border-white/10"
                   }`}
                 >
-                  {/* Background Image with Glass Blur */}
+                  {/* 1. Background Image Effect */}
                   <div className="absolute inset-0 z-0">
                     <img
-                      src={categoryBackgrounds[cat.id]}
+                      src={cat.items?.[0]?.image || ""}
                       alt=""
-                      className={`w-full h-full object-cover opacity-[0.90                                                                                                                                                                                                                                                                                                                                                                                                              ] blur-[2px] transition-transform duration-700 ${isActive ? "scale-110" : "scale-100"}`}
-                      loading="lazy"
+                      className={`w-full h-full object-cover transition-transform duration-1000 ${
+                        isActive
+                          ? "scale-125 blur-[4px]"
+                          : "scale-100 blur-[10px]"
+                      } opacity-50`}
                       referrerPolicy="no-referrer"
                     />
                     <div
-                      className={`absolute inset-0 ${isDark ? "bg-gradient-to-b from-transparent to-slate-900/40" : "bg-gradient-to-b from-transparent to-white/40"}`}
+                      className={`absolute inset-0 bg-gradient-to-b ${
+                        isDark
+                          ? "from-slate-900/40 via-slate-900/80 to-slate-900"
+                          : "from-white/40 via-white/80 to-white"
+                      }`}
                     />
                   </div>
 
+                  {/* 2. Floating Icon Box (DIPERBAIKI: Hapus strokeWidth) */}
                   <div
-                    className={`relative z-10 w-16 h-16 md:w-20 md:h-20 rounded-2xl flex items-center justify-center border mb-6 transition-all ${
+                    className={`relative z-10 w-16 h-16 md:w-20 md:h-20 rounded-3xl flex items-center justify-center border backdrop-blur-2xl mb-6 transition-all duration-500 ${
                       isActive
-                        ? isDark
-                          ? "bg-blue-500/20 border-blue-400 text-blue-400"
-                          : "bg-blue-50 border-blue-200 text-blue-600 shadow-lg"
-                        : isDark
-                          ? "bg-slate-800 border-white/5 text-slate-500"
-                          : "bg-slate-50 border-slate-100 text-slate-400"
+                        ? "bg-blue-500/20 border-blue-400/50 text-blue-400 shadow-[0_0_20px_rgba(59,130,246,0.3)] scale-110"
+                        : "bg-white/5 border-white/10 text-slate-500"
                     }`}
                   >
-                    <Icon size={isActive ? 36 : 28} />
+                    {/* Cukup gunakan properti size saja agar tidak error */}
+                    <Icon size={isActive ? 32 : 24} />
+
+                    {isActive && (
+                      <div className="absolute inset-0 bg-blue-500/20 blur-xl rounded-full z-[-1]" />
+                    )}
                   </div>
 
-                  <h4
-                    className={`relative z-10 text-base md:text-lg font-bold mb-5 tracking-tight leading-tight ${isDark && isActive ? "text-white" : isActive ? "text-slate-900" : "text-slate-500"}`}
-                  >
-                    {cat.name}
-                  </h4>
+                  {/* 3. Category Name & Badge */}
+                  <div className="relative z-10 px-6">
+                    <span className="text-[8px] md:text-[10px] font-black uppercase tracking-[0.3em] text-blue-500 mb-2 block">
+                      {t.collectionLabel || "Collection"}
+                    </span>
+                    <h4
+                      className={`text-lg md:text-2xl font-black tracking-tighter leading-tight ${
+                        isDark ? "text-white" : "text-slate-900"
+                      } ${!isActive && "opacity-50"}`}
+                    >
+                      {cat.name}
+                    </h4>
 
+                    <p
+                      className={`text-[10px] md:text-xs mt-3 font-medium transition-opacity duration-500 ${
+                        isActive ? "text-slate-400 opacity-100" : "opacity-0"
+                      }`}
+                    >
+                      {cat.items?.length || 0}{" "}
+                      {t.certsEarnedLabel || "Certificates Earned"}
+                    </p>
+                  </div>
+
+                  {/* 4. Action Button */}
                   {isActive && (
-                    <button
+                    <motion.button
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
                       onClick={() =>
                         setExpandedId(expandedId === cat.id ? null : cat.id)
                       }
-                      className="relative z-10 text-blue-500 text-[6.5px] md:text-[10px] font-black uppercase tracking-[0.25em] flex items-center gap-2 hover:gap-3 transition-all group py-2"
+                      className="relative z-10 mt-8 px-6 py-2 rounded-full bg-blue-600 text-white text-[10px] font-black uppercase tracking-widest hover:bg-blue-500 transition-all shadow-[0_10px_20px_rgba(37,99,235,0.3)]"
                     >
-                      {seeMoreBtnText}
+                      {expandedId === cat.id ? "Close Details" : seeMoreBtnText}
+                    </motion.button>
+                  )}
+
+                  {/* 5. Glass Reflection Shine (Animasi Cahaya Lewat) */}
+                  {isActive && (
+                    <div className="absolute inset-0 z-5 pointer-events-none overflow-hidden">
                       <motion.div
-                        animate={{ rotate: expandedId === cat.id ? 180 : 0 }}
-                      >
-                        <ChevronDown size={12} />
-                      </motion.div>
-                    </button>
+                        animate={{ x: ["-100%", "200%"] }}
+                        transition={{
+                          repeat: Infinity,
+                          duration: 3,
+                          ease: "linear",
+                          repeatDelay: 1,
+                        }}
+                        className="absolute top-0 bottom-0 w-1/2 bg-gradient-to-r from-transparent via-white/10 to-transparent skew-x-12"
+                      />
+                    </div>
                   )}
                 </motion.div>
               );
