@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Send, X, Loader2 } from "lucide-react";
+import toast, { Toaster } from "react-hot-toast";
 
 interface ReplyModalProps {
   isOpen: boolean;
@@ -50,16 +51,16 @@ export const ReplyModal = ({
       const result = await response.json(); // Ambil pesan dari server
 
       if (response.ok) {
-        alert("Email balasan berhasil dikirim!");
+        toast.success("Pesan Anda berhasil terkirim!");
         setReplyText("");
         onSuccess();
         onClose();
       } else {
         // Menampilkan pesan error spesifik dari server (misal: API Key habis)
-        alert(`Gagal: ${result.error || "Terjadi kesalahan"}`);
+        toast.error(`Gagal: ${result.error || "Terjadi kesalahan"}`);
       }
     } catch (error) {
-      alert("Gagal mengirim email. Periksa koneksi internet Anda.");
+      toast.error("Gagal mengirim email. Periksa koneksi internet Anda.");
     } finally {
       setIsSending(false);
     }
@@ -84,6 +85,10 @@ export const ReplyModal = ({
             value={replyText}
             onChange={(e) => setReplyText(e.target.value)}
           />
+        </div>
+        <div>
+          <Toaster position="top-right" /> {/* Tambahkan di sini */}
+          {/* Isi Portfolio kamu */}
         </div>
         <div className="p-4 bg-white/[0.02] flex justify-end">
           <button
