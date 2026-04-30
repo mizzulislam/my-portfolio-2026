@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Send, X, Loader2 } from "lucide-react";
+import { toast } from "react-hot-toast";
 
 interface ReplyModalProps {
   isOpen: boolean;
@@ -52,14 +53,20 @@ export const ReplyModal = ({
       if (response.ok) {
         alert("Email balasan berhasil dikirim!");
         setReplyText("");
-        onSuccess();
-        onClose();
+        setTimeout(() => {
+          onSuccess();
+          onClose();
+        }, 500);
       } else {
         // Menampilkan pesan error spesifik dari server (misal: API Key habis)
-        alert(`Gagal: ${result.error || "Terjadi kesalahan"}`);
+        const errorData = await response.json();
+        toast.error(
+          `Gagal: ${errorData.error || "Terjadi kesalahan pada server"}`,
+        );
       }
     } catch (error) {
-      alert("Gagal mengirim email. Periksa koneksi internet Anda.");
+      console.error("Error saat mengirim:", error);
+      toast.error("Terjadi kesalahan koneksi ke server.");
     } finally {
       setIsSending(false);
     }
