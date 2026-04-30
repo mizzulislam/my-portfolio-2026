@@ -9,6 +9,7 @@ import Login from "./components/Login";
 import Admin from "./components/Admin";
 import { AnimatePresence } from 'motion/react';
 import { translations } from './constants';
+import { Toaster } from "react-hot-toast";
 
 // Layout Components
 import { Navbar } from './components/layout/Navbar';
@@ -157,6 +158,20 @@ export default function App() {
               <Contact isDark={isDark} t={t} lang={lang} />
             </main>
 
+            <Toaster
+              position="bottom-right"
+              toastOptions={{
+                style: {
+                  background: isDark ? "#1e293b" : "#fff",
+                  color: isDark ? "#fff" : "#1e293b",
+                  border: isDark
+                    ? "1px solid rgba(255,255,255,0.1)"
+                    : "1px solid rgba(0,0,0,0.1)",
+                  borderRadius: "12px",
+                  fontSize: "14px",
+                },
+              }}
+            />
             <Footer isDark={isDark} />
 
             {/* Music Notifier at Bottom Right */}

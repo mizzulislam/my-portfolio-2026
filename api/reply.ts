@@ -14,26 +14,57 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
     // 2. Kirim Email
     const data = await resend.emails.send({
-      from: "Muhammad Izzul Islam <mizzulislam@gmail.com>",
+      from: "Muhammad Izzul Islam <onboarding@resend.dev>",
       to: [to],
       subject: subject || "Balasan Pesan",
       html: `
-      <div style="font-family: sans-serif; background-color: #f4f4f7; padding: 20px;">
-        <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; overflow: hidden; border: 1px solid #e2e8f0;">
-          <div style="background-color: #2563eb; padding: 20px; text-align: center;">
-            <h1 style="color: #ffffff; margin: 0; font-size: 20px;">Tanggapan Portofolio</h1>
+      <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #020617; padding: 40px 20px; color: #f8fafc;">
+        <div style="max-width: 600px; margin: 0 auto; background-color: #0f172a; border-radius: 24px; overflow: hidden; border: 1px solid #1e293b; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);">
+          
+          <!-- Header dengan Gradient Look -->
+          <div style="background: linear-gradient(to bottom right, #2563eb, #4338ca); padding: 40px 20px; text-align: center;">
+            <div style="font-size: 14px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; color: #bfdbfe; margin-bottom: 8px;">2026 Portfolio</div>
+            <h1 style="margin: 0; font-size: 28px; font-weight: 800; color: #ffffff;">New Message Reply</h1>
+            <p style="color: #bfdbfe; font-size: 14px; margin-top: 8px;">Muhammad Izzul Islam has responded to you</p>
           </div>
-          <div style="padding: 30px; color: #334155;">
-            <p>Halo,</p>
-            <p>Terima kasih telah menghubungi saya. Berikut adalah balasan untuk pesan Anda:</p>
-            <div style="background-color: #f8fafc; padding: 20px; border-radius: 6px; border-left: 4px solid #2563eb; margin: 20px 0;">
-              <p style="margin: 0; font-style: italic;">"${replyText}"</p>
+
+          <div style="padding: 40px;">
+            <!-- Card Informasi Pengirim -->
+            <div style="background-color: #1e293b; border-radius: 16px; padding: 20px; margin-bottom: 24px;">
+              <table style="width: 100%;">
+                <tr>
+                  <td style="padding-bottom: 10px;">
+                    <span style="color: #94a3b8; font-size: 12px; text-transform: uppercase;">Sender Name</span><br/>
+                    <strong style="color: #ffffff;">Muhammad Izzul Islam</strong>
+                  </td>
+                  <td style="padding-bottom: 10px;">
+                    <span style="color: #94a3b8; font-size: 12px; text-transform: uppercase;">Time Stamp</span><br/>
+                    <strong style="color: #ffffff;">${new Date().toLocaleString("id-ID", { dateStyle: "long", timeStyle: "short" })}</strong>
+                  </td>
+                </tr>
+                <tr>
+                  <td colspan="2">
+                    <span style="color: #94a3b8; font-size: 12px; text-transform: uppercase;">Email Contact</span><br/>
+                    <a href="mailto:mizzulislam.id@gmail.com" style="color: #3b82f6; text-decoration: none;">mizzulislam.id@gmail.com</a>
+                  </td>
+                </tr>
+              </table>
             </div>
-            <p>Salam hangat,</p>
-            <p><strong>Muhammad Izzul Islam</strong></p>
-          </div>
-          <div style="background-color: #f1f5f9; padding: 15px; text-align: center; font-size: 12px; color: #64748b;">
-            © 2026 Muhammad Izzul Islam. All Rights Reserved.
+
+            <!-- Box Pesan -->
+            <div style="margin-bottom: 10px;">
+              <span style="color: #94a3b8; font-size: 12px; text-transform: uppercase;">Message Content</span>
+            </div>
+            <div style="background-color: #020617; border: 1px solid #1e293b; border-radius: 16px; padding: 24px; line-height: 1.6; color: #cbd5e1; font-style: italic;">
+              "${replyText}"
+            </div>
+
+            <div style="margin-top: 40px; text-align: center; border-top: 1px solid #1e293b; pt: 30px;">
+              <p style="font-size: 12px; color: #64748b; margin-top: 20px;">
+                © 2026 Muhammad Izzul Islam. All Rights Reserved.<br/>
+                Sent from my Personal Portfolio CRM.
+              </p>
+            </div>
           </div>
         </div>
       </div>
