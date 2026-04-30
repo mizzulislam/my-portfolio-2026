@@ -1025,7 +1025,7 @@ export function CertCategoryCarousel({
   t: any; // translation function
 }) {
   const [index, setIndex] = useState(0);
-  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [expandedId, setExpandedId] = useState<string | number | null>(null);
   const [zoomedItemIndex, setZoomedItemIndex] = useState<number | null>(null);
   const [activeSubItemIndex, setActiveSubItemIndex] = useState(0);
   const scrollRef = useRef<HTMLDivElement>(null);

@@ -34,7 +34,7 @@ export const ReplyModal = ({
   if (!isOpen) return null;
 
   const handleSend = async () => {
-    if (!replyText.trim()) return alert("Pesan tidak boleh kosong!"); // Pakai .trim() untuk cegah spasi saja
+    if (!replyText.trim()) return alert("Pesan tidak boleh kosong!");
     setIsSending(true);
 
     try {
@@ -48,20 +48,16 @@ export const ReplyModal = ({
         }),
       });
 
-      const result = await response.json(); // Ambil pesan dari server
+      const responseData = await response.json();
 
       if (response.ok) {
-        alert("Email balasan berhasil dikirim!");
+        toast.success("Email balasan berhasil dikirim!");
         setReplyText("");
-        setTimeout(() => {
-          onSuccess();
-          onClose();
-        }, 500);
+        onSuccess();
+        onClose();
       } else {
-        // Menampilkan pesan error spesifik dari server (misal: API Key habis)
-        const errorData = await response.json();
         toast.error(
-          `Gagal: ${errorData.error || "Terjadi kesalahan pada server"}`,
+          `Gagal: ${responseData.error || "Terjadi kesalahan pada server"}`,
         );
       }
     } catch (error) {
@@ -73,38 +69,68 @@ export const ReplyModal = ({
   };
 
   return (
-    <div className="fixed inset-0 z-[999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-      <div className="bg-[#0f172a] border border-white/10 w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
-        <div className="flex justify-between items-center p-4 border-b border-white/5 bg-white/[0.02]">
-          <h3 className="text-white font-bold text-sm">
-            Balas ke: {recipientEmail}
-          </h3>
-          <button onClick={onClose} className="text-slate-400 hover:text-white">
-            <X size={18} />
-          </button>
+    <div className="fixed inset-0 z-[999] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
+      <div className="bg-slate-950 border border-white/10 w-full max-w-xl rounded-[2rem] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+        <div className="flex flex-col gap-2 p-5 border-b border-white/5 bg-slate-900/60">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <p className="text-slate-400 uppercase text-[10px] tracking-[0.32em] font-bold mb-1">
+                Balas Pesan
+              </p>
+              <h3 className="text-white text-xl font-black">
+                {subject}
+              </h3>
+              <p className="text-slate-500 text-sm mt-2">
+                Kepada: <span className="text-slate-200">{recipientEmail}</span>
+              </p>
+            </div>
+            <button
+              onClick={onClose}
+              className="text-slate-400 hover:text-white rounded-full p-2 transition-all"
+              aria-label="Tutup"
+            >
+              <X size={18} />
+            </button>
+          </div>
+          <p className="text-slate-500 text-sm leading-relaxed">
+            Kirim balasan langsung dari panel admin menggunakan Resend.
+          </p>
         </div>
-        <div className="p-4">
-          <textarea
-            autoFocus
-            className="w-full h-40 bg-transparent text-slate-200 outline-none resize-none text-sm leading-relaxed"
-            placeholder="Ketik balasan Anda di sini..."
-            value={replyText}
-            onChange={(e) => setReplyText(e.target.value)}
-          />
-        </div>
-        <div className="p-4 bg-white/[0.02] flex justify-end">
-          <button
-            disabled={isSending}
-            onClick={handleSend}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-xl text-sm font-bold flex items-center gap-2 transition-all disabled:opacity-50"
-          >
-            {isSending ? (
-              <Loader2 size={16} className="animate-spin" />
-            ) : (
-              <Send size={16} />
-            )}
-            Kirim Balasan
-          </button>
+
+        <div className="p-5 space-y-4 bg-slate-950/90">
+          <div className="rounded-3xl border border-white/10 bg-slate-900/80 p-4 text-slate-300 text-sm leading-relaxed">
+            <p className="font-semibold text-slate-100 mb-2">Pesan Anda</p>
+            <textarea
+              autoFocus
+              rows={8}
+              className="w-full min-h-[200px] resize-none rounded-3xl border border-white/10 bg-slate-950 px-4 py-3 text-slate-100 outline-none transition-all focus:border-blue-500/50 focus:ring-4 focus:ring-blue-500/10"
+              placeholder="Tulis balasan Anda di sini..."
+              value={replyText}
+              onChange={(e) => setReplyText(e.target.value)}
+            />
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <button
+              type="button"
+              onClick={onClose}
+              className="w-full rounded-2xl border border-white/10 bg-white/5 py-3 text-sm font-bold uppercase tracking-[0.18em] text-slate-300 transition-all hover:bg-white/10"
+            >
+              Batal
+            </button>
+            <button
+              disabled={isSending}
+              onClick={handleSend}
+              className="w-full rounded-2xl bg-blue-600 py-3 text-sm font-bold uppercase tracking-[0.18em] text-white transition-all hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            >
+              {isSending ? (
+                <Loader2 size={16} className="animate-spin" />
+              ) : (
+                <Send size={16} />
+              )}
+              {isSending ? "Mengirim..." : "Kirim Balasan"}
+            </button>
+          </div>
         </div>
       </div>
     </div>

@@ -273,3 +273,68 @@ export interface CertZoomCarouselProps {
   isDark: boolean;
   viewCertBtnText: string;
 }
+
+// ─── Interface Khusus Panel Admin (Supabase Structure) ──────────
+export interface Experience {
+  id?: string;
+  company: string;
+  role: string;
+  type: "work" | "org";
+  start_date: string;
+  end_date: string;
+  location: string;
+  logo_url: string;
+  details: string[];
+  role_id: string;
+  company_id: string;
+  location_id: string;
+  details_id: string[];
+}
+
+export interface CertificationItem {
+  id?: string;
+  category_id: string;
+  title: string;
+  title_id: string;
+  issuer: string;
+  issue_month: string;
+  issue_year: string;
+  expiry_month: string;
+  expiry_year: string;
+  credential_id: string;
+  image_url: string;
+  link: string;
+  order: number;
+}
+
+export interface Message {
+  id: string;
+  name: string;
+  lastname: string;
+  email: string;
+  message: string;
+  is_read: boolean;
+  created_at: string;
+}
+
+export interface Project {
+  id?: string;
+  title: string;
+  title_id: string;
+  description: string;
+  desc_id: string;
+  category: string;
+  category_id: string;
+  image_url: string;
+  github_url: string;
+  live_url: string;
+  tags: string[];
+  tags_id: string[];
+}
+
+export interface Skill {
+  id?: string;
+  name: string;
+  category: string;
+}
+

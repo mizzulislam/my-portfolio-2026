@@ -13,63 +13,52 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   try {
     // 2. Kirim Email
-    const data = await resend.emails.send({
+    const { data, error } = await resend.emails.send({
       from: "Muhammad Izzul Islam <onboarding@resend.dev>",
       to: [to],
       subject: subject || "Balasan Pesan",
       html: `
-      <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #020617; padding: 40px 20px; color: #f8fafc;">
-        <div style="max-width: 600px; margin: 0 auto; background-color: #0f172a; border-radius: 24px; overflow: hidden; border: 1px solid #1e293b; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);">
-          
-          <!-- Header dengan Gradient Look -->
-          <div style="background: linear-gradient(to bottom right, #2563eb, #4338ca); padding: 40px 20px; text-align: center;">
-            <div style="font-size: 14px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; color: #bfdbfe; margin-bottom: 8px;">2026 Portfolio</div>
-            <h1 style="margin: 0; font-size: 28px; font-weight: 800; color: #ffffff;">New Message Reply</h1>
-            <p style="color: #bfdbfe; font-size: 14px; margin-top: 8px;">Muhammad Izzul Islam has responded to you</p>
+      <div style="font-family: 'Inter', system-ui, sans-serif; background-color: #020617; min-height: 100vh; padding: 32px 16px; color: #e2e8f0;">
+        <div style="max-width: 650px; margin: 0 auto; background: linear-gradient(180deg, rgba(15,23,42,0.95), rgba(15,23,42,0.98)); border: 1px solid rgba(255,255,255,0.08); border-radius: 28px; overflow: hidden; box-shadow: 0 30px 80px rgba(0, 0, 0, 0.35);">
+          <div style="background: radial-gradient(circle at top right, rgba(56,189,248,0.16), transparent 45%), linear-gradient(180deg, rgba(56,189,248,0.12), rgba(15,23,42,0.95)); padding: 36px 28px; text-align: center;">
+            <p style="margin:0; font-size: 12px; letter-spacing: 0.18em; color: #38bdf8; text-transform: uppercase;">Web Porto Notification</p>
+            <h1 style="margin: 16px 0 0; font-size: 30px; line-height: 1.1; font-weight: 900; color: #ffffff;">Pesan Balasan dari Portfolio</h1>
+            <p style="margin: 12px auto 0; font-size: 14px; color: #cbd5e1; max-width: 520px;">Balasan Anda dikirim langsung dari panel admin menggunakan layanan Resend.</p>
           </div>
 
-          <div style="padding: 40px;">
-            <!-- Card Informasi Pengirim -->
-            <div style="background-color: #1e293b; border-radius: 16px; padding: 20px; margin-bottom: 24px;">
-              <table style="width: 100%;">
-                <tr>
-                  <td style="padding-bottom: 10px;">
-                    <span style="color: #94a3b8; font-size: 12px; text-transform: uppercase;">Sender Name</span><br/>
-                    <strong style="color: #ffffff;">Muhammad Izzul Islam</strong>
-                  </td>
-                  <td style="padding-bottom: 10px;">
-                    <span style="color: #94a3b8; font-size: 12px; text-transform: uppercase;">Time Stamp</span><br/>
-                    <strong style="color: #ffffff;">${new Date().toLocaleString("id-ID", { dateStyle: "long", timeStyle: "short" })}</strong>
-                  </td>
-                </tr>
-                <tr>
-                  <td colspan="2">
-                    <span style="color: #94a3b8; font-size: 12px; text-transform: uppercase;">Email Contact</span><br/>
-                    <a href="mailto:mizzulislam.id@gmail.com" style="color: #3b82f6; text-decoration: none;">mizzulislam.id@gmail.com</a>
-                  </td>
-                </tr>
-              </table>
+          <div style="padding: 32px 28px;">
+            <div style="display: flex; flex-wrap: wrap; gap: 16px; margin-bottom: 28px;">
+              <div style="flex: 1 1 220px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 18px; padding: 18px; min-width: 160px;">
+                <p style="margin:0 0 8px; font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: #94a3b8;">To</p>
+                <p style="margin:0; font-size: 14px; color: #ffffff;">${to}</p>
+              </div>
+              <div style="flex: 1 1 220px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 18px; padding: 18px; min-width: 160px;">
+                <p style="margin:0 0 8px; font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: #94a3b8;">Subject</p>
+                <p style="margin:0; font-size: 14px; color: #ffffff;">${subject || "Balasan Pesan"}</p>
+              </div>
             </div>
 
-            <!-- Box Pesan -->
-            <div style="margin-bottom: 10px;">
-              <span style="color: #94a3b8; font-size: 12px; text-transform: uppercase;">Message Content</span>
+            <div style="background: #111827; border: 1px solid rgba(255,255,255,0.08); border-radius: 24px; padding: 28px; color: #cbd5e1; line-height: 1.75;">
+              <p style="margin: 0 0 14px; font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase; color: #94a3b8;">Isi Balasan</p>
+              <div style="font-size: 15px; white-space: pre-wrap;">${replyText}</div>
             </div>
-            <div style="background-color: #020617; border: 1px solid #1e293b; border-radius: 16px; padding: 24px; line-height: 1.6; color: #cbd5e1; font-style: italic;">
-              "${replyText}"
-            </div>
+          </div>
 
-            <div style="margin-top: 40px; text-align: center; border-top: 1px solid #1e293b; pt: 30px;">
-              <p style="font-size: 12px; color: #64748b; margin-top: 20px;">
-                © 2026 Muhammad Izzul Islam. All Rights Reserved.<br/>
-                Sent from my Personal Portfolio CRM.
-              </p>
-            </div>
+          <div style="padding: 0 28px 32px; text-align: center; border-top: 1px solid rgba(255,255,255,0.06);">
+            <p style="margin: 0; font-size: 12px; color: #94a3b8;">© 2026 Muhammad Izzul Islam • Sent via Web Porto Admin</p>
           </div>
         </div>
       </div>
     `,
     });
+
+    if (error) {
+      console.error("Resend API Error:", error);
+      return res.status(403).json({
+        success: false,
+        error: error.message, // Ini akan mengirim pesan "You can only send testing emails..." ke frontend
+      });
+    }
 
     // 3. WAJIB: Kirim jawaban sukses ke Frontend agar loading berhenti
     return res.status(200).json({ success: true, data });
