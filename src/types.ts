@@ -66,7 +66,7 @@ export interface EduItem {
 }
 
 export interface WorkItem {
-  id: number;
+  id: number | string;
   title: string;
   company: string;
   period: string;
@@ -76,7 +76,7 @@ export interface WorkItem {
 }
 
 export interface OrgItem {
-  id: number;
+  id: number | string;
   title: string;
   company: string;
   period: string;
@@ -86,7 +86,7 @@ export interface OrgItem {
 }
 
 export interface ProjectItem {
-  id: number;
+  id: number | string;
   title: string;
   category: string;
   desc: string;
@@ -102,7 +102,7 @@ export interface CertItem {
 }
 
 export interface CertCategory {
-  id: string;
+  id: number | string;
   icon: string;
   name: string;
   description: string;
@@ -182,6 +182,8 @@ export interface Translation {
   formEmail: string;
   formMsg: string;
   formBtn: string;
+  formLoading?: string;
+  formSuccess?: string;
 }
 
 // ─── Interface untuk props komponen ──────────────────────────

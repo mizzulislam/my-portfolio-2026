@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Mail, MessageCircle, Send, Loader2, CheckCircle } from "lucide-react";
 import { SectionHeader } from "../UIComponents";
 import { SectionProps } from "../../types";
+import { supabase } from "../../lib/supabase";
 
 interface ContactProps extends SectionProps {
   lang: "en" | "id";
@@ -11,11 +12,12 @@ export function Contact({ isDark, t, lang }: ContactProps) {
   // 1. Gabungkan semua data input ke dalam satu state agar rapi
   const [formData, setFormData] = useState({
     name: "",
-    lastName: "",
+    lastname: "",
     email: "",
     message: "",
   });
 
+  // 2. State untuk mengelola status pengiriman dan error
   const [status, setStatus] = useState<
     "idle" | "loading" | "success" | "error"
   >("idle");
@@ -76,17 +78,17 @@ export function Contact({ isDark, t, lang }: ContactProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // LANGKAH A: Cek Jebakan Bot
+    // 1. CEK BOT (Honeypot) DULU
+    // Jika honeypot terisi, berarti yang mengisi adalah bot. Kita hentikan proses.
     if (honeypot !== "") {
       console.log("Bot Detected!");
-      setStatus("success"); // Pura-pura sukses agar bot berhenti
+      setStatus("success"); // Pura-pura sukses agar bot tertipu dan berhenti
       return;
     }
 
-    // LANGKAH B: Validasi di Sisi User (Frontend)
-    // Ini supaya user langsung dilarang kirim kalau pesan < 10 karakter
+    // 2. VALIDASI FORM (Frontend)
+    // Tampilkan error jika input kosong atau format salah SEBELUM dikirim ke database
     setTouched({ name: true, email: true, message: true });
-
     const nameError = getFieldError("name", formData.name);
     const emailError = getFieldError("email", formData.email);
     const messageError = getFieldError("message", formData.message);
@@ -94,34 +96,42 @@ export function Contact({ isDark, t, lang }: ContactProps) {
     if (nameError || emailError || messageError) {
       setStatus("error");
       setErrorMessage(nameError || emailError || messageError);
-      return;
+      return; // Berhenti di sini, jangan lanjut ke database
     }
 
+    // 3. KIRIM DATA KE SUPABASE
+    // Jika lolos cek bot dan validasi form, baru kita proses ke database
     setStatus("loading");
     setErrorMessage("");
-
     try {
-      const response = await fetch("/api/contact", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
-      });
+      const { error } = await supabase.from("messages").insert([
+        {
+          name: formData.name,
+          // Sesuaikan 'lastname' ini dengan nama kolom di database Supabase kamu.
+          // Jika di database tidak ada kolom lastname, kamu bisa gabungkan: name: `${formData.name} ${formData.lastName}`
+          lastname: formData.lastname,
+          email: formData.email,
+          message: formData.message,
+        },
+      ]);
 
-      const data = await response.json();
+      if (error) throw error; // Lempar ke catch jika Supabase menolak
 
-      if (response.ok) {
-        setStatus("success");
-        // Reset form setelah berhasil
-        setFormData({ name: "", lastName: "", email: "", message: "" });
-      } else {
-        // LANGKAH C: Tangkap Pesan Error dari Zod (Backend)
-        // Di sini API akan mengirim "Pesan minimal 10 karakter" jika lolos dari cek frontend
-        setStatus("error");
-        setErrorMessage(data.error || "Gagal mengirim pesan.");
-      }
-    } catch (error) {
+      // Jika berhasil:
+      setStatus("success");
+      setFormData({ name: "", lastname: "", email: "", message: "" }); // Kosongkan form
+      setTouched({ name: false, email: false, message: false }); // Reset status sentuhan
+
+      // Kembalikan ke tombol normal setelah 3 detik
+      setTimeout(() => setStatus("idle"), 3000);
+    } catch (error: any) {
+      console.error("Gagal mengirim:", error.message);
       setStatus("error");
-      setErrorMessage("Terjadi kesalahan koneksi ke server.");
+      setErrorMessage(
+        lang === "id"
+          ? "Gagal mengirim pesan, coba lagi nanti."
+          : "Failed to send message.",
+      );
     }
   };
 
@@ -209,8 +219,8 @@ export function Contact({ isDark, t, lang }: ContactProps) {
                 )}
               </div>
               <input
-                name="lastName"
-                value={formData.lastName}
+                name="lastname"
+                value={formData.lastname}
                 onChange={handleChange}
                 placeholder={t.formLastName}
                 className={`border rounded-2xl px-6 py-4 outline-none ${isDark ? "bg-white/5 border-white/10 text-white" : "bg-slate-50 border-slate-200"}`}
@@ -266,6 +276,13 @@ export function Contact({ isDark, t, lang }: ContactProps) {
                 )}
             </div>
 
+            <div
+              className={`text-right text-xs mt-1 ${formData.message.length < 10 ? "text-rose-500" : "text-slate-500"}`}
+            >
+              {formData.message.length} / 500{" "}
+              {lang === "id" ? "karakter" : "characters"}
+            </div>
+
             {/* INPUT JEBAKAN BOT (PENTING: Harus di dalam form) */}
             <input
               type="text"
@@ -278,8 +295,9 @@ export function Contact({ isDark, t, lang }: ContactProps) {
             />
 
             <button
-              disabled={status === "loading"}
-              className="w-full flex items-center justify-center gap-2 font-bold py-4 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white transition-all"
+              // Matikan tombol saat sedang loading atau saat baru saja sukses terkirim
+              disabled={status === "loading" || status === "success"}
+              className="w-full flex items-center justify-center gap-2 font-bold py-4 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white transition-all disabled:opacity-70 disabled:cursor-not-allowed"
             >
               {status === "loading" ? (
                 <>

@@ -3,6 +3,7 @@ import React from 'react'
 import { supabase } from '../lib/supabase'
 import { User } from '@supabase/supabase-js'
 import { motion, AnimatePresence } from 'motion/react'
+import { ReplyModal } from './ReplyModal'
 import { translateToIndonesian, translateArrayToIndonesian } from '../lib/translate'
 import {
   DndContext,
@@ -64,8 +65,9 @@ interface Project {
 }
 
 interface Message {
-  id?: string
+  id: string
   name: string
+  lastname: string
   email: string
   message: string
   is_read: boolean
@@ -925,78 +927,224 @@ function ProjectsManager() {
 }
 
 // ─── Messages Manager ─────────────────────────────────
-function MessagesManager() {
-  const [items, setItems] = useState<Message[]>([])
+const MessagesManager = () => {
+  // 1. STATE MANAGEMENT
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [selectedMessage, setSelectedMessage] = useState<Message | null>(null);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
-  useEffect(() => { fetchItems() }, [])
+  // 2. FUNGSI AMBIL DATA (FETCH)
+  const fetchMessages = async () => {
+    setIsLoading(true);
+    const { data, error } = await supabase
+      .from("messages")
+      .select("*")
+      .order("created_at", { ascending: false });
 
-  const fetchItems = async () => {
-    const { data } = await supabase.from('messages').select('*').order('created_at', { ascending: false })
-    if (data) setItems(data)
-  }
+    if (!error) setMessages(data || []);
+    setIsLoading(false);
+  };
 
-  const markRead = async (id: string) => {
-    await supabase.from('messages').update({ is_read: true }).eq('id', id)
-    fetchItems()
-  }
+  useEffect(() => { fetchMessages(); }, []);
 
-  const handleDelete = async (id: string) => {
-    if (confirm('Delete this message permanently?')) {
-      await supabase.from('messages').delete().eq('id', id)
-      fetchItems()
+  // 3. LOGIKA SELEKSI (CHECKBOX)
+  const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.checked) {
+      setSelectedIds(messages.map((msg) => msg.id));
+    } else {
+      setSelectedIds([]);
     }
+  };
+
+  const toggleSelect = (id: string) => {
+    setSelectedIds((prev) =>
+      prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]
+    );
+  };
+
+  // 4. LOGIKA PENGHAPUSAN (DELETE)
+  const handleDeleteSelected = async () => {
+    if (selectedIds.length === 0) return;
+    if (confirm(`Hapus ${selectedIds.length} pesan terpilih?`)) {
+      const { error } = await supabase
+        .from("messages")
+        .delete()
+        .in("id", selectedIds);
+      
+      if (!error) {
+        fetchMessages();
+        setSelectedIds([]);
+      }
+    }
+  };
+
+  // 5. TAMPILAN DETAIL PESAN (Body Email)
+  if (selectedMessage) {
+    return (
+      <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
+        <button 
+          onClick={() => setSelectedMessage(null)}
+          className="flex items-center gap-2 text-slate-400 hover:text-white transition-colors mb-4 group"
+        >
+          <span className="group-hover:-translate-x-1 transition-transform">←</span> Kembali ke Kotak Masuk
+        </button>
+
+        <div className="bg-slate-900 border border-white/5 rounded-3xl p-8 shadow-2xl relative">
+          <div className="border-b border-white/5 pb-6 mb-6">
+            <h2 className="text-2xl font-bold text-white mb-2">
+              {selectedMessage.name} {selectedMessage.lastname}
+            </h2>
+            <div className="flex justify-between items-center text-sm">
+              <span className="text-blue-400 font-medium">{selectedMessage.email}</span>
+              <span className="text-slate-500 tabular-nums">
+                {new Date(selectedMessage.created_at).toLocaleString('id-ID', {
+                  dateStyle: 'long',
+                  timeStyle: 'short'
+                })}
+              </span>
+            </div>
+          </div>
+          
+          <div className="text-slate-300 leading-relaxed whitespace-pre-wrap min-h-[200px] bg-slate-950/30 p-6 rounded-2xl border border-white/5">
+            {selectedMessage.message}
+          </div>
+
+          <div className="mt-8 pt-6 border-t border-white/5 flex gap-4">
+            <button 
+              onClick={() => setIsModalOpen(true)}
+              className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-xl text-sm font-bold shadow-lg shadow-blue-900/20 transition-all active:scale-95"
+            >
+              Balas Pesan
+            </button>
+          </div>
+        </div>
+
+        {/* MODAL BALAS PESAN */}
+        <ReplyModal 
+          isOpen={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+          recipientEmail={selectedMessage.email}
+          subject={`Re: Pesan dari ${selectedMessage.name}`}
+          onSuccess={() => setIsModalOpen(false)}
+        />
+      </div>
+    );
   }
 
+  // 6. TAMPILAN DAFTAR PESAN (Inbox List)
   return (
-    <div className="space-y-6">
-      <div className="flex items-center gap-4 mb-8">
-        <h2 className="text-3xl font-black text-white tracking-tighter uppercase">Inbound Transmission</h2>
-        <div className="h-px flex-1 bg-gradient-to-r from-white/10 to-transparent" />
+    <div className="flex flex-col h-full bg-[#020617] text-slate-200 rounded-3xl border border-white/5 overflow-hidden animate-in fade-in duration-500">
+      
+      {/* SEARCH BAR */}
+      <div className="p-4 border-b border-white/5 bg-white/[0.01]">
+        <div className="relative max-w-2xl mx-auto">
+          <input 
+            type="text" 
+            placeholder="Cari nama pengirim..." 
+            className="w-full bg-white/5 border border-white/10 rounded-full py-2.5 px-11 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all text-sm"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+          <span className="absolute left-4 top-3 opacity-40">🔍</span>
+        </div>
       </div>
 
-      {items.length === 0 && (
-        <div className="text-center py-20 bg-white/5 rounded-[2.5rem] border border-dashed border-white/10">
-          <MessageSquare className="mx-auto text-slate-700 mb-4" size={48} />
-          <p className="text-slate-500 font-bold uppercase tracking-widest text-sm">Silence in the comms channel.</p>
-        </div>
-      )}
-
-      {items.map(item => (
-        <motion.div 
-          key={item.id}
-          layout
-          className={`p-6 md:p-8 rounded-[2rem] border transition-all duration-500 shadow-xl relative overflow-hidden ${
-            item.is_read 
-              ? 'bg-slate-900/40 border-white/5 opacity-80' 
-              : 'bg-slate-900 border-blue-500/20 shadow-[0_0_30px_rgba(59,130,246,0.1)]'
-          }`}
-        >
-          {!item.is_read && <div className="absolute top-0 right-0 p-3"><div className="w-2 h-2 bg-blue-500 rounded-full shadow-[0_0_10px_rgba(59,130,246,1)] animate-pulse" /></div>}
+      {/* ACTION BAR */}
+      <div className="flex items-center gap-4 px-6 py-3 bg-white/[0.02] border-b border-white/5">
+        <div className="flex items-center gap-3">
+          <input 
+            type="checkbox" 
+            className="w-4 h-4 rounded border-white/20 bg-white/5 checked:bg-blue-600 transition-all cursor-pointer"
+            onChange={handleSelectAll}
+            checked={selectedIds.length === messages.length && messages.length > 0}
+          />
           
-          <div className="flex flex-col md:flex-row justify-between gap-4 mb-6">
-            <div>
-              <h3 className="text-xl font-black text-white tracking-tight leading-none mb-1">{item.name}</h3>
-              <p className="text-blue-500 text-xs font-mono font-bold tracking-tight">{item.email}</p>
+          {selectedIds.length > 0 && (
+            <div className="flex items-center gap-2 animate-in slide-in-from-left-2 duration-200">
+              <button 
+                onClick={handleDeleteSelected}
+                className="p-2 hover:bg-red-500/20 text-slate-400 hover:text-red-500 rounded-lg transition-colors" 
+                title="Hapus terpilih"
+              >
+                🗑️
+              </button>
             </div>
-            <div className="flex items-center gap-2 text-slate-500 text-[10px] font-black uppercase tracking-widest">
-              <Calendar size={12} />
-              {new Date(item.created_at).toLocaleString('en-US', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
-            </div>
-          </div>
+          )}
+        </div>
 
-          <div className="bg-white/5 p-6 rounded-2xl border border-white/5 text-slate-200 text-sm leading-relaxed mb-6 font-medium italic">
-            "{item.message}"
-          </div>
+        <div className="h-4 w-[1px] bg-white/10 mx-1"></div>
+        
+        <button 
+          onClick={fetchMessages} 
+          className="p-2 hover:bg-white/10 rounded-lg text-slate-400 hover:text-white transition-all"
+          title="Segarkan"
+        >
+          🔄
+        </button>
+      </div>
 
-          <div className="flex gap-3">
-            {!item.is_read && <AdminBtn variant="primary" onClick={() => markRead(item.id!)}><Check size={14} /> Mark as Read</AdminBtn>}
-            <AdminBtn variant="danger" onClick={() => handleDelete(item.id!)}><Trash2 size={14} /> Purge</AdminBtn>
+      {/* LIST PESAN */}
+      <div className="flex-1 overflow-y-auto custom-scrollbar">
+        {isLoading ? (
+          <div className="p-20 text-center text-slate-500 flex flex-col items-center gap-3">
+            <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+            <p className="text-sm">Menyelaraskan kotak masuk...</p>
           </div>
-        </motion.div>
-      ))}
+        ) : messages.length === 0 ? (
+          <div className="p-20 text-center text-slate-500">
+            <p className="text-sm font-medium">Kotak masuk kosong.</p>
+          </div>
+        ) : (
+          <div className="divide-y divide-white/5">
+            {messages
+              .filter(m => m.name.toLowerCase().includes(searchQuery.toLowerCase()))
+              .map((msg) => (
+              <div 
+                key={msg.id}
+                onClick={() => setSelectedMessage(msg)}
+                className={`flex items-center gap-4 px-6 py-3 hover:bg-white/[0.04] cursor-pointer group transition-all border-l-2 ${
+                  selectedIds.includes(msg.id) ? "bg-blue-500/10 border-blue-500" : "border-transparent"
+                }`}
+              >
+                <input 
+                  type="checkbox" 
+                  className="w-4 h-4 rounded border-white/20 bg-white/5 checked:bg-blue-600 transition-all cursor-pointer"
+                  checked={selectedIds.includes(msg.id)}
+                  onClick={(e) => e.stopPropagation()} 
+                  onChange={() => toggleSelect(msg.id)}
+                />
+
+                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-600/20 to-indigo-600/20 text-blue-400 flex items-center justify-center text-xs font-bold shrink-0 border border-blue-500/10 uppercase">
+                  {msg.name[0]}
+                </div>
+
+                <span className="w-40 font-semibold truncate text-slate-200 text-sm">
+                  {msg.name}
+                </span>
+
+                <div className="flex-1 min-w-0 flex items-center gap-2">
+                  <span className="text-sm text-slate-300 font-medium truncate shrink-0">
+                    {msg.lastname || "Pesan Baru"}
+                  </span>
+                  <span className="text-sm text-slate-500 truncate opacity-60">
+                    — {msg.message}
+                  </span>
+                </div>
+
+                <span className="text-[11px] font-medium text-slate-500 whitespace-nowrap tabular-nums">
+                  {new Date(msg.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
-  )
-}
+  );
+};
 
 // ─── Certifications Manager ───────────────────────────
 function SortableCertCard({
@@ -1484,8 +1632,7 @@ function CertificationsManager() {
 
   const categoryOptions = dbCategories.map((cat) => ({
     value: cat.id,
-    label: cat.name,
-    emoji: iconEmoji[cat.icon] || "📄",
+    label: `${iconEmoji[cat.icon] || "📄"} ${cat.name}`,
   }));
 
   // Bulan untuk dropdown
@@ -1698,43 +1845,23 @@ function CertificationsManager() {
             <AnimatePresence>
               {isCatDropdownOpen && (
                 <motion.div
-                  initial={{ opacity: 0, y: -8 }}
+                  initial={{ opacity: 1, y: -10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -8 }}
-                  transition={{ duration: 0.15 }}
-                  className="absolute right-0 z-20 mt-2 w-72 rounded-2xl border border-white/10 bg-slate-950 shadow-[0_20px_60px_rgba(0,0,0,0.7)] overflow-hidden"
+                  exit={{ opacity: 0, y: -10 }}
+                  className="absolute z-10 mt-2 w-full bg-[#050a18] border border-blue-500/50 rounded-2xl py-2"
                 >
-                  <div className="py-1.5 max-h-64 overflow-y-auto">
-                    {categoryOptions.map((opt) => {
-                      const isSelected = form.category_id === opt.value;
-                      return (
-                        <button
-                          key={opt.value}
-                          type="button"
-                          onClick={() => {
-                            setForm({ ...form, category_id: opt.value });
-                            setIsCatDropdownOpen(false);
-                          }}
-                          className={[
-                            "w-full flex items-center gap-3 px-4 py-2.5 text-sm text-left transition-colors duration-150",
-                            isSelected
-                              ? "bg-blue-500/20 text-blue-300"
-                              : "text-slate-300 hover:bg-slate-800 hover:text-white",
-                          ].join(" ")}
-                        >
-                          <span className="shrink-0 w-5 text-center text-base">
-                            {opt.emoji}
-                          </span>
-                          <span className="flex-1 truncate">
-                            {opt.label}
-                          </span>
-                          {isSelected && (
-                            <Check size={13} className="shrink-0 text-blue-400" />
-                          )}
-                        </button>
-                      );
-                    })}
-                  </div>
+                  {categoryOptions.map((opt) => (
+                    <button
+                      key={opt.value}
+                      onClick={() => {
+                        setForm({ ...form, category_id: opt.value });
+                        setIsCatDropdownOpen(false);
+                      }}
+                      className="w-full text-left px-5 py-2 text-slate-300 hover:bg-blue-500/10 transition-all"
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
                 </motion.div>
               )}
             </AnimatePresence>
@@ -2089,40 +2216,55 @@ function CertificationsManager() {
             <AnimatePresence>
               {isFilterDropdownOpen && (
                 <motion.div
-                  initial={{ opacity: 0, scale: 0.9, y: 10 }}
-                  animate={{ opacity: 1, scale: 1, y: 0 }}
-                  exit={{ opacity: 0, scale: 0.9, y: 10 }}
-                  className="absolute right-0 mt-3 w-56 bg-slate-950 border border-white/10 rounded-2xl shadow-2xl z-[9999] py-2 backdrop-blur-xl"
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  className="absolute right-0 z-20 mt-2 w-64 bg-[#050a18] border border-blue-500/50 rounded-2xl py-2 shadow-2xl overflow-hidden"
                 >
+                  {/* Opsi All Categories */}
                   <button
-                    type="button"
                     onClick={() => {
                       setFilterCategory("all");
                       setIsFilterDropdownOpen(false);
                     }}
-                    className={`w-full px-5 py-2.5 text-left text-sm flex items-center justify-between ${filterCategory === "all" ? "text-blue-400 bg-blue-500/10" : "text-slate-400"}`}
+                    className={`w-full text-left px-5 py-3 transition-all flex items-center justify-between ${
+                      filterCategory === "all"
+                        ? "bg-blue-500/20 text-blue-400"
+                        : "text-slate-300 hover:bg-white/5"
+                    }`}
                   >
-                    All Categories
+                    <span className="text-xs font-bold uppercase tracking-wider">All Categories</span>
                     {filterCategory === "all" && <Check size={14} />}
                   </button>
-                  <div className="h-[1px] bg-white/5 my-1"></div>
-                  {dbCategories.map((cat) => (
-                    <button
-                      key={cat.id}
-                      type="button"
-                      onClick={() => {
-                        setFilterCategory(cat.id);
-                        setIsFilterDropdownOpen(false);
-                      }}
-                      className={`w-full px-5 py-2.5 text-left text-sm flex items-center justify-between ${filterCategory === cat.id ? "text-blue-400 bg-blue-500/10" : "text-slate-400"}`}
-                    >
-                      <span className="flex items-center gap-2">
-                        <span>{iconEmoji[cat.icon] || "📄"}</span>
-                        <span className="truncate">{cat.name}</span>
-                      </span>
-                      {filterCategory === cat.id && <Check size={14} />}
-                    </button>
-                  ))}
+
+                  <div className="h-[1px] bg-white/5 my-1" /> {/* Garis pemisah halus */}
+
+                  {/* List Kategori dari DB */}
+                  <div className="max-h-64 overflow-y-auto custom-scrollbar">
+                    {dbCategories.map((cat) => (
+                      <button
+                        key={cat.id}
+                        onClick={() => {
+                          setFilterCategory(cat.id);
+                          setIsFilterDropdownOpen(false);
+                        }}
+                        className={`w-full text-left px-5 py-3 transition-all flex items-center gap-3 ${
+                          filterCategory === cat.id
+                            ? "bg-blue-500/20 text-blue-400 font-bold"
+                            : "text-slate-300 hover:bg-white/10" 
+                        }`}
+                      >
+                        <span className="text-lg">{iconEmoji[cat.icon] || "📄"}</span>
+                        <span className="text-sm truncate pr-2">{cat.name}</span>
+                        
+                        {filterCategory === cat.id && (
+                          <div className="ml-auto">
+                            <Check size={14} />
+                          </div>
+                        )}
+                      </button>
+                    ))}
+                  </div>
                 </motion.div>
               )}
             </AnimatePresence>
