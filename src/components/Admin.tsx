@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useState, useEffect, useRef } from "react";
 import React from 'react'
 import { supabase } from '../lib/supabase'
 import { User } from '@supabase/supabase-js'
@@ -40,6 +40,7 @@ import {
   Building2,
   User as UserIcon,
   Tag,
+  ListFilter,
   Filter,
   ChevronDown,
   Eye,
@@ -234,7 +235,7 @@ function AdminCard({ children, title, icon: Icon }: { children: React.ReactNode,
     <motion.div 
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="bg-slate-900/40 backdrop-blur-xl border border-white/10 rounded-[2.5rem] overflow-hidden p-6 md:p-8 shadow-2xl relative group"
+      className="bg-slate-900/40 backdrop-blur-xl border border-white/10 rounded-[2.5rem] overflow-visible p-6 md:p-8 shadow-2xl relative group"
     >
       <div className="absolute inset-0 bg-gradient-to-br from-blue-600/[0.03] to-transparent pointer-events-none" />
       <div className="flex items-center gap-3 mb-8 relative z-10">
@@ -1239,6 +1240,9 @@ function CertificationsManager() {
   const [isExpiryMonthOpen, setIsExpiryMonthOpen] = useState(false);
   const [isExpiryYearOpen, setIsExpiryYearOpen] = useState(false);
 
+  const [isFilterDropdownOpen, setIsFilterDropdownOpen] = useState(false);
+  const filterRef = useRef<HTMLDivElement>(null);
+
   const sensors = useSensors(
     useSensor(PointerSensor),
     useSensor(KeyboardSensor, {
@@ -1249,6 +1253,15 @@ function CertificationsManager() {
   useEffect(() => {
     fetchItems();
     fetchCategories();
+    const handleClickOutside = (event: MouseEvent) => {
+      // Jika klik terjadi DI LUAR elemen yang diref (filterRef), maka tutup dropdown
+      if (filterRef.current && !filterRef.current.contains(event.target as Node)) {
+        setIsFilterDropdownOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
   const fetchCategories = async () => {
@@ -1471,7 +1484,8 @@ function CertificationsManager() {
 
   const categoryOptions = dbCategories.map((cat) => ({
     value: cat.id,
-    label: `${iconEmoji[cat.icon] || "📄"} ${cat.name}`,
+    label: cat.name,
+    emoji: iconEmoji[cat.icon] || "📄",
   }));
 
   // Bulan untuk dropdown
@@ -1684,29 +1698,49 @@ function CertificationsManager() {
             <AnimatePresence>
               {isCatDropdownOpen && (
                 <motion.div
-                  initial={{ opacity: 1, y: -10 }}
+                  initial={{ opacity: 0, y: -8 }}
                   animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -10 }}
-                  className="absolute z-10 mt-2 w-full bg-[#050a18] border border-blue-500/50 rounded-2xl py-2"
+                  exit={{ opacity: 0, y: -8 }}
+                  transition={{ duration: 0.15 }}
+                  className="absolute right-0 z-20 mt-2 w-72 rounded-2xl border border-white/10 bg-slate-950 shadow-[0_20px_60px_rgba(0,0,0,0.7)] overflow-hidden"
                 >
-                  {categoryOptions.map((opt) => (
-                    <button
-                      key={opt.value}
-                      onClick={() => {
-                        setForm({ ...form, category_id: opt.value });
-                        setIsCatDropdownOpen(false);
-                      }}
-                      className="w-full text-left px-5 py-2 text-slate-300 hover:bg-blue-500/10 transition-all"
-                    >
-                      {opt.label}
-                    </button>
-                  ))}
+                  <div className="py-1.5 max-h-64 overflow-y-auto">
+                    {categoryOptions.map((opt) => {
+                      const isSelected = form.category_id === opt.value;
+                      return (
+                        <button
+                          key={opt.value}
+                          type="button"
+                          onClick={() => {
+                            setForm({ ...form, category_id: opt.value });
+                            setIsCatDropdownOpen(false);
+                          }}
+                          className={[
+                            "w-full flex items-center gap-3 px-4 py-2.5 text-sm text-left transition-colors duration-150",
+                            isSelected
+                              ? "bg-blue-500/20 text-blue-300"
+                              : "text-slate-300 hover:bg-slate-800 hover:text-white",
+                          ].join(" ")}
+                        >
+                          <span className="shrink-0 w-5 text-center text-base">
+                            {opt.emoji}
+                          </span>
+                          <span className="flex-1 truncate">
+                            {opt.label}
+                          </span>
+                          {isSelected && (
+                            <Check size={13} className="shrink-0 text-blue-400" />
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
                 </motion.div>
               )}
             </AnimatePresence>
           </div>
 
-          {/* ── Baris 2: Judul EN & ID (✅ FIX 2: grid sejajar dengan min-h label) ── */}
+          {/* ── Baris 2: Judul EN & ID ── */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6">
             <div>
               <div className="min-h-[32px] flex items-end mb-2 px-2">
@@ -2026,87 +2060,100 @@ function CertificationsManager() {
         </div>
       </AdminCard>
 
-      {/* ── Filter + Tombol Reorder ── */}
-      <div className="flex flex-col gap-4">
-        {/* Baris atas: label + Edit Order button */}
-        <div className="flex items-center justify-between">
-          <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">
-            Filter by Category
+      {/* ── Filter & Reorder Controls ── */}
+      <div className="relative z-40 flex items-center justify-between bg-slate-900/40 p-4 rounded-3xl border border-white/5 backdrop-blur-md">
+        <div className="flex items-center gap-4">
+          <span className="text-[10px] font-black uppercase tracking-widest text-slate-500 px-2">
+            Certificates ({filteredItems.length})
           </span>
-          <div className="flex gap-3 shrink-0">
-            {isReordering ? (
-              <>
-                {pendingOrder.length > 0 && (
-                  <AdminBtn onClick={() => setShowConfirm(true)}>
-                    <Check size={16} /> Save Order
-                  </AdminBtn>
-                )}
-                <AdminBtn variant="secondary" onClick={handleDiscardOrder}>
-                  <X size={16} /> Cancel
-                </AdminBtn>
-              </>
-            ) : (
-              <AdminBtn
-                variant="secondary"
-                onClick={() => setIsReordering(true)}
-              >
-                <svg
-                  width="16"
-                  height="16"
-                  viewBox="0 0 16 16"
-                  fill="currentColor"
-                >
-                  <circle cx="5" cy="4" r="1.5" />
-                  <circle cx="11" cy="4" r="1.5" />
-                  <circle cx="5" cy="8" r="1.5" />
-                  <circle cx="11" cy="8" r="1.5" />
-                  <circle cx="5" cy="12" r="1.5" />
-                  <circle cx="11" cy="12" r="1.5" />
-                </svg>
-                Edit Order
-              </AdminBtn>
-            )}
-          </div>
         </div>
 
-        {/* Baris bawah: filter pills */}
-        <div className="flex flex-wrap gap-2">
-          <button
-            onClick={() => setFilterCategory("all")}
-            className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border ${
-              filterCategory === "all"
-                ? "bg-blue-600 border-blue-500 text-white shadow-[0_0_15px_rgba(37,99,235,0.3)]"
-                : "bg-white/5 border-white/10 text-slate-400 hover:text-white hover:border-white/20 hover:bg-white/10"
-            }`}
-          >
-            All ({items.length})
-          </button>
-          {categoryOptions.map((opt: any) => {
-            const count = items.filter(
-              (i) => i.category_id === opt.value,
-            ).length;
-            const isActive = filterCategory === opt.value;
-            return (
-              <button
-                key={opt.value}
-                onClick={() => setFilterCategory(opt.value)}
-                className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border flex items-center gap-1.5 ${
-                  isActive
-                    ? "bg-blue-600 border-blue-500 text-white shadow-[0_0_15px_rgba(37,99,235,0.3)]"
-                    : "bg-white/5 border-white/10 text-slate-400 hover:text-white hover:border-white/20 hover:bg-white/10"
-                }`}
-              >
-                <span>{opt.label}</span>
-                <span
-                  className={`px-1.5 py-0.5 rounded-md text-[9px] font-black ${
-                    isActive ? "bg-white/20" : "bg-white/5"
-                  }`}
+        <div className="flex items-center gap-2">
+          {/* DROPDOWN FILTER */}
+          <div className="relative z-50" ref={filterRef}>
+            <button
+              type="button"
+              onClick={() => setIsFilterDropdownOpen(!isFilterDropdownOpen)}
+              className={`p-2.5 rounded-xl border transition-all ${
+                filterCategory !== "all"
+                  ? "bg-blue-500/20 border-blue-500/50 text-blue-400"
+                  : "bg-white/5 border-white/10 text-slate-400 hover:text-white"
+              }`}
+            >
+              <ListFilter size={20} />
+              {filterCategory !== "all" && (
+                <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-blue-500 rounded-full border-2 border-[#050a18]"></span>
+              )}
+            </button>
+
+            <AnimatePresence>
+              {isFilterDropdownOpen && (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.9, y: 10 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.9, y: 10 }}
+                  className="absolute right-0 mt-3 w-56 bg-slate-950 border border-white/10 rounded-2xl shadow-2xl z-[9999] py-2 backdrop-blur-xl"
                 >
-                  {count}
-                </span>
-              </button>
-            );
-          })}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setFilterCategory("all");
+                      setIsFilterDropdownOpen(false);
+                    }}
+                    className={`w-full px-5 py-2.5 text-left text-sm flex items-center justify-between ${filterCategory === "all" ? "text-blue-400 bg-blue-500/10" : "text-slate-400"}`}
+                  >
+                    All Categories
+                    {filterCategory === "all" && <Check size={14} />}
+                  </button>
+                  <div className="h-[1px] bg-white/5 my-1"></div>
+                  {dbCategories.map((cat) => (
+                    <button
+                      key={cat.id}
+                      type="button"
+                      onClick={() => {
+                        setFilterCategory(cat.id);
+                        setIsFilterDropdownOpen(false);
+                      }}
+                      className={`w-full px-5 py-2.5 text-left text-sm flex items-center justify-between ${filterCategory === cat.id ? "text-blue-400 bg-blue-500/10" : "text-slate-400"}`}
+                    >
+                      <span className="flex items-center gap-2">
+                        <span>{iconEmoji[cat.icon] || "📄"}</span>
+                        <span className="truncate">{cat.name}</span>
+                      </span>
+                      {filterCategory === cat.id && <Check size={14} />}
+                    </button>
+                  ))}
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+
+          {/* TOMBOL REORDER */}
+          {isReordering ? (
+            <div className="flex gap-2">
+              <AdminBtn onClick={() => setShowConfirm(true)} size="normal">
+                <Check size={16} /> Save
+              </AdminBtn>
+              <AdminBtn
+                variant="secondary"
+                onClick={() => {
+                  fetchItems();
+                  setIsReordering(false);
+                }}
+                size="normal"
+              >
+                <X size={16} />
+              </AdminBtn>
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setIsReordering(true)}
+              className="p-2.5 rounded-xl bg-white/5 border border-white/10 text-slate-400 hover:text-white transition-all"
+            >
+              <GripVertical size={20} />
+            </button>
+          )}
         </div>
       </div>
 
