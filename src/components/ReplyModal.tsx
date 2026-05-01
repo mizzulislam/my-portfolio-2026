@@ -34,7 +34,7 @@ export const ReplyModal = ({
   if (!isOpen) return null;
 
   const handleSend = async () => {
-    if (!replyText.trim()) return alert("Pesan tidak boleh kosong!");
+    if (!replyText.trim()) return toast.error("Pesan tidak boleh kosong!");
     setIsSending(true);
 
     try {
