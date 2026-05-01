@@ -10,46 +10,70 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   const { to, subject, replyText } = req.body;
+  const timestamp = new Intl.DateTimeFormat("en-US", {
+    dateStyle: "long",
+    timeStyle: "short",
+  }).format(new Date());
 
   try {
     // 2. Kirim Email
     const { data, error } = await resend.emails.send({
-      from: "Muhammad Izzul Islam <onboarding@resend.dev>",
+      from: "Muhammad Izzul Islam <admin@mizzulislam.site>",
       to: [to],
       subject: subject || "Balasan Pesan",
       html: `
-      <div style="font-family: 'Inter', system-ui, sans-serif; background-color: #020617; min-height: 100vh; padding: 32px 16px; color: #e2e8f0;">
-        <div style="max-width: 650px; margin: 0 auto; background: linear-gradient(180deg, rgba(15,23,42,0.95), rgba(15,23,42,0.98)); border: 1px solid rgba(255,255,255,0.08); border-radius: 28px; overflow: hidden; box-shadow: 0 30px 80px rgba(0, 0, 0, 0.35);">
-          <div style="background: radial-gradient(circle at top right, rgba(56,189,248,0.16), transparent 45%), linear-gradient(180deg, rgba(56,189,248,0.12), rgba(15,23,42,0.95)); padding: 36px 28px; text-align: center;">
-            <p style="margin:0; font-size: 12px; letter-spacing: 0.18em; color: #38bdf8; text-transform: uppercase;">Web Porto Notification</p>
-            <h1 style="margin: 16px 0 0; font-size: 30px; line-height: 1.1; font-weight: 900; color: #ffffff;">Pesan Balasan dari Portfolio</h1>
-            <p style="margin: 12px auto 0; font-size: 14px; color: #cbd5e1; max-width: 520px;">Balasan Anda dikirim langsung dari panel admin menggunakan layanan Resend.</p>
-          </div>
-
-          <div style="padding: 32px 28px;">
-            <div style="display: flex; flex-wrap: wrap; gap: 16px; margin-bottom: 28px;">
-              <div style="flex: 1 1 220px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 18px; padding: 18px; min-width: 160px;">
-                <p style="margin:0 0 8px; font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: #94a3b8;">To</p>
-                <p style="margin:0; font-size: 14px; color: #ffffff;">${to}</p>
-              </div>
-              <div style="flex: 1 1 220px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 18px; padding: 18px; min-width: 160px;">
-                <p style="margin:0 0 8px; font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: #94a3b8;">Subject</p>
-                <p style="margin:0; font-size: 14px; color: #ffffff;">${subject || "Balasan Pesan"}</p>
+        <!DOCTYPE html>
+        <html>
+          <head>
+            <style>
+              .container { font-family: sans-serif; background-color: #0f172a; padding: 40px 20px; color: #ffffff; }
+              .card { max-width: 600px; margin: 0 auto; background-color: #1e293b; border-radius: 24px; overflow: hidden; border: 1px solid #334155; }
+              .header { background: linear-gradient(to bottom, #3b82f6, #1d4ed8); padding: 40px; text-align: center; }
+              .logo { width: 120px; margin-bottom: 20px; }
+              .content { padding: 40px; }
+              .info-grid { display: table; width: 100%; margin-bottom: 30px; }
+              .info-box { display: table-cell; background: #0f172a; border: 1px solid #334155; border-radius: 16px; padding: 15px; width: 48%; }
+              .label { font-size: 10px; text-transform: uppercase; color: #94a3b8; letter-spacing: 1px; margin-bottom: 5px; }
+              .value { font-size: 14px; font-weight: bold; color: #f8fafc; }
+              .message-body { background: #0f172a; border-radius: 16px; padding: 25px; border: 1px solid #334155; line-height: 1.6; color: #cbd5e1; }
+              .footer { padding: 20px; text-align: center; font-size: 12px; color: #64748b; }
+            </style>
+          </head>
+          <body>
+            <div class="container">
+              <div class="card">
+                <div class="header">
+                  <!-- Pastikan URL Logo kamu sudah online/public -->
+                  <img src="https://mizzulislam.site/logo.png" alt="Logo" class="logo" />
+                  <h1 style="margin:0; font-size: 28px;">New Message Request</h1>
+                  <p style="margin:10px 0 0; opacity: 0.8;">Someone Just Messaged You</p>
+                </div>
+                <div class="content">
+                  <div class="info-grid">
+                    <div class="info-box">
+                      <div class="label">Sender Name</div>
+                      <div class="value">Muhammad Izzul Islam</div>
+                    </div>
+                    <div style="display: table-cell; width: 4%;"></div>
+                    <div class="info-box">
+                      <div class="label">Time Stamp</div>
+                      <div class="value">${timestamp}</div>
+                    </div>
+                  </div>
+                  <div style="margin-top: 20px;">
+                    <div class="label" style="margin-bottom: 10px;">Message Content</div>
+                    <div class="message-body">${replyText}</div>
+                  </div>
+                </div>
+                <div class="footer">
+                  <p>© 2026 Muhammad Izzul Islam. All Rights Reserved.</p>
+                  <p>This is an automated notification from Izzul's Portfolio CRM.</p>
+                </div>
               </div>
             </div>
-
-            <div style="background: #111827; border: 1px solid rgba(255,255,255,0.08); border-radius: 24px; padding: 28px; color: #cbd5e1; line-height: 1.75;">
-              <p style="margin: 0 0 14px; font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase; color: #94a3b8;">Isi Balasan</p>
-              <div style="font-size: 15px; white-space: pre-wrap;">${replyText}</div>
-            </div>
-          </div>
-
-          <div style="padding: 0 28px 32px; text-align: center; border-top: 1px solid rgba(255,255,255,0.06);">
-            <p style="margin: 0; font-size: 12px; color: #94a3b8;">© 2026 Muhammad Izzul Islam • Sent via Web Porto Admin</p>
-          </div>
-        </div>
-      </div>
-    `,
+          </body>
+        </html>
+      `,
     });
 
     if (error) {

@@ -48,13 +48,17 @@ export const ReplyModal = ({
         }),
       });
 
+      // Ambil data respon di sini agar bisa digunakan di if dan else
       const responseData = await response.json();
 
       if (response.ok) {
         toast.success("Email balasan berhasil dikirim!");
         setReplyText("");
         onSuccess();
-        onClose();
+        // Jeda agar user sempat melihat toast sukses
+        setTimeout(() => {
+          onClose();
+        }, 500);
       } else {
         toast.error(
           `Gagal: ${responseData.error || "Terjadi kesalahan pada server"}`,
