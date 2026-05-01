@@ -1,10 +1,10 @@
 import { useState, useEffect, useRef } from "react";
 import React from "react";
-import { supabase } from "../../lib/supabase";
+import { supabase } from "../../../lib/supabase";
 import { motion, AnimatePresence } from "motion/react";
-import { Project } from "../../types";
-import { translateToIndonesian } from "../../lib/translate";
-import { translateArrayToIndonesian } from "../../lib/translate";
+import { Project } from "../../../types";
+import { translateToIndonesian } from "../../../lib/translate";
+import { translateArrayToIndonesian } from "../../../lib/translate";
 import {
   DndContext,
   closestCenter,
@@ -42,7 +42,7 @@ import {
   AdminTextArea,
   AdminSelect,
   ImageUpload,
-} from "./AdminSharedUI";
+} from "../AdminSharedUI";
 
 function SortableCard({
   item,
