@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Mail, MessageCircle, Send, Loader2, CheckCircle } from "lucide-react";
-import { SectionHeader } from "../UIComponents";
+import { SectionHeader } from "../ui";
 import { SectionProps } from "../../types";
 import { supabase } from "../../lib/supabase";
 

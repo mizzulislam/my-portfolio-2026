@@ -8,7 +8,7 @@ import {
   Youtube,
   Github,
 } from "lucide-react";
-import { InteractiveGrid } from "../UIComponents";
+import { InteractiveGrid } from "../ui";
 import { AIRobot } from "../Visuals";
 import { SectionProps } from "../../types";
 

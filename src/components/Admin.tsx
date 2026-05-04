@@ -7,6 +7,7 @@ import CertificateManager from "./admin/managers/CertificateManager";
 import ExperienceManager from "./admin/managers/ExperienceManager";
 import ProjectManager from "./admin/managers/ProjectManager";
 import SkillManager from "./admin/managers/SkillManager";
+import AboutPhotoManager from "./admin/managers/AboutPhotoManager";
 import MessageManager from "./admin/managers/messagemanager";
 import AdminLayout from "./admin/AdminLayout";
 import { User as UserIcon } from "lucide-react";
@@ -87,6 +88,7 @@ export default function Admin() {
           {activeMenu === "certifications" && <CertificateManager />}
           {activeMenu === "experience" && <ExperienceManager />}
           {activeMenu === "skills" && <SkillManager />}
+          {activeMenu === "about" && <AboutPhotoManager />}
         </motion.div>
       </AnimatePresence>
     </AdminLayout>

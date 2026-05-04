@@ -1,10 +1,12 @@
 import { useState, useEffect, useRef } from "react";
 import React from "react";
-import { supabase } from "../../../lib/supabase";
 import { motion, AnimatePresence } from "motion/react";
-import { Experience } from "../../../types";
-import { translateToIndonesian } from "../../../lib/translate";
-import { translateArrayToIndonesian } from "../../../lib/translate";
+import { Experience } from "@/src/types/experience";
+import { translateToIndonesian } from "@/src/lib/translate";
+import { translateArrayToIndonesian } from "@/src/lib/translate";
+import { toast } from "react-hot-toast";
+import { experienceApi } from "@/src/lib/api/experience";
+import { useExperience } from "@/src/hooks/useExperience";
 import {
   DndContext,
   closestCenter,
@@ -35,7 +37,7 @@ import {
   Eye,
   GripVertical,
   Briefcase,
-  Building2
+  Building2,
 } from "lucide-react";
 import {
   AdminCard,
@@ -160,11 +162,11 @@ function SortableExperienceCard({
   );
 }
 export default function ExperienceManager() {
+  const { items, setItems, isLoading, fetchItems } = useExperience();
   const [isReordering, setIsReordering] = useState(false);
   const [pendingOrder, setPendingOrder] = useState<Experience[]>([]);
   const [showConfirm, setShowConfirm] = useState(false);
   const [dragSuccess, setDragSuccess] = useState(false);
-  const [items, setItems] = useState<Experience[]>([]);
   const [form, setForm] = useState<Experience>({
     company: "",
     role: "",
@@ -178,6 +180,7 @@ export default function ExperienceManager() {
     company_id: "",
     location_id: "",
     details_id: [],
+    order: 0,
   });
   const [editId, setEditId] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -197,20 +200,25 @@ export default function ExperienceManager() {
     setPendingOrder(newItems);
     setItems(newItems);
   };
+
   const handleConfirmOrder = async () => {
-    await Promise.all(
-      pendingOrder.map((item, index) =>
-        supabase
-          .from("experience")
-          .update({ order: index + 1 })
-          .eq("id", item.id!),
-      ),
-    );
-    setPendingOrder([]);
-    setShowConfirm(false);
-    setIsReordering(false);
-    setDragSuccess(true);
-    setTimeout(() => setDragSuccess(false), 3000);
+    try {
+      await Promise.all(
+        pendingOrder.map((item, index) =>
+          experienceApi.updateOrder(item.id!, index + 1)
+        ),
+      );
+      setPendingOrder([]);
+      setShowConfirm(false);
+      setIsReordering(false);
+      setDragSuccess(true);
+      setTimeout(() => setDragSuccess(false), 3000);
+      toast.success("Urutan berhasil diperbarui! 🚀");
+      fetchItems();
+    } catch (err) {
+      console.error(err);
+      toast.error("Gagal memperbarui urutan");
+    }
   };
 
   const handleCancelOrder = () => setShowConfirm(false);
@@ -221,19 +229,28 @@ export default function ExperienceManager() {
     setIsReordering(false);
   };
 
-  useEffect(() => {
-    fetchItems();
-  }, []);
-
-  const fetchItems = async () => {
-    const { data } = await supabase
-      .from("experience")
-      .select("*")
-      .order("order", { ascending: true });
-    if (data) setItems(data);
+  const resetForm = () => {
+    setForm({
+      company: "",
+      role: "",
+      type: "work",
+      start_date: "",
+      end_date: "",
+      location: "",
+      logo_url: "",
+      details: [],
+      role_id: "",
+      company_id: "",
+      location_id: "",
+      details_id: [],
+      order: 0,
+    });
+    setEditId(null);
   };
 
   const handleSave = async () => {
+    if (!form.role || !form.company)
+      return toast.error("Role dan Company wajib diisi");
     setIsSubmitting(true);
     try {
       const [role_id, company_id, details_id] = await Promise.all([
@@ -245,26 +262,22 @@ export default function ExperienceManager() {
       const dataToSave = { ...form, role_id, company_id, details_id };
 
       if (editId) {
-        await supabase.from("experience").update(dataToSave).eq("id", editId);
+        // Zul, pastikan di src/lib/api/experience.ts kamu sudah menambahkan fungsi update ya!
+        await experienceApi.update(editId, dataToSave);
+        toast.success("Perubahan berhasil disimpan! ✅");
       } else {
-        await supabase.from("experience").insert(dataToSave);
+        const maxOrder =
+          items.length > 0
+            ? Math.max(...items.map((i) => i.order || 0)) + 1
+            : 1;
+        await experienceApi.create({ ...dataToSave, order: maxOrder });
+        toast.success("Pengalaman baru ditambahkan");
       }
-      setForm({
-        company: "",
-        role: "",
-        type: "work",
-        start_date: "",
-        end_date: "",
-        location: "",
-        logo_url: "",
-        details: [],
-        role_id: "",
-        company_id: "",
-        location_id: "",
-        details_id: [],
-      });
-      setEditId(null);
+      resetForm();
       fetchItems();
+    } catch (err) {
+      console.error(err);
+      toast.error("Gagal menyimpan data");
     } finally {
       setIsSubmitting(false);
     }
@@ -276,8 +289,13 @@ export default function ExperienceManager() {
   };
   const handleDelete = async (id: string) => {
     if (confirm("Delete this experience entry?")) {
-      await supabase.from("experience").delete().eq("id", id);
-      fetchItems();
+      try {
+        await experienceApi.delete(id);
+        toast.success("Pengalaman berhasil dihapus");
+        fetchItems();
+      } catch (err) {
+        toast.error("Gagal menghapus data");
+      }
     }
   };
 

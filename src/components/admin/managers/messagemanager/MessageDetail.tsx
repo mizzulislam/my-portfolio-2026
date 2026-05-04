@@ -1,7 +1,7 @@
 import React from "react";
 import { motion } from "motion/react";
 import { ChevronLeft, Mail, Calendar, Send, Trash2 } from "lucide-react";
-import { Message } from "../../../../types";
+import { Message } from "@/src/types/message";
 
 // Kita definisikan apa saja yang dibutuhkan komponen ini dari luar
 interface MessageDetailProps {

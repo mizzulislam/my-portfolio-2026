@@ -8,6 +8,7 @@ import {
   Coins,
   TrendingUp,
 } from "lucide-react";
+import { useAboutPhotos } from "@/src/hooks/useAboutPhotos";
 
 function useWindowWidth() {
   const [width, setWidth] = useState(
@@ -27,11 +28,13 @@ export function PhotoCarousel({ isDark }: { isDark: boolean }) {
   const [[page, direction], setPage] = useState([0, 0]);
   const [viewMode, setViewMode] = useState("carousel");
   const windowWidth = useWindowWidth();
-  const photos = [
+  const { items: aboutPhotos } = useAboutPhotos();
+
+  const fallbackPhotos = [
     {
       id: 1,
       src: "/assets/portfolio/izzul-1.webp",
-      alt: "Izzul grabbing camera",
+      alt: "Izzul with colleagues",
     },
     {
       id: 2,
@@ -41,12 +44,12 @@ export function PhotoCarousel({ isDark }: { isDark: boolean }) {
     {
       id: 3,
       src: "/assets/portfolio/izzul-3.webp",
-      alt: "Izzul with colleagues",
+      alt: "MyTax System Presentation",
     },
     {
       id: 4,
       src: "/assets/portfolio/izzul-4.jpg",
-      alt: "Izzul passport photo",
+      alt: "Izzul behind the camera",
     },
     {
       id: 5,
@@ -54,6 +57,13 @@ export function PhotoCarousel({ isDark }: { isDark: boolean }) {
       alt: "Graduation Side-by-Side",
     },
   ];
+
+  const photos = aboutPhotos.length > 0 ? aboutPhotos.map((photo) => ({
+    id: photo.id ?? `about-${photo.image_url}`,
+    src: photo.image_url,
+    alt: photo.alt || "About photo",
+    caption: photo.caption,
+  })) : fallbackPhotos;
   const imageIndex = Math.abs(page % photos.length);
   const paginate = (newDirection: number) =>
     setPage([page + newDirection, newDirection]);
@@ -136,7 +146,6 @@ export function PhotoCarousel({ isDark }: { isDark: boolean }) {
                 <img
                   src={photos[imageIndex].src}
                   alt={photos[imageIndex].alt}
-                  loading="lazy"
                   className="w-full h-full object-cover"
                   referrerPolicy="no-referrer"
                 />
@@ -168,23 +177,23 @@ export function PhotoCarousel({ isDark }: { isDark: boolean }) {
             exit={{ opacity: 0, y: -20 }}
             className="absolute inset-0 w-full h-full p-6 overflow-y-auto no-scrollbar bg-slate-950/20"
           >
-            <div className="grid grid-cols-2 gap-3 pb-4">
+            <div className="grid grid-cols-2 gap-4 pb-6">
               {photos.map((photo, i) => (
                 <motion.div
                   key={photo.id}
                   initial={{ opacity: 0, scale: 0.8 }}
                   animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: i * 0.1 }}
-                  className="aspect-square rounded-2xl overflow-hidden border border-white/5 relative group/item"
+                  whileHover={{ scale: 1.05, zIndex: 10 }}
+                  transition={{ delay: i * 0.05, duration: 0.3 }}
+                  className="aspect-square rounded-2xl overflow-hidden border border-white/10 relative group/item shadow-lg"
                 >
                   <img
                     src={photo.src}
                     alt={photo.alt}
-                    loading="lazy"
-                    className="w-full h-full object-cover transition-transform duration-500 group-hover/item:scale-110"
+                    className="w-full h-full object-cover transition-transform duration-700 group-hover/item:scale-110"
                     referrerPolicy="no-referrer"
                   />
-                  <div className="absolute inset-0 bg-blue-600/20 opacity-0 group-hover/item:opacity-100 transition-opacity" />
+                  <div className="absolute inset-0 bg-blue-600/10 opacity-0 group-hover/item:opacity-100 transition-opacity duration-300" />
                 </motion.div>
               ))}
             </div>

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { Briefcase, Calendar, CheckCircle2, Users } from "lucide-react";
-import { SectionHeader, ExperienceRoadmap } from "../UIComponents";
+import { SectionHeader, ExperienceRoadmap } from "../ui";
 import { supabase } from "../../lib/supabase";
 import { Translation } from "../../types";
 

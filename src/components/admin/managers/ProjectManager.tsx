@@ -1,10 +1,12 @@
 import { useState, useEffect, useRef } from "react";
 import React from "react";
-import { supabase } from "../../../lib/supabase";
 import { motion, AnimatePresence } from "motion/react";
-import { Project } from "../../../types";
-import { translateToIndonesian } from "../../../lib/translate";
-import { translateArrayToIndonesian } from "../../../lib/translate";
+import { Project } from "@/src/types/project";
+import { translateToIndonesian } from "@/src/lib/translate";
+import { translateArrayToIndonesian } from "@/src/lib/translate";
+import { toast } from "react-hot-toast";
+import { projectsApi } from "@/src/lib/api/projects";
+import { useProjects } from "@/src/hooks/useProjects";
 import {
   DndContext,
   closestCenter,
@@ -156,7 +158,7 @@ export default function ProjectManager() {
   const [isReordering, setIsReordering] = useState(false);
   const [pendingOrder, setPendingOrder] = useState<Project[]>([]);
   const [showConfirm, setShowConfirm] = useState(false);
-  const [items, setItems] = useState<Project[]>([]);
+  const { items, setItems, fetchItems } = useProjects();
   const [form, setForm] = useState<Project>({
     title: "",
     title_id: "",
@@ -169,6 +171,7 @@ export default function ProjectManager() {
     live_url: "",
     tags: [],
     tags_id: [],
+    order: 0,
   });
   const [editId, setEditId] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -193,19 +196,22 @@ export default function ProjectManager() {
   };
 
   const handleConfirmOrder = async () => {
-    await Promise.all(
-      pendingOrder.map((item, index) =>
-        supabase
-          .from("projects")
-          .update({ order: index + 1 })
-          .eq("id", item.id!),
-      ),
-    );
-    setPendingOrder([]);
-    setShowConfirm(false);
-    setIsReordering(false);
-    setDragSuccess(true);
-    setTimeout(() => setDragSuccess(false), 3000);
+    try {
+      await projectsApi.updateOrder(pendingOrder);
+
+      setPendingOrder([]);
+      setShowConfirm(false);
+      setIsReordering(false);
+      setDragSuccess(true);
+
+      toast.success("Urutan proyek berhasil diperbarui! 📦");
+
+      setTimeout(() => setDragSuccess(false), 3000);
+      fetchItems();
+    } catch (err) {
+      console.error(err);
+      toast.error("Gagal memperbarui urutan");
+    }
   };
 
   const handleCancelOrder = () => {
@@ -213,27 +219,32 @@ export default function ProjectManager() {
   };
 
   const handleDiscardOrder = () => {
-    fetchItems(); // kembalikan ke urutan Supabase
     setPendingOrder([]);
     setIsReordering(false);
   };
 
-  useEffect(() => {
-    fetchItems();
-  }, []);
-
-  const fetchItems = async () => {
-    const { data } = await supabase
-      .from("projects")
-      .select("*")
-      .order("order", { ascending: true });
-    if (data) setItems(data);
+  const resetForm = () => {
+    setForm({
+      title: "",
+      title_id: "",
+      description: "",
+      desc_id: "",
+      category: "",
+      category_id: "",
+      image_url: "",
+      github_url: "",
+      live_url: "",
+      tags: [],
+      tags_id: [],
+      order: 0,
+    });
+    setEditId(null);
   };
-
+  
   const handleSave = async () => {
+    if (!form.title.trim()) return toast.error("Judul proyek wajib diisi!");
     setIsSubmitting(true);
     try {
-      // Auto-translate ke Bahasa Indonesia
       const [title_id, desc_id, category_id, tags_id] = await Promise.all([
         translateToIndonesian(form.title),
         translateToIndonesian(form.description),
@@ -244,25 +255,22 @@ export default function ProjectManager() {
       const dataToSave = { ...form, title_id, desc_id, category_id, tags_id };
 
       if (editId) {
-        await supabase.from("projects").update(dataToSave).eq("id", editId);
+        await projectsApi.update(editId, dataToSave);
+        toast.success("Proyek berhasil diperbarui! ✅");
       } else {
-        await supabase.from("projects").insert(dataToSave);
+        // Logika order otomatis: ambil max order + 1
+        const maxOrder =
+          items.length > 0
+            ? Math.max(...items.map((i) => i.order || 0)) + 1
+            : 1;
+        await projectsApi.create({ ...dataToSave, order: maxOrder } as Omit<Project, 'id'>);
+        toast.success("Proyek baru berhasil diluncurkan! 🚀");
       }
-      setForm({
-        title: "",
-        title_id: "",
-        description: "",
-        desc_id: "",
-        category: "",
-        category_id: "",
-        image_url: "",
-        github_url: "",
-        live_url: "",
-        tags: [],
-        tags_id: [],
-      });
-      setEditId(null);
+
+      resetForm(); // Pindahkan logika reset form ke fungsi tersendiri agar rapi
       fetchItems();
+    } catch (err) {
+      toast.error("Gagal menyimpan proyek");
     } finally {
       setIsSubmitting(false);
     }
@@ -275,9 +283,14 @@ export default function ProjectManager() {
   };
 
   const handleDelete = async (id: string) => {
-    if (confirm("Are you sure you want to delete this project?")) {
-      await supabase.from("projects").delete().eq("id", id);
-      fetchItems();
+    if (confirm("Apakah anda yakin ingin menghapus proyek ini secara permanen?")) {
+      try {
+        await projectsApi.delete(id);
+        toast.success("Proyek berhasil dihapus");
+        fetchItems();
+      } catch (err) {
+        toast.error("Gagal menghapus proyek");
+      }
     }
   };
 
@@ -399,6 +412,7 @@ export default function ProjectManager() {
                   live_url: "",
                   tags: [],
                   tags_id: [],
+                  order: 0,
                 });
               }}
             >

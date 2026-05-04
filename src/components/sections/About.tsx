@@ -1,9 +1,9 @@
 import React from "react";
 import { motion } from "motion/react";
 import { User } from "lucide-react";
-import { SectionHeader, AnimatedCounter } from "../UIComponents";
+import { SectionHeader, AnimatedCounter } from "../ui";
 import { PhotoCarousel } from "../Visuals";
-import { SectionProps } from "../../types";
+import { SectionProps } from "@/src/types";
 
 type AboutProps = SectionProps;
 

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Award } from "lucide-react";
-import { SectionHeader, CertCategoryCarousel } from "../UIComponents";
+import { SectionHeader, CertCategoryCarousel } from "../ui";
 import { SectionProps } from "../../types";
 import { supabase } from "../../lib/supabase";
 

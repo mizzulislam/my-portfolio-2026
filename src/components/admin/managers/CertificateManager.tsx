@@ -1,9 +1,11 @@
 import { useState, useEffect, useRef } from "react";
 import React from "react";
-import { supabase } from "../../../lib/supabase";
 import { motion, AnimatePresence } from "motion/react";
-import { CertificationItem } from "../../../types";
-import { translateToIndonesian } from "../../../lib/translate";
+import { CertificationItem } from "@/src/types/certification";
+import { translateToIndonesian } from "@/src/lib/translate";
+import { toast } from "react-hot-toast";
+import { certificationsApi } from "@/src/lib/api/certifications";
+import { useCertifications } from "@/src/hooks/useCertifications";
 import {
   DndContext,
   closestCenter,
@@ -225,7 +227,7 @@ export default function CertificateManager() {
 
   const EMPTY_CAT = { name: "", icon: "", description: "" };
 
-  const [items, setItems] = useState<CertificationItem[]>([]);
+  const { items, setItems, categories, fetchAllData, isLoading } = useCertifications();
   const [form, setForm] = useState<CertificationItem>(EMPTY_FORM);
   const [editId, setEditId] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -258,7 +260,6 @@ export default function CertificateManager() {
   );
 
   useEffect(() => {
-    fetchItems();
     fetchCategories();
     const handleClickOutside = (event: MouseEvent) => {
       // Jika klik terjadi DI LUAR elemen yang diref (filterRef), maka tutup dropdown
@@ -275,31 +276,11 @@ export default function CertificateManager() {
   }, []);
 
   const fetchCategories = async () => {
-    const { data } = await supabase
-      .from("cert_categories")
-      .select("id, name, icon, description")
-      .order("order", { ascending: true });
-    if (data) setDbCategories(data);
-  };
-
-  const fetchItems = async () => {
-    const { data } = await supabase
-      .from("certifications")
-      .select("*")
-      // ✅ FIX 1: Tambah secondary sort by id agar urutan konsisten
-      // saat dua item punya nilai order yang sama
-      .order("order", { ascending: true })
-      .order("created_at", { ascending: true });
-
-    if (data) {
-      // Sort berdasarkan issue_year DESC, lalu issue_month DESC
-      // sehingga sertifikat terbaru muncul di atas
-      const sorted = [...data].sort((a, b) => {
-        const va = toSortValue(a.issue_year, a.issue_month);
-        const vb = toSortValue(b.issue_year, b.issue_month);
-        return vb - va; // DESC: terbaru di atas
-      });
-      setItems(sorted);
+    try {
+      const data = await certificationsApi.getCategories();
+      if (data) setDbCategories(data);
+    } catch (err) {
+      toast.error("Gagal memuat kategori");
     }
   };
 
@@ -309,39 +290,29 @@ export default function CertificateManager() {
     try {
       const name_id = await translateToIndonesian(catForm.name);
       const description_id = await translateToIndonesian(catForm.description);
+      const payload = {
+        name: catForm.name,
+        name_id,
+        icon: catForm.icon,
+        description: catForm.description,
+        description_id,
+      };
 
       if (catEditId) {
-        // Mode edit: UPDATE
-        await supabase
-          .from("cert_categories")
-          .update({
-            name: catForm.name,
-            name_id,
-            icon: catForm.icon,
-            description: catForm.description,
-            description_id,
-          })
-          .eq("id", catEditId);
+        await certificationsApi.updateCategory(catEditId, payload);
       } else {
-        // Mode tambah: INSERT
-        const maxOrder =
-          dbCategories.length > 0
-            ? Math.max(...dbCategories.map((_, i) => i)) + 1
-            : 1;
-        await supabase.from("cert_categories").insert({
-          name: catForm.name,
-          name_id,
-          icon: catForm.icon,
-          description: catForm.description,
-          description_id,
-          order: maxOrder,
+        await certificationsApi.createCategory({
+          ...payload,
+          order: dbCategories.length + 1,
         });
       }
 
       setCatForm(EMPTY_CAT);
       setCatEditId(null);
-      setIsIconDropdownOpen(false);
-      fetchCategories();
+      fetchAllData(); // Refresh semua data lewat hook
+      toast.success("Kategori berhasil disimpan!");
+    } catch (err) {
+      toast.error("Gagal menyimpan kategori");
     } finally {
       setIsAddingCat(false);
     }
@@ -368,15 +339,19 @@ export default function CertificateManager() {
         "Hapus kategori ini? Semua sertifikat di dalamnya akan ikut terhapus!",
       )
     ) {
-      await supabase.from("cert_categories").delete().eq("id", id);
-      fetchCategories();
-      fetchItems();
+      try {
+        await certificationsApi.deleteCategory(id);
+        toast.success("Kategori berhasil dihapus");
+        fetchAllData();
+      } catch (err) {
+        toast.error("Gagal menghapus kategori");
+      }
     }
   };
 
   const handleSave = async () => {
     if (!form.title.trim() || !form.category_id) {
-      alert("Judul dan kategori wajib diisi!");
+      toast.error("Judul dan kategori wajib diisi!");
       return;
     }
 
@@ -389,20 +364,19 @@ export default function CertificateManager() {
       const dataToSave = { ...form, title_id };
 
       if (editId) {
-        await supabase
-          .from("certifications")
-          .update(dataToSave)
-          .eq("id", editId);
+        await certificationsApi.update(editId, dataToSave);
+        toast.success("Sertifikat berhasil diperbarui");
       } else {
         const maxOrder =
           items.length > 0 ? Math.max(...items.map((i) => i.order)) + 1 : 1;
-        await supabase
-          .from("certifications")
-          .insert({ ...dataToSave, order: maxOrder });
+        await certificationsApi.create({ ...dataToSave, order: maxOrder });
+        toast.success("Sertifikat berhasil ditambahkan");
       }
 
       resetForm();
-      fetchItems();
+      fetchAllData();
+    } catch (err) {
+      toast.error("Gagal menyimpan sertifikat");
     } finally {
       setIsSubmitting(false);
     }
@@ -423,8 +397,13 @@ export default function CertificateManager() {
 
   const handleDelete = async (id: string) => {
     if (confirm("Hapus sertifikat ini secara permanen?")) {
-      await supabase.from("certifications").delete().eq("id", id);
-      fetchItems();
+      try {
+        await certificationsApi.deleteCertification(id);
+        toast.success("Sertifikat berhasil dihapus");
+        fetchAllData();
+      } catch (err) {
+        toast.error("Gagal menghapus sertifikat");
+      }
     }
   };
 
@@ -455,24 +434,27 @@ export default function CertificateManager() {
   };
 
   const handleConfirmOrder = async () => {
-    await Promise.all(
-      pendingOrder.map((item, index) =>
-        supabase
-          .from("certifications")
-          .update({ order: index + 1 })
-          .eq("id", item.id!),
-      ),
-    );
-    setPendingOrder([]);
-    setShowConfirm(false);
-    setIsReordering(false);
-    setDragSuccess(true);
-    await fetchItems();
-    setTimeout(() => setDragSuccess(false), 3000);
+    try {
+      // Kita update satu per satu urutannya
+      await Promise.all(
+        pendingOrder.map((item, index) =>
+          certificationsApi.updateOrder(item.id!, index + 1)
+        ),
+      );
+      setPendingOrder([]);
+      setShowConfirm(false);
+      setIsReordering(false);
+      setDragSuccess(true);
+      fetchAllData();
+      toast.success("Urutan berhasil disimpan");
+      setTimeout(() => setDragSuccess(false), 3000);
+    } catch (err) {
+      toast.error("Gagal menyimpan urutan baru");
+    }
   };
 
   const handleDiscardOrder = () => {
-    fetchItems();
+    fetchAllData();
     setPendingOrder([]);
     setIsReordering(false);
   };
@@ -1146,7 +1128,7 @@ export default function CertificateManager() {
               <AdminBtn
                 variant="secondary"
                 onClick={() => {
-                  fetchItems();
+                  fetchAllData();
                   setIsReordering(false);
                 }}
                 size="normal"

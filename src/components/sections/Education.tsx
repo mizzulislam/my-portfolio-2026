@@ -1,6 +1,6 @@
 import React from "react";
 import { GraduationCap } from "lucide-react";
-import { SectionHeader, EducationCard } from "../UIComponents";
+import { SectionHeader, EducationCard } from "../ui";
 import { SectionProps } from "../../types";
 
 type EducationProps = SectionProps;

@@ -7,6 +7,7 @@ import {
   Award,
   Briefcase,
   Zap,
+  Image,
   LogOut,
   LayoutDashboard,
   User as UserIcon,
@@ -18,6 +19,7 @@ export const MENUS = [
   { key: "certifications", label: "Certificate", icon: Award },
   { key: "experience", label: "Experience", icon: Briefcase },
   { key: "skills", label: "Skills", icon: Zap },
+  { key: "about", label: "About Photos", icon: Image },
 ];
 
 interface AdminLayoutProps {

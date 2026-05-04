@@ -1,25 +1,8 @@
 import React, { useState, useEffect } from "react";
-import {
-  motion,
-  AnimatePresence,
-  MotionValue,
-  useTransform,
-} from "motion/react";
+import { motion, AnimatePresence, MotionValue, useTransform } from "motion/react";
 import { Cpu, User, Layers, Terminal, Rocket } from "lucide-react";
-import {
-  SectionHeader,
-  UFOScanner,
-  SkillLogoBox,
-  TechnicalCarousel,
-} from "../UIComponents";
-import {
-  Translation,
-  SoftSkill,
-  HardSkill,
-  Skill,
-  SoftSkillDB,
-  HardSkillDB,
-} from "../../types";
+import { SectionHeader, UFOScanner, SkillLogoBox, TechnicalCarousel } from "../ui";
+import { Translation, Skill, SoftSkillDB, HardSkillDB } from "../../types";
 import { supabase } from "../../lib/supabase";
 
 interface SkillsProps {

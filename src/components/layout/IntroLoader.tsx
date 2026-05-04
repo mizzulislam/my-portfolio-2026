@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
-import { InteractiveGrid } from '../UIComponents';
+import { InteractiveGrid } from '../ui';
 
 export function IntroLoader({ onComplete }: { onComplete: () => void }) {
   const [percent, setPercent] = useState(0);

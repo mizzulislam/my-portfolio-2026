@@ -1,81 +1,51 @@
 import { useState, useEffect } from "react";
 import React from "react";
-import { supabase } from "../../../lib/supabase";
 import { motion, AnimatePresence } from "motion/react";
-import { translateToIndonesian } from "../../../lib/translate";
+import { translateToIndonesian } from "@/src/lib/translate";
+import { toast } from "react-hot-toast";
+import { skillsApi } from "@/src/lib/api/skills";
+import { useSkills } from "@/src/hooks/useSkills";
 import {
-  Plus,
-  Trash2,
-  Edit2,
-  Check,
-  X,
-  Zap,
-  Tag,
-  Brain,
-  Users,
-  MessageSquare,
-  Search,
-  Lightbulb,
-  Clock,
-  ShieldCheck,
+  Plus, Trash2, Edit2, Check, X, Zap, Tag, Brain, Users,
+  MessageSquare, Search, Lightbulb, Clock, ShieldCheck,
 } from "lucide-react";
 import {
-  AdminCard,
-  AdminInput,
-  AdminBtn,
-  AdminTextArea,
-  ImageUpload,
+  AdminCard, AdminInput,
+  AdminBtn, AdminTextArea, ImageUpload,
 } from "../AdminSharedUI";
-import type {
-  SoftSkillDB,
-  HardSkillDB,
-  TechnicalSkillDB,
-} from "../../../types";
+import type { SoftSkillDB, HardSkillDB, TechnicalSkillDB } from "@/src/types/skill";
 
 // ─── Tab Type ─────────────────────────────────────────
 type SkillTab = "soft" | "hard" | "technical";
 
 // ─── Soft Skills Manager ──────────────────────────────
 function SoftSkillsManager() {
-  const [items, setItems] = useState<SoftSkillDB[]>([]);
+  const { softSkills, setSoftSkills, fetchAllSkills } = useSkills();
   const [form, setForm] = useState({ name: "" });
   const [editId, setEditId] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  useEffect(() => {
-    fetchItems();
-  }, []);
-
-  const fetchItems = async () => {
-    const { data } = await supabase
-      .from("soft_skills")
-      .select("*")
-      .order("order", { ascending: true });
-    if (data) setItems(data);
-  };
-
   const handleSave = async () => {
-    if (!form.name.trim()) return alert("Nama skill wajib diisi!");
+    if (!form.name.trim()) return toast.error("Nama skill wajib diisi!");
     setIsSubmitting(true);
     try {
       const name_id = await translateToIndonesian(form.name);
       if (editId) {
-        await supabase
-          .from("soft_skills")
-          .update({ name: form.name, name_id })
-          .eq("id", editId);
+        await skillsApi.update("soft_skills", editId, { name: form.name, name_id });
+        toast.success("Soft skill berhasil diperbarui");
       } else {
         const maxOrder =
-          items.length > 0
-            ? Math.max(...items.map((i) => i.order ?? 0)) + 1
+          softSkills.length > 0
+            ? Math.max(...softSkills.map((i) => i.order ?? 0)) + 1
             : 1;
-        await supabase
-          .from("soft_skills")
-          .insert({ name: form.name, name_id, order: maxOrder });
+        await skillsApi.create("soft_skills", { name: form.name, name_id, order: maxOrder });
+        toast.success("Soft skill berhasil ditambahkan");
       }
       setForm({ name: "" });
       setEditId(null);
-      fetchItems();
+      fetchAllSkills();
+    } catch (err) {
+      toast.error("Gagal menyimpan soft skill");
     } finally {
       setIsSubmitting(false);
     }
@@ -89,8 +59,13 @@ function SoftSkillsManager() {
 
   const handleDelete = async (id: string) => {
     if (confirm("Hapus skill ini?")) {
-      await supabase.from("soft_skills").delete().eq("id", id);
-      fetchItems();
+      try {
+        await skillsApi.delete("soft_skills", id);
+        toast.success("Skill berhasil dihapus");
+        fetchAllSkills();
+      } catch (err) {
+        toast.error("Gagal menghapus skill");
+      }
     }
   };
 
@@ -162,7 +137,7 @@ function SoftSkillsManager() {
       </AdminCard>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {items.map((item) => {
+        {softSkills.map((item) => {
           const Icon = getIcon(item.name);
           return (
             <div
@@ -204,45 +179,32 @@ function SoftSkillsManager() {
 
 // ─── Hard Skills Manager ──────────────────────────────
 function HardSkillsManager() {
-  const [items, setItems] = useState<HardSkillDB[]>([]);
+  const { hardSkills, setHardSkills, fetchAllSkills } = useSkills();
   const [form, setForm] = useState({ name: "" });
   const [editId, setEditId] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  useEffect(() => {
-    fetchItems();
-  }, []);
-
-  const fetchItems = async () => {
-    const { data } = await supabase
-      .from("hard_skills")
-      .select("*")
-      .order("order", { ascending: true });
-    if (data) setItems(data);
-  };
-
   const handleSave = async () => {
-    if (!form.name.trim()) return alert("Nama skill wajib diisi!");
+    if (!form.name.trim()) return toast.error("Nama skill wajib diisi!");
     setIsSubmitting(true);
     try {
       const name_id = await translateToIndonesian(form.name);
       if (editId) {
-        await supabase
-          .from("hard_skills")
-          .update({ name: form.name, name_id })
-          .eq("id", editId);
+        await skillsApi.update("hard_skills", editId, { name: form.name, name_id });
+        toast.success("Hard skill berhasil diperbarui");
       } else {
         const maxOrder =
-          items.length > 0
-            ? Math.max(...items.map((i) => i.order ?? 0)) + 1
+          hardSkills.length > 0
+            ? Math.max(...hardSkills.map((i) => i.order ?? 0)) + 1
             : 1;
-        await supabase
-          .from("hard_skills")
-          .insert({ name: form.name, name_id, order: maxOrder });
+        await skillsApi.create("hard_skills", { name: form.name, name_id, order: maxOrder });
+        toast.success("Hard skill berhasil ditambahkan");
       }
       setForm({ name: "" });
       setEditId(null);
-      fetchItems();
+      fetchAllSkills();
+    } catch (err) {
+      toast.error("Gagal menyimpan hard skill");
     } finally {
       setIsSubmitting(false);
     }
@@ -256,8 +218,13 @@ function HardSkillsManager() {
 
   const handleDelete = async (id: string) => {
     if (confirm("Hapus skill ini?")) {
-      await supabase.from("hard_skills").delete().eq("id", id);
-      fetchItems();
+      try {
+        await skillsApi.delete("hard_skills", id);
+        toast.success("Skill berhasil dihapus");
+        fetchAllSkills();
+      } catch (err) {
+        toast.error("Gagal menghapus skill");
+      }
     }
   };
 
@@ -300,7 +267,7 @@ function HardSkillsManager() {
       </AdminCard>
 
       <div className="flex flex-wrap gap-3">
-        {items.map((item) => (
+        {hardSkills.map((item) => (
           <div
             key={item.id}
             className="group flex items-center gap-2 px-4 py-2 bg-slate-900/40 border border-white/10 rounded-full hover:border-blue-500/30 transition-all"
@@ -336,7 +303,7 @@ function HardSkillsManager() {
 
 // ─── Technical Skills Manager ─────────────────────────
 function TechnicalSkillsManager() {
-  const [items, setItems] = useState<TechnicalSkillDB[]>([]);
+  const { technicalSkills, setTechnicalSkills, fetchAllSkills } = useSkills();
   const [form, setForm] = useState<TechnicalSkillDB>({
     name: "",
     category: "",
@@ -346,20 +313,8 @@ function TechnicalSkillsManager() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [imageResetKey, setImageResetKey] = useState(0);
 
-  useEffect(() => {
-    fetchItems();
-  }, []);
-
-  const fetchItems = async () => {
-    const { data } = await supabase
-      .from("skills")
-      .select("*")
-      .order("order", { ascending: true });
-    if (data) setItems(data);
-  };
-
   const handleSave = async () => {
-    if (!form.name.trim()) return alert("Nama tool wajib diisi!");
+    if (!form.name.trim()) return toast.error("Nama tool wajib diisi!");
     setIsSubmitting(true);
     try {
       const dataToSave = {
@@ -368,20 +323,22 @@ function TechnicalSkillsManager() {
         logo_url: form.logo_url,
       };
       if (editId) {
-        await supabase.from("skills").update(dataToSave).eq("id", editId);
+        await skillsApi.update("skills", editId, dataToSave);
+        toast.success("Technical skill berhasil diperbarui");
       } else {
         const maxOrder =
-          items.length > 0
-            ? Math.max(...items.map((i) => i.order ?? 0)) + 1
+          technicalSkills.length > 0
+            ? Math.max(...technicalSkills.map((i) => i.order ?? 0)) + 1
             : 1;
-        await supabase
-          .from("skills")
-          .insert({ ...dataToSave, order: maxOrder });
+        await skillsApi.create("skills", { ...dataToSave, order: maxOrder });
+        toast.success("Technical skill berhasil ditambahkan");
       }
       setForm({ name: "", category: "", logo_url: "" });
       setEditId(null);
       setImageResetKey((k) => k + 1);
-      fetchItems();
+      fetchAllSkills();
+    } catch (err) {
+      toast.error("Gagal menyimpan technical skill");
     } finally {
       setIsSubmitting(false);
     }
@@ -400,8 +357,13 @@ function TechnicalSkillsManager() {
 
   const handleDelete = async (id: string) => {
     if (confirm("Hapus tool ini?")) {
-      await supabase.from("skills").delete().eq("id", id);
-      fetchItems();
+      try {
+        await skillsApi.delete("skills", id);
+        toast.success("Tool berhasil dihapus");
+        fetchAllSkills();
+      } catch (err) {
+        toast.error("Gagal menghapus tool");
+      }
     }
   };
 
@@ -468,7 +430,7 @@ function TechnicalSkillsManager() {
       </AdminCard>
 
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-        {items.map((item) => (
+        {technicalSkills.map((item) => (
           <div
             key={item.id}
             className="p-4 bg-slate-900/40 border border-white/5 rounded-2xl flex flex-col items-center gap-3 group hover:border-blue-500/20 transition-all relative"

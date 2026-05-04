@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
-import { supabase } from "../../../../lib/supabase";
-import type { Message } from "../../../../types";
+import { supabase } from "../lib/supabase";
+import type { Message } from "@/src/types";
+import { toast } from "react-hot-toast";
+import { messagesApi } from "@/src/lib/api/messages";
 
 export function useMessages() {
   const [messages, setMessages] = useState<Message[]>([]);
@@ -14,12 +16,15 @@ export function useMessages() {
 
   const fetchMessages = async () => {
     setIsLoading(true);
-    const { data, error } = await supabase
-      .from("messages")
-      .select("*")
-      .order("created_at", { ascending: false });
-    if (!error) setMessages(data || []);
-    setIsLoading(false);
+    try {
+      const data = await messagesApi.getAll();
+      setMessages(data);
+    } catch (error) {
+      toast.error("Gagal memuat pesan");
+      console.error(error);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -33,7 +38,7 @@ export function useMessages() {
   const handleOpenMessage = async (msg: Message) => {
     setSelectedMessage(msg);
     if (!msg.is_read) {
-      await supabase.from("messages").update({ is_read: true }).eq("id", msg.id);
+      await messagesApi.markAsRead(msg.id);
       setMessages((prev) => prev.map((m) => (m.id === msg.id ? { ...m, is_read: true } : m)));
     }
   };

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Rocket } from "lucide-react";
-import { SectionHeader, ProjectFolders } from "../UIComponents";
+import { SectionHeader, ProjectFolders } from "../ui";
 import { supabase } from "../../lib/supabase";
 import { Translation, ProjectItem } from "../../types";
 
