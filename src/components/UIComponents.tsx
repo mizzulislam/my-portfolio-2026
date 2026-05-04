@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from "react";
 import {
   motion,
   AnimatePresence,
+  MotionValue,
   animate,
   useInView,
   useMotionValue,
@@ -683,47 +684,39 @@ interface SkillLogoBoxProps {
   skill: TechnicalTool | SoftSkill | HardSkill;
   isDark: boolean;
   type: "tech" | "soft" | "hard";
-  beamX?: number | null;
+  beamX?: MotionValue<number> | null
   parentRef?: React.RefObject<HTMLDivElement | null> | null;
 }
 
 export function SkillLogoBox({
-  skill,
-  isDark,
-  type,
-  beamX = null,
-  parentRef = null,
+  skill, isDark, type, beamX = null, parentRef = null,
 }: SkillLogoBoxProps) {
   const boxRef = useRef<HTMLDivElement>(null);
   const [isRevealed, setIsRevealed] = useState(false);
-  const cachedX = useRef<number | null>(null);
-
-  // Cache position on mount and resize instead of every mouse move
-  useEffect(() => {
-    const updateCache = () => {
-      if (type === "tech" && boxRef.current && parentRef?.current) {
-        const boxRect = boxRef.current.getBoundingClientRect();
-        const parentRect = parentRef.current.getBoundingClientRect();
-        cachedX.current = (boxRect.left + boxRect.right) / 2 + window.scrollX;
-      }
-    };
-
-    updateCache();
-    window.addEventListener("resize", updateCache);
-    return () => window.removeEventListener("resize", updateCache);
-  }, [type, parentRef]);
 
   useEffect(() => {
-    if (type !== "tech" || beamX === null || cachedX.current === null) {
+    // Hanya berlaku untuk type tech dengan beamX aktif
+    if (type !== "tech" || beamX === null) {
       setIsRevealed(false);
       return;
     }
-    const distance = Math.abs(cachedX.current - beamX);
-    const revealed = distance < 55;
-    if (revealed !== isRevealed) {
-      setIsRevealed(revealed);
-    }
-  }, [beamX, type, isRevealed]);
+
+    const checkReveal = (val: number) => {
+      if (!boxRef.current) return;
+      const rect = boxRef.current.getBoundingClientRect();
+      const boxCenterX = (rect.left + rect.right) / 2;
+      const distance = Math.abs(boxCenterX - val);
+      setIsRevealed(distance < 60);
+    };
+
+    // Subscribe ke perubahan MotionValue
+    const unsubscribe = beamX.on("change", checkReveal);
+
+    // Cek posisi saat ini juga
+    checkReveal(beamX.get());
+
+    return () => unsubscribe();
+  }, [beamX, type]);
 
   const getStyle = (
     name: string | TechnicalTool | SoftSkill | HardSkill,
@@ -899,8 +892,8 @@ export function UFOScanner({
   isHovering,
 }: {
   isDark: boolean;
-  mouseX: number;
-  mouseY: number;
+  mouseX: MotionValue<number>;
+  mouseY: MotionValue<number>;
   isHovering: boolean;
 }) {
   return (
@@ -969,7 +962,7 @@ export function TechnicalCarousel({
   tools: TechnicalTool[];
   isDark: boolean;
   isScannerActive: boolean;
-  globalMouseX: number;
+  globalMouseX: MotionValue<number>;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -978,9 +971,9 @@ export function TechnicalCarousel({
   return (
     <div
       ref={containerRef}
-      className={`relative select-none min-h-[250px] w-full flex flex-col items-center justify-start transition-all duration-700 ${isScannerActive ? "cursor-crosshair" : "cursor-default"}`}
+      className={`relative select-none w-full flex flex-col items-center justify-start transition-all duration-700 ${isScannerActive ? "cursor-crosshair" : "cursor-default"}`}
     >
-      <div className="grid grid-cols-3 md:grid-cols-5 lg:grid-cols-4 place-items-center gap-y-10 gap-x-6 relative z-20 w-full max-w-4xl mx-auto">
+      <div className="grid grid-cols-4 place-items-center gap-y-6 gap-x-4 relative z-20 w-full max-w-4xl mx-auto">
         {tools.map((tool: TechnicalTool, idx: number) => (
           <SkillLogoBox
             key={idx}

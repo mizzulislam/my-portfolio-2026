@@ -44,7 +44,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
               <div class="card">
                 <div class="header">
                   <!-- Pastikan URL Logo kamu sudah online/public -->
-                  <img src="https://mizzulislam.site/logo.png" alt="Logo" class="logo" />
+                  <img src="https://izzuls-portfolio.vercel.app//logo.png" alt="Logo" class="logo" />
                   <h1 style="margin:0; font-size: 28px;">New Message Request</h1>
                   <p style="margin:10px 0 0; opacity: 0.8;">Someone Just Messaged You</p>
                 </div>

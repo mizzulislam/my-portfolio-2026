@@ -336,5 +336,28 @@ export interface Skill {
   id?: string;
   name: string;
   category: string;
+  logo_url?: string;
+  order?: number;
 }
 
+export interface SoftSkillDB {
+  id?: string;
+  name: string;
+  name_id?: string;
+  order?: number;
+}
+
+export interface HardSkillDB {
+  id?: string;
+  name: string;
+  name_id?: string;
+  order?: number;
+}
+
+export interface TechnicalSkillDB {
+  id?: string;
+  name: string;
+  category?: string;
+  logo_url?: string;
+  order?: number;
+}

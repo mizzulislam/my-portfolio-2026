@@ -10,6 +10,7 @@ import Admin from "./components/Admin";
 import { AnimatePresence } from 'motion/react';
 import { translations } from './constants';
 import { Toaster } from "react-hot-toast";
+import { useMotionValue } from "motion/react";
 
 // Layout Components
 import { Navbar } from './components/layout/Navbar';
@@ -37,8 +38,8 @@ export default function App() {
   const [activeTab, setActiveTab] = useState<'work' | 'org'>('work');
   const [scrolled, setScrolled] = useState(false);
   const [isTechnicalScannerActive, setIsTechnicalScannerActive] = useState(false);
-  const [globalMouseX, setGlobalMouseX] = useState(0);
-  const [globalMouseY, setGlobalMouseY] = useState(0);
+  const globalMouseX = useMotionValue(0);
+  const globalMouseY = useMotionValue(0);
   const [isSkillsHovering, setIsSkillsHovering] = useState(false);
   const skillsSectionRef = useRef<HTMLDivElement>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
@@ -61,13 +62,10 @@ export default function App() {
   }, [showIntro]);
 
   const handleGlobalMouseMove = (e: React.MouseEvent | React.TouchEvent) => {
-    if (skillsSectionRef.current) {
-      const rect = skillsSectionRef.current.getBoundingClientRect();
-      const clientX = 'touches' in e ? e.touches[0].clientX : (e as React.MouseEvent).clientX;
-      const clientY = 'touches' in e ? e.touches[0].clientY : (e as React.MouseEvent).clientY;
-      setGlobalMouseX(clientX + window.scrollX);
-      setGlobalMouseY(clientY - rect.top);
-    }
+    const clientX = "touches" in e ? e.touches[0].clientX : e.clientX;
+    const clientY = "touches" in e ? e.touches[0].clientY : e.clientY;
+    globalMouseX.set(clientX);
+    globalMouseY.set(clientY);
   };
 
   const toggleMusic = () => {
@@ -143,6 +141,7 @@ export default function App() {
               />
               <Projects isDark={isDark} t={t} lang={lang} />
               <Skills
+                lang={lang}
                 isDark={isDark}
                 t={t}
                 skillsSectionRef={skillsSectionRef}
