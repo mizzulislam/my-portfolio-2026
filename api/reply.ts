@@ -13,16 +13,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const timestamp = new Intl.DateTimeFormat("en-US", {
     dateStyle: "long",
     timeStyle: "short",
+    timeZone: "Asia/Jakarta",
   }).format(new Date());
+  const cleanSubject = subject ? `${subject} \u200B` : "Balasan dari Muhammad Izzul Islam \u200B";
 
   try {
     // 2. Kirim Email
     const { data, error } = await resend.emails.send({
       from: "Muhammad Izzul Islam <admin@mizzulislam.site>",
       to: [to],
-      subject: subject
-        ? `${subject} #${Math.random().toString(36).substring(7)}`
-        : "Balasan dari Muhammad Izzul Islam",
+      subject: cleanSubject,
       headers: {
         "Message-ID": `<${Date.now()}@mizzulislam.site>`,
         "In-Reply-To": "",
@@ -51,9 +51,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
               <div class="card">
                 <div class="header">
                   <img src="https://mizzulislam.site/portfolio-logo.png" alt="Logo" class="logo" />
-                  <div style="width:72px; height:72px; border-radius:50%; background:rgba(255,255,255,0.15); border:2px solid rgba(255,255,255,0.3); margin:0 auto 16px; display:flex; align-items:center; justify-content:center; font-size:28px; font-weight:900;">
-                    MI
-                  </div>
                   <h1 style="margin:0; font-size: 28px;">New Message Reply</h1>
                   <p style="margin:10px 0 0; opacity: 0.8;">Muhammad Izzul Islam has responded to you</p>
                 </div>
@@ -66,7 +63,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                     <div style="display: table-cell; width: 4%;"></div>
                     <div class="info-box">
                       <div class="label">Time Stamp</div>
-                      <div class="value">${timestamp}</div>
+                      <div class="value">${timestamp} WIB</div>
                     </div>
                   </div>
                   <div style="margin-top: 20px;">
