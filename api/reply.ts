@@ -15,7 +15,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     timeStyle: "short",
     timeZone: "Asia/Jakarta",
   }).format(new Date());
-  const cleanSubject = subject ? `${subject} \u200B` : "Balasan dari Muhammad Izzul Islam \u200B";
+  const cleanSubject = "Balasan Untuk Pesan Anda \u200B";
 
   try {
     // 2. Kirim Email
@@ -33,7 +33,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         <html>
           <head>
             <style>
-              .container { font-family: sans-serif; background-color: #0f172a; padding: 40px 20px; color: #ffffff; }
+              .container { font-family: sans-serif; background-color: #d1d5db; padding: 40px 20px; color: #ffffff; }
               .card { max-width: 600px; margin: 0 auto; background-color: #1e293b; border-radius: 24px; overflow: hidden; border: 1px solid #334155; }
               .header { background: linear-gradient(to bottom, #3b82f6, #1d4ed8); padding: 40px; text-align: center; }
               .logo { width: 120px; margin-bottom: 20px; }
