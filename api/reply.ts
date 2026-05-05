@@ -20,7 +20,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const { data, error } = await resend.emails.send({
       from: "Muhammad Izzul Islam <admin@mizzulislam.site>",
       to: [to],
-      subject: subject || "Balasan dari Muhammad Izzul Islam",
+      subject: subject
+        ? `${subject} #${Math.random().toString(36).substring(7)}`
+        : "Balasan dari Muhammad Izzul Islam",
+      headers: {
+        "Message-ID": `<${Date.now()}@mizzulislam.site>`,
+        "In-Reply-To": "",
+        References: "",
+      },
       html: `
         <!DOCTYPE html>
         <html>
@@ -44,13 +51,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
               <div class="card">
                 <div class="header">
                   <img src="https://mizzulislam.site/portfolio-logo.png" alt="Logo" class="logo" />
-                  <img 
-                    src="https://mizzulislam.site/assets/portfolio/izzul-4.jpg" 
-                    alt="Muhammad Izzul Islam"
-                    style="width:80px; height:80px; border-radius:50%; object-fit:cover; border:3px solid rgba(255,255,255,0.3); margin-bottom:16px;"
-                  />
-                  <h1 style="margin:0; font-size: 28px;">New Message Request</h1>
-                  <p style="margin:10px 0 0; opacity: 0.8;">Someone Just Messaged You</p>
+                  <div style="width:72px; height:72px; border-radius:50%; background:rgba(255,255,255,0.15); border:2px solid rgba(255,255,255,0.3); margin:0 auto 16px; display:flex; align-items:center; justify-content:center; font-size:28px; font-weight:900;">
+                    MI
+                  </div>
+                  <h1 style="margin:0; font-size: 28px;">New Message Reply</h1>
+                  <p style="margin:10px 0 0; opacity: 0.8;">Muhammad Izzul Islam has responded to you</p>
                 </div>
                 <div class="content">
                   <div class="info-grid">
@@ -71,7 +76,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 </div>
                 <div class="footer">
                   <p>© 2026 Muhammad Izzul Islam. All Rights Reserved.</p>
-                  <p>This is an automated notification from Izzul's Portfolio CRM.</p>
+                  <p>This is an automated notification from Izzul's Portfolio.</p>
+                  <p style="font-size: 10px; opacity: 0.5; margin-top: 10px;">
+                    Trace ID: ${Math.random().toString(36).substring(2, 15).toUpperCase()}
+                  </p>
                 </div>
               </div>
             </div>
