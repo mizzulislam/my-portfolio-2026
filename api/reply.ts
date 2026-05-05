@@ -20,7 +20,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const { data, error } = await resend.emails.send({
       from: "Muhammad Izzul Islam <admin@mizzulislam.site>",
       to: [to],
-      subject: subject || "Balasan Pesan",
+      subject: subject || "Balasan dari Muhammad Izzul Islam",
       html: `
         <!DOCTYPE html>
         <html>
@@ -43,8 +43,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             <div class="container">
               <div class="card">
                 <div class="header">
-                  <!-- Pastikan URL Logo kamu sudah online/public -->
-                  <img src="https://izzuls-portfolio.vercel.app//logo.png" alt="Logo" class="logo" />
+                  <img src="https://mizzulislam.site/portfolio-logo.png" alt="Logo" class="logo" />
+                  <img 
+                    src="https://mizzulislam.site/assets/portfolio/izzul-4.jpg" 
+                    alt="Muhammad Izzul Islam"
+                    style="width:80px; height:80px; border-radius:50%; object-fit:cover; border:3px solid rgba(255,255,255,0.3); margin-bottom:16px;"
+                  />
                   <h1 style="margin:0; font-size: 28px;">New Message Request</h1>
                   <p style="margin:10px 0 0; opacity: 0.8;">Someone Just Messaged You</p>
                 </div>
