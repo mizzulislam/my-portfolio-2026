@@ -18,18 +18,20 @@ export const ReplyModal = ({
   onSuccess,
 }: ReplyModalProps) => {
   const [replyText, setReplyText] = useState("");
+  const [subjectText, setSubjectText] = useState(subject);
   const [isSending, setIsSending] = useState(false);
 
   React.useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = "hidden";
+      setSubjectText(subject);
     } else {
       document.body.style.overflow = "unset";
     }
     return () => {
       document.body.style.overflow = "unset";
     };
-  }, [isOpen]);
+  }, [isOpen, subject]);
 
   if (!isOpen) return null;
 
@@ -43,7 +45,7 @@ export const ReplyModal = ({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           to: recipientEmail,
-          subject: subject,
+          subject: subjectText,
           replyText: replyText,
         }),
       });
@@ -74,18 +76,16 @@ export const ReplyModal = ({
 
   return (
     <div className="fixed inset-0 z-[999] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
-      <div className="bg-slate-950 border border-white/10 w-full max-w-xl rounded-[2rem] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+      <div className="bg-slate-950 border border-white/10 w-full max-w-2xl rounded-[2rem] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 max-h-[calc(100vh-2rem)]">
         <div className="flex flex-col gap-2 p-5 border-b border-white/5 bg-slate-900/60">
           <div className="flex items-start justify-between gap-4">
             <div>
               <p className="text-slate-400 uppercase text-[10px] tracking-[0.32em] font-bold mb-1">
-                Balas Pesan
+                Reply Message
               </p>
-              <h3 className="text-white text-xl font-black">
-                {subject}
-              </h3>
+              <h3 className="text-white text-xl font-black">{subjectText}</h3>
               <p className="text-slate-500 text-sm mt-2">
-                Kepada: <span className="text-slate-200">{recipientEmail}</span>
+                To: <span className="text-slate-200">{recipientEmail}</span>
               </p>
             </div>
             <button
@@ -97,13 +97,24 @@ export const ReplyModal = ({
             </button>
           </div>
           <p className="text-slate-500 text-sm leading-relaxed">
-            Kirim balasan langsung dari panel admin menggunakan Resend.
+            Send a reply directly from the admin panel using Resend.
           </p>
         </div>
 
-        <div className="p-5 space-y-4 bg-slate-950/90">
+        <div className="p-5 space-y-4 bg-slate-950/90 overflow-y-auto max-h-[calc(100vh-14rem)]">
           <div className="rounded-3xl border border-white/10 bg-slate-900/80 p-4 text-slate-300 text-sm leading-relaxed">
-            <p className="font-semibold text-slate-100 mb-2">Pesan Anda</p>
+            <p className="font-semibold text-slate-100 mb-2">Subject</p>
+            <input
+              type="text"
+              className="w-full rounded-3xl border border-white/10 bg-slate-950 px-4 py-3 text-slate-100 outline-none transition-all focus:border-blue-500/50 focus:ring-4 focus:ring-blue-500/10"
+              placeholder="Tulis subjek email di sini..."
+              value={subjectText}
+              onChange={(e) => setSubjectText(e.target.value)}
+            />
+          </div>
+
+          <div className="rounded-3xl border border-white/10 bg-slate-900/80 p-4 text-slate-300 text-sm leading-relaxed">
+            <p className="font-semibold text-slate-100 mb-2">Your Message</p>
             <textarea
               autoFocus
               rows={8}
@@ -120,7 +131,7 @@ export const ReplyModal = ({
               onClick={onClose}
               className="w-full rounded-2xl border border-white/10 bg-white/5 py-3 text-sm font-bold uppercase tracking-[0.18em] text-slate-300 transition-all hover:bg-white/10"
             >
-              Batal
+              Cancel
             </button>
             <button
               disabled={isSending}
@@ -132,7 +143,7 @@ export const ReplyModal = ({
               ) : (
                 <Send size={16} />
               )}
-              {isSending ? "Mengirim..." : "Kirim Balasan"}
+              {isSending ? "Sending..." : "Send Reply"}
             </button>
           </div>
         </div>

@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Mail, MessageCircle, Send, Loader2, CheckCircle } from "lucide-react";
+import { toast } from "react-hot-toast";
 import { SectionHeader } from "../ui";
 import { SectionProps } from "../../types";
 import { supabase } from "../../lib/supabase";
@@ -14,6 +15,7 @@ export function Contact({ isDark, t, lang }: ContactProps) {
     name: "",
     lastname: "",
     email: "",
+    subject: "",
     message: "",
   });
 
@@ -27,7 +29,9 @@ export function Contact({ isDark, t, lang }: ContactProps) {
   // Validasi hanya tampil setelah user menyentuh field tersebut
   const [touched, setTouched] = useState({
     name: false,
+    lastname: false,
     email: false,
+    subject: false,
     message: false,
   });
   // Fungsi validasi — mengembalikan pesan error per field
@@ -37,6 +41,10 @@ export function Contact({ isDark, t, lang }: ContactProps) {
         en: "Name is required.",
         id: "Nama tidak boleh kosong.",
       },
+      lastname: {
+        en: "Last name is required.",
+        id: "Nama belakang tidak boleh kosong.",
+      },
       emailRequired: {
         en: "Email is required.",
         id: "Email tidak boleh kosong.",
@@ -45,6 +53,14 @@ export function Contact({ isDark, t, lang }: ContactProps) {
         en: "Invalid email format.",
         id: "Format email tidak valid.",
       },
+      subjectRequired: {
+        en: "Subject is required.",
+        id: "Subjek tidak boleh kosong.",
+      },
+      subjectShort: {
+        en: "Subject must be at least 3 characters.",
+        id: "Subjek minimal 3 karakter.",
+      },
       message: {
         en: "Message must be at least 10 characters.",
         id: "Pesan minimal 10 karakter.",
@@ -52,10 +68,15 @@ export function Contact({ isDark, t, lang }: ContactProps) {
     };
 
     if (field === "name" && value.trim() === "") return msg.name[lang];
+    if (field === "lastname" && value.trim() === "") return msg.lastname[lang];
     if (field === "email") {
       if (value.trim() === "") return msg.emailRequired[lang];
       if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value))
         return msg.emailInvalid[lang];
+    }
+    if (field === "subject") {
+      if (value.trim() === "") return msg.subjectRequired[lang];
+      if (value.trim().length < 3) return msg.subjectShort[lang];
     }
     if (field === "message" && value.length < 10) return msg.message[lang];
     return "";
@@ -88,14 +109,16 @@ export function Contact({ isDark, t, lang }: ContactProps) {
 
     // 2. VALIDASI FORM (Frontend)
     // Tampilkan error jika input kosong atau format salah SEBELUM dikirim ke database
-    setTouched({ name: true, email: true, message: true });
+    setTouched({ name: true, lastname: true, email: true, subject: true, message: true });
     const nameError = getFieldError("name", formData.name);
+    const lastnameError = getFieldError("lastname", formData.lastname);
     const emailError = getFieldError("email", formData.email);
+    const subjectError = getFieldError("subject", formData.subject);
     const messageError = getFieldError("message", formData.message);
 
-    if (nameError || emailError || messageError) {
+    if (nameError || lastnameError || emailError || subjectError || messageError) {
       setStatus("error");
-      setErrorMessage(nameError || emailError || messageError);
+      setErrorMessage(nameError || lastnameError || emailError || subjectError || messageError);
       return; // Berhenti di sini, jangan lanjut ke database
     }
 
@@ -111,6 +134,7 @@ export function Contact({ isDark, t, lang }: ContactProps) {
           // Jika di database tidak ada kolom lastname, kamu bisa gabungkan: name: `${formData.name} ${formData.lastName}`
           lastname: formData.lastname,
           email: formData.email,
+          subject: formData.subject,
           message: formData.message,
         },
       ]);
@@ -119,13 +143,18 @@ export function Contact({ isDark, t, lang }: ContactProps) {
 
       // Jika berhasil:
       setStatus("success");
-      setFormData({ name: "", lastname: "", email: "", message: "" }); // Kosongkan form
-      setTouched({ name: false, email: false, message: false }); // Reset status sentuhan
+      setFormData({ name: "", lastname: "", email: "", subject: "", message: "" }); // Kosongkan form
+      setTouched({ name: false, lastname: false, email: false, subject: false, message: false }); // Reset status sentuhan
 
       // Kembalikan ke tombol normal setelah 3 detik
       setTimeout(() => setStatus("idle"), 3000);
     } catch (error: any) {
       console.error("Gagal mengirim:", error.message);
+      toast.error(
+        lang === "id"
+          ? "Gagal mengirim pesan, coba lagi nanti."
+          : "Failed to send message.",
+      );
       setStatus("error");
       setErrorMessage(
         lang === "id"
@@ -218,13 +247,31 @@ export function Contact({ isDark, t, lang }: ContactProps) {
                   </span>
                 )}
               </div>
-              <input
-                name="lastname"
-                value={formData.lastname}
-                onChange={handleChange}
-                placeholder={t.formLastName}
-                className={`border rounded-2xl px-6 py-4 outline-none ${isDark ? "bg-white/5 border-white/10 text-white" : "bg-slate-50 border-slate-200"}`}
-              />
+
+              <div className="flex flex-col gap-1">
+                <input
+                  name="lastname"
+                  value={formData.lastname}
+                  onChange={handleChange}
+                  onBlur={handleBlur}
+                  placeholder={t.formLastName}
+                  required
+                  className={`border rounded-2xl px-6 py-4 outline-none ${
+                    touched.lastname &&
+                    getFieldError("lastname", formData.lastname)
+                      ? "border-rose-500"
+                      : isDark
+                        ? "border-white/10"
+                        : "border-slate-200"
+                  } ${isDark ? "bg-white/5 text-white" : "bg-slate-50"}`}
+                />
+                {touched.lastname &&
+                  getFieldError("lastname", formData.lastname) && (
+                    <span className="text-rose-500 text-xs px-2">
+                      {getFieldError("lastname", formData.lastname)}
+                    </span>
+                  )}
+              </div>
             </div>
 
             <div className="flex flex-col gap-1">
@@ -249,6 +296,30 @@ export function Contact({ isDark, t, lang }: ContactProps) {
                   {getFieldError("email", formData.email)}
                 </span>
               )}
+            </div>
+
+            <div className="flex flex-col gap-1">
+              <input
+                name="subject"
+                value={formData.subject}
+                onChange={handleChange}
+                onBlur={handleBlur}
+                placeholder={t.formSubject}
+                required
+                className={`w-full border rounded-2xl px-6 py-4 outline-none ${
+                  touched.subject && getFieldError("subject", formData.subject)
+                    ? "border-rose-500"
+                    : isDark
+                      ? "border-white/10"
+                      : "border-slate-200"
+                } ${isDark ? "bg-white/5 text-white" : "bg-slate-50"}`}
+              />
+              {touched.subject &&
+                getFieldError("subject", formData.subject) && (
+                  <span className="text-rose-500 text-xs px-2">
+                    {getFieldError("subject", formData.subject)}
+                  </span>
+                )}
             </div>
 
             <div className="flex flex-col gap-1">
@@ -277,7 +348,11 @@ export function Contact({ isDark, t, lang }: ContactProps) {
             </div>
 
             <div
-              className={`text-right text-xs mt-1 ${formData.message.length < 10 ? "text-rose-500" : "text-slate-500"}`}
+              className={`text-right text-xs mt-1 ${
+                formData.message.length < 10 || formData.message.length > 500
+                  ? "text-rose-500"
+                  : "text-white"
+              }`}
             >
               {formData.message.length} / 500{" "}
               {lang === "id" ? "karakter" : "characters"}

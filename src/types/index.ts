@@ -87,6 +87,7 @@ export interface Translation {
   formName: string;
   formLastName: string;
   formEmail: string;
+  formSubject: string;
   formMsg: string;
   formBtn: string;
   formLoading?: string;

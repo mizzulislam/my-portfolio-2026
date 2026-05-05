@@ -35,11 +35,12 @@ export function Navbar({
             <Menu size={20} />
           </button>
           <div className="flex items-center gap-2">
-            <span
-              className={`font-black text-lg sm:text-xl xl:text-2xl tracking-tighter uppercase leading-none ${isDark ? "text-white" : "text-slate-900"}`}
+            <a
+              href="#hero"
+              className={`font-black text-lg sm:text-xl xl:text-2xl tracking-tighter uppercase leading-none transition-colors ${isDark ? "text-white hover:text-blue-300" : "text-slate-900 hover:text-blue-600"}`}
             >
               {t.badge}
-            </span>
+            </a>
           </div>
         </div>
 

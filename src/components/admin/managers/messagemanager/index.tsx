@@ -211,7 +211,7 @@ export default function MessageManager() {
           isOpen={isReplyModalOpen}
           onClose={() => setIsReplyModalOpen(false)}
           recipientEmail={selectedMessage.email as string} // 'as string' memaksa TS percaya data ini ada
-          subject={`Re: Portofolio - Balasan untuk ${selectedMessage.name}`}
+          subject={`Balasan Untuk Pesan Anda`}
           onSuccess={() => {
             setIsReplyModalOpen(false);
             toast.success(`Email berhasil dikirim ke ${selectedMessage.name}`);

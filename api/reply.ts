@@ -15,7 +15,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     timeStyle: "short",
     timeZone: "Asia/Jakarta",
   }).format(new Date());
-  const cleanSubject = "Balasan Untuk Pesan Anda \u200B";
+  const cleanSubject = subject
+    ? `${subject} \u200B`
+    : "Balasan Untuk Pesan Anda \u200B";
 
   try {
     // 2. Kirim Email

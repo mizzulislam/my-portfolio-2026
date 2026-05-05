@@ -105,6 +105,7 @@ export const translations = {
     formName: "Full Name",
     formLastName: "Last Name",
     formEmail: "Email",
+    formSubject: "Subject",
     formMsg: "How can I help you?",
     formBtn: "Submit Inquiry",
     formLoading: "Sending...",
@@ -700,6 +701,7 @@ export const translations = {
     formName: "Nama Lengkap",
     formLastName: "Nama Belakang",
     formEmail: "Email",
+    formSubject: "Subjek",
     formMsg: "Bagaimana saya bisa membantu Anda?",
     formBtn: "Kirim Pesan",
     hardSkills: [

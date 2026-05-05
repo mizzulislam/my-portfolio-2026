@@ -32,7 +32,7 @@ export default function MessageDetail({
           size={16}
           className="group-hover:-translate-x-1 transition-transform"
         />
-        Kembali ke Kotak Masuk
+        Back to Inbox
       </button>
 
       <div className="bg-slate-900/60 backdrop-blur-2xl border border-white/10 rounded-[2.5rem] p-6 md:p-10 shadow-2xl relative overflow-hidden">
@@ -78,12 +78,23 @@ export default function MessageDetail({
         </div>
 
         {/* Konten Pesan */}
-        <div className="relative z-10">
-          <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-4 ml-2">
-            Isi Pesan
-          </p>
-          <div className="bg-black/20 p-8 rounded-[2rem] border border-white/5 text-slate-300 leading-relaxed min-h-[160px] whitespace-pre-wrap text-[15px] shadow-inner font-medium">
-            {selectedMessage.message}
+        <div className="relative z-10 space-y-4">
+          <div>
+            <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-4 ml-2">
+              Subject
+            </p>
+            <div className="bg-black/20 p-6 rounded-[2rem] border border-white/5 text-slate-100 leading-relaxed min-h-[72px] whitespace-pre-wrap text-[15px] shadow-inner font-semibold">
+              {selectedMessage.subject || "-"}
+            </div>
+          </div>
+
+          <div>
+            <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-4 ml-2">
+              Message Content
+            </p>
+            <div className="bg-black/20 p-8 rounded-[2rem] border border-white/5 text-slate-300 leading-relaxed min-h-[160px] whitespace-pre-wrap text-[15px] shadow-inner font-medium">
+              {selectedMessage.message}
+            </div>
           </div>
         </div>
 
@@ -93,14 +104,14 @@ export default function MessageDetail({
             onClick={onReply} // Memicu modal yang ada di index.tsx
             className="flex items-center gap-2.5 px-8 py-4 bg-blue-600 hover:bg-blue-500 text-white rounded-2xl font-black text-xs uppercase tracking-[0.15em] transition-all shadow-[0_0_20px_rgba(37,99,235,0.4)] hover:shadow-[0_0_30px_rgba(37,99,235,0.6)]"
           >
-            <Send size={16} /> Balas Pesan
+            <Send size={16} /> Reply Message
           </button>
 
           <button
             onClick={() => onDelete(selectedMessage.id!)} // Menggunakan fungsi hapus dari props
             className="flex items-center gap-2.5 px-8 py-4 bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500/20 hover:text-red-300 rounded-2xl font-black text-xs uppercase tracking-[0.15em] transition-all"
           >
-            <Trash2 size={16} /> Hapus
+            <Trash2 size={16} /> Delete
           </button>
         </div>
       </div>
