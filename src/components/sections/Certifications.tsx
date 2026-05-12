@@ -91,7 +91,7 @@ export function Certifications({ isDark, t, lang }: CertificationsProps) {
     <section
       id="certifications"
       className={`py-24 transition-colors duration-500 overflow-hidden ${
-        isDark ? "bg-[#020617]" : "bg-white"
+        isDark ? "bg-[#020617]" : "bg-slate-50"
       }`}
     >
       <div className="max-w-7xl mx-auto px-6 text-center">

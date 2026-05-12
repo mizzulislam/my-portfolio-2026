@@ -10,3 +10,4 @@ export * from "./TechnicalCarousel";
 export * from "./CertCategoryCarousel";
 export * from "./CertZoomCarousel";
 export * from "./AnimatedCounter";
+export * from "./TextReveal";

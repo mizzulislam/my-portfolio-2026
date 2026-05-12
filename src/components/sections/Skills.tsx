@@ -105,7 +105,7 @@ export function Skills({
       onTouchMove={handleGlobalMouseMove}
       onMouseEnter={() => setIsSkillsHovering(true)}
       onMouseLeave={() => setIsSkillsHovering(false)}
-      className={`py-12 sm:py-24 transition-colors relative overflow-hidden ${isDark ? "bg-slate-950/50" : "bg-slate-100"}`}
+      className={`py-12 sm:py-24 transition-colors relative overflow-hidden ${isDark ? "bg-slate-950/50" : "bg-white"}`}
     >
       <AnimatePresence>
         {isTechnicalScannerActive && (

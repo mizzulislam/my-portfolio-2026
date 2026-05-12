@@ -2,13 +2,13 @@ import React from "react";
 import { motion } from "motion/react";
 import {
   Zap,
-  Download,
+  ExternalLink,
   Linkedin,
   Instagram,
   Youtube,
   Github,
 } from "lucide-react";
-import { InteractiveGrid } from "../ui";
+import { InteractiveGrid, TextReveal } from "../ui";
 import { AIRobot } from "../Visuals";
 import { SectionProps } from "../../types";
 
@@ -38,7 +38,7 @@ export function Hero({ isDark, t }: HeroProps) {
           <h1
             className={`text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold leading-[1.1] mb-6 tracking-tight ${isDark ? "text-white drop-shadow-2xl" : "text-slate-900"}`}
           >
-            <span className="uppercase block">MUHAMMAD IZZUL ISLAM</span>
+            <TextReveal delay={0.2} className="uppercase block">MUHAMMAD IZZUL ISLAM</TextReveal>
           </h1>
           <p
             className={`text-sm sm:text-base md:text-lg lg:text-xl mb-8 font-light leading-relaxed max-w-2xl mx-auto lg:mx-0 ${isDark ? "text-slate-400" : "text-slate-600"}`}
@@ -54,14 +54,15 @@ export function Hero({ isDark, t }: HeroProps) {
             */}
             <a
               href="/CV-Muhammad-Izzul-Islam.pdf"
-              download="CV-Muhammad-Izzul-Islam.pdf"
-              aria-label="Download CV Muhammad Izzul Islam dalam format PDF"
+              target="_blank"
+              rel="noreferrer"
+              aria-label="Lihat CV Muhammad Izzul Islam dalam format PDF"
               className={`font-bold px-6 sm:px-8 py-3.5 sm:py-4 rounded-xl flex items-center gap-2 transition-colors group shadow-xl text-sm sm:text-base ${isDark ? "bg-white text-black hover:bg-slate-200" : "bg-slate-900 text-white hover:bg-black"}`}
             >
               {t.downloadBtn}{" "}
-              <Download
+              <ExternalLink
                 size={18}
-                className="group-hover:translate-y-0.5 transition-transform"
+                className="group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform"
               />
             </a>
             <div className="flex gap-3 sm:gap-4">

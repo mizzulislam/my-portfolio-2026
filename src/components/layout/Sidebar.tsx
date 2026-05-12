@@ -1,8 +1,7 @@
 import React from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { X, Sun, Moon, Languages, Volume2, VolumeX } from "lucide-react";
+import { X, Sun, Moon, Languages, Volume2, VolumeX, LayoutDashboard } from "lucide-react";
 import { SidebarProps } from "../../types";
-
 export function Sidebar({
   isMenuOpen,
   setIsMenuOpen,
@@ -35,8 +34,8 @@ export function Sidebar({
           >
             <div className="flex justify-between items-center mb-12">
               <div className="flex items-center gap-2">
-                <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center font-bold text-white shadow-lg">
-                  IZ
+                <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white shadow-lg">
+                  <LayoutDashboard size={18} />
                 </div>
                 <span
                   className={`font-bold tracking-tighter uppercase ${isDark ? "text-white" : "text-slate-900"}`}

@@ -165,7 +165,7 @@ export function Contact({ isDark, t, lang }: ContactProps) {
   };
 
   return (
-    <section id="contact" className="py-20 px-6">
+    <section id="contact" className={`py-20 px-6 transition-colors ${isDark ? "bg-transparent" : "bg-white"}`}>
       <SectionHeader
         title={t.contactHeader}
         subTitle={t.contactSub}
@@ -349,7 +349,7 @@ export function Contact({ isDark, t, lang }: ContactProps) {
 
             <div
               className={`text-right text-xs mt-1 ${
-                formData.message.length < 10 || formData.message.length > 500
+                formData.message.length > 500
                   ? "text-rose-500"
                   : "text-white"
               }`}

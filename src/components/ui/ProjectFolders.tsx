@@ -30,8 +30,12 @@ export function ProjectFolders({
               <div
                 className={`px-4 md:px-7 py-2.5 md:py-3.5 rounded-t-xl md:rounded-t-2xl relative transition-all duration-500 ${
                   isActive
-                    ? "bg-gradient-to-t from-[#0B0E14] to-[#1E293B] border-t-2 border-l border-r border-[#3b82f6]/50 shadow-[0_-8px_20px_rgba(37,99,235,0.12)] scale-[1.02] -translate-y-[2px]"
-                    : "bg-[#161B22]/60 border-t border-l border-r border-white/5 opacity-60 hover:opacity-100 hover:bg-[#161B22]/100"
+                    ? isDark
+                      ? "bg-gradient-to-t from-[#0B0E14] to-[#1E293B] border-t-2 border-l border-r border-[#3b82f6]/50 shadow-[0_-8px_20px_rgba(37,99,235,0.12)] scale-[1.02] -translate-y-[2px]"
+                      : "bg-gradient-to-t from-white to-slate-50 border-t-2 border-l border-r border-blue-500/30 shadow-[0_-8px_20px_rgba(37,99,235,0.08)] scale-[1.02] -translate-y-[2px]"
+                    : isDark
+                      ? "bg-[#161B22]/60 border-t border-l border-r border-white/5 opacity-60 hover:opacity-100 hover:bg-[#161B22]/100"
+                      : "bg-slate-200/60 border-t border-l border-r border-slate-300 opacity-60 hover:opacity-100 hover:bg-slate-200"
                 }`}
               >
                 <div className="flex items-center gap-2.5">
@@ -41,7 +45,7 @@ export function ProjectFolders({
                     {String(idx + 1).padStart(2, "0")}
                   </span>
                   <span
-                    className={`text-[9px] md:text-xs font-black uppercase tracking-widest whitespace-nowrap transition-colors duration-300 ${isActive ? "text-white" : "text-slate-400 group-hover:text-slate-200"}`}
+                    className={`text-[9px] md:text-xs font-black uppercase tracking-widest whitespace-nowrap transition-colors duration-300 ${isActive ? (isDark ? "text-white" : "text-slate-900") : (isDark ? "text-slate-400 group-hover:text-slate-200" : "text-slate-400 group-hover:text-slate-600")}`}
                   >
                     {project.title.split(" ").slice(0, 2).join(" ")}
                   </span>
@@ -56,7 +60,7 @@ export function ProjectFolders({
 
                 {/* Visual Connection Overlay (only for active) to bridge the border gap */}
                 {isActive && (
-                  <div className="absolute -bottom-[2px] left-0 right-0 h-[4px] bg-[#0B0E14] z-30" />
+                  <div className={`absolute -bottom-[2px] left-0 right-0 h-[4px] z-30 ${isDark ? "bg-[#0B0E14]" : "bg-white"}`} />
                 )}
               </div>
             </button>
@@ -82,7 +86,7 @@ export function ProjectFolders({
               loading="lazy"
               referrerPolicy="no-referrer"
             />
-            <div className="absolute inset-0 bg-gradient-to-r from-[#0B0E14]/95 via-[#0B0E14]/80 to-[#0B0E14]/60" />
+            <div className={`absolute inset-0 ${isDark ? "bg-gradient-to-r from-[#0B0E14]/95 via-[#0B0E14]/80 to-[#0B0E14]/60" : "bg-gradient-to-r from-white/95 via-white/80 to-white/60"}`} />
           </div>
         )}
 

@@ -11,6 +11,7 @@ import { AnimatePresence } from 'motion/react';
 import { translations } from './constants';
 import { Toaster } from "react-hot-toast";
 import { useMotionValue } from "motion/react";
+import { ReactLenis } from 'lenis/react';
 
 // Layout Components
 import { Navbar } from './components/layout/Navbar';
@@ -79,6 +80,7 @@ export default function App() {
   };
 
   return (
+    <ReactLenis root>
     <Routes>
       <Route path="/login" element={<Login />} />
       <Route path="/admin" element={<Admin />} />
@@ -185,6 +187,7 @@ export default function App() {
         }
       />
     </Routes>
+    </ReactLenis>
   );
 }
 

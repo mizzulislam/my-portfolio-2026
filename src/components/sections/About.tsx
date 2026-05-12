@@ -11,7 +11,7 @@ export function About({ isDark, t }: AboutProps) {
   return (
     <section
       id="about"
-      className={`py-20 transition-colors overflow-hidden ${isDark ? "bg-slate-900/30" : "bg-slate-100"}`}
+      className={`py-20 transition-colors overflow-hidden ${isDark ? "bg-slate-900/30" : "bg-white"}`}
     >
       <div className="max-w-7xl mx-auto px-6 text-center">
         <SectionHeader

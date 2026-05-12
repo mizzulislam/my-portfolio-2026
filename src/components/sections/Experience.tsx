@@ -117,7 +117,7 @@ export function Experience({
   const activeData = activeTab === "work" ? workData : orgData;
 
   return (
-    <section id="experience" className="pt-20 pb-4 px-6 overflow-hidden">
+    <section id="experience" className={`pt-20 pb-4 px-6 overflow-hidden transition-colors ${isDark ? "bg-transparent" : "bg-white"}`}>
       <div className="max-w-7xl mx-auto text-center">
         <SectionHeader
           title={t.expHeader}

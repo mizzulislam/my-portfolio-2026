@@ -1,4 +1,5 @@
 import React from "react";
+import { motion } from "motion/react";
 import {
   Menu,
   Sun,
@@ -9,7 +10,6 @@ import {
   Mail,
 } from "lucide-react";
 import { NavbarProps } from "../../types";
-
 export function Navbar({
   scrolled,
   isDark,
@@ -28,12 +28,13 @@ export function Navbar({
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 flex justify-between items-center h-full">
         <div className="flex items-center gap-2 sm:gap-4 flex-shrink-0">
-          <button
+          <motion.button
+            whileTap={{ scale: 0.85, rotate: 90 }}
             onClick={() => setIsMenuOpen(true)}
             className={`lg:hidden p-2 rounded-xl border transition-all ${isDark ? "bg-white/5 border-white/10 text-white" : "bg-slate-50 border-slate-200 text-slate-900"}`}
           >
             <Menu size={20} />
-          </button>
+          </motion.button>
           <div className="flex items-center gap-2">
             <a
               href="#hero"
@@ -89,7 +90,7 @@ export function Navbar({
           </button>
           <a
             href="#contact"
-            className="bg-blue-600 hover:bg-blue-700 text-white px-4 xl:px-5 py-2 rounded-full transition-all shadow-lg active:scale-95 text-[10px] font-bold uppercase whitespace-nowrap"
+            className="bg-blue-600 hover:bg-blue-700 text-white px-4 xl:px-5 py-2 rounded-full transition-all shadow-lg active:scale-95 text-[10px] font-bold uppercase whitespace-nowrap block"
           >
             {t.contactBtn}
           </a>

@@ -103,7 +103,7 @@ export function ExperienceRoadmap({ labels, isDark }: ExperienceRoadmapProps) {
                   }}
                   className="absolute left-1/2 -translate-x-1/2 top-1/2 -translate-y-1/2 z-30"
                 >
-                  <div className="w-8 h-8 rotate-45 rounded-md border-2 flex items-center justify-center bg-slate-950 border-blue-600/50 shadow-[0_0_10px_rgba(37,99,235,0.2)]">
+                  <div className={`w-8 h-8 rotate-45 rounded-md border-2 flex items-center justify-center shadow-[0_0_10px_rgba(37,99,235,0.2)] ${isDark ? "bg-slate-950 border-blue-600/50" : "bg-white border-blue-400"}`}>
                     <NodeIcon size={12} className="text-blue-400 -rotate-45" />
                   </div>
                 </motion.div>
@@ -112,18 +112,18 @@ export function ExperienceRoadmap({ labels, isDark }: ExperienceRoadmapProps) {
                 <motion.div
                   initial={{ opacity: 0, x: isLeft ? -15 : 15 }}
                   whileInView={{ opacity: 1, x: 0 }}
-                  className={`p-4 rounded-xl border border-white/5 bg-[#161B22]/90 backdrop-blur-xl w-[42%] relative flex flex-col items-start ${isLeft ? "mr-10" : "ml-10"}`}
+                  className={`p-4 rounded-xl border backdrop-blur-xl w-[42%] relative flex flex-col items-start ${isLeft ? "mr-10" : "ml-10"} ${isDark ? "bg-[#161B22]/90 border-white/5" : "bg-white/90 border-slate-200 shadow-lg"}`}
                 >
                   {/* Arrow for mobile */}
                   <div
-                    className={`absolute top-1/2 -translate-y-1/2 w-3 h-3 bg-[#161B22] border-white/5 rotate-45 ${isLeft ? "-right-[7px] border-t border-r" : "-left-[7px] border-l border-b"}`}
+                    className={`absolute top-1/2 -translate-y-1/2 w-3 h-3 rotate-45 ${isLeft ? "-right-[7px] border-t border-r" : "-left-[7px] border-l border-b"} ${isDark ? "bg-[#161B22] border-white/5" : "bg-white border-slate-200"}`}
                   />
 
                   <span className="text-lg font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-300 mb-1 font-mono text-left">
                     {m.year}
                   </span>
                   <div className="h-[1px] w-6 bg-blue-600/40 mb-2" />
-                  <p className="text-[10px] font-medium text-white leading-tight text-left line-clamp-3">
+                  <p className={`text-[10px] font-medium leading-tight text-left line-clamp-3 ${isDark ? "text-white" : "text-slate-700"}`}>
                     {m.event}
                   </p>
                 </motion.div>
@@ -165,18 +165,18 @@ export function ExperienceRoadmap({ labels, isDark }: ExperienceRoadmapProps) {
                       whileInView={{ opacity: 1, y: 0 }}
                       viewport={{ once: false }}
                       transition={{ duration: 0.6, delay: i * 0.1 }}
-                      className="p-6 rounded-2xl border border-white/5 bg-[#161B22]/90 backdrop-blur-2xl shadow-2xl relative transition-all duration-300 group-hover:border-blue-500/30 min-h-[150px] flex flex-col items-start justify-start"
+                      className={`p-6 rounded-2xl border backdrop-blur-2xl shadow-2xl relative transition-all duration-300 min-h-[150px] flex flex-col items-start justify-start ${isDark ? "bg-[#161B22]/90 border-white/5 group-hover:border-blue-500/30" : "bg-white/90 border-slate-200 group-hover:border-blue-400"}`}
                     >
                       {/* Arrow indicator */}
                       <div
-                        className={`absolute left-1/2 -translate-x-1/2 w-4 h-4 bg-[#161B22] border-white/5 rotate-45 ${isUp ? "bottom-[-9px] border-r border-b" : "top-[-9px] border-l border-t"}`}
+                        className={`absolute left-1/2 -translate-x-1/2 w-4 h-4 rotate-45 ${isUp ? "bottom-[-9px] border-r border-b" : "top-[-9px] border-l border-t"} ${isDark ? "bg-[#161B22] border-white/5" : "bg-white border-slate-200"}`}
                       />
 
                       <span className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-300 mb-2 font-mono tracking-tighter text-left">
                         {m.year}
                       </span>
                       <div className="h-[2px] w-10 bg-blue-600/40 mb-3" />
-                      <p className="text-sm font-medium text-white leading-relaxed text-left whitespace-normal line-clamp-3 overflow-hidden">
+                      <p className={`text-sm font-medium leading-relaxed text-left whitespace-normal line-clamp-3 overflow-hidden ${isDark ? "text-white" : "text-slate-700"}`}>
                         {m.event}
                       </p>
                     </motion.div>
@@ -194,7 +194,7 @@ export function ExperienceRoadmap({ labels, isDark }: ExperienceRoadmapProps) {
                     }}
                     className="relative z-30"
                   >
-                    <div className="w-14 h-14 rotate-45 rounded-xl border-4 flex items-center justify-center transition-all bg-slate-950 border-blue-600/70 shadow-[0_0_20px_rgba(37,99,235,0.2)] group-hover:border-blue-400 group-hover:scale-110 group-hover:shadow-[0_0_25px_rgba(37,99,235,0.5)]">
+                    <div className={`w-14 h-14 rotate-45 rounded-xl border-4 flex items-center justify-center transition-all shadow-[0_0_20px_rgba(37,99,235,0.2)] group-hover:scale-110 group-hover:shadow-[0_0_25px_rgba(37,99,235,0.5)] ${isDark ? "bg-slate-950 border-blue-600/70 group-hover:border-blue-400" : "bg-white border-blue-400 group-hover:border-blue-600"}`}>
                       <NodeIcon
                         size={20}
                         className="text-blue-400 -rotate-45"

@@ -9,7 +9,7 @@ export function Education({ isDark, t }: EducationProps) {
   return (
     <section
       id="education"
-      className={`py-24 relative overflow-hidden ${isDark ? "bg-slate-950/30" : "bg-white"}`}
+      className={`py-24 relative overflow-hidden ${isDark ? "bg-slate-950/30" : "bg-slate-50"}`}
     >
       <div className="max-w-5xl mx-auto px-6 text-center">
         <SectionHeader

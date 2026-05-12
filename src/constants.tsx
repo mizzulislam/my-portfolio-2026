@@ -25,7 +25,7 @@ export const translations = {
     badge: "Portfolio 2026",
     heroDesc:
       "Accounting graduate & Certified Tax Technician (CTT). Bridging the gap between tax compliance and cutting-edge automation.",
-    downloadBtn: "Download CV",
+    downloadBtn: "View CV",
     aboutHeader: "About Me",
     aboutSub:
       "A brief introduction to my professional background and career goals.",
@@ -621,7 +621,7 @@ export const translations = {
     badge: "Portofolio 2026",
     heroDesc:
       "Lulusan Akuntansi & Teknisi Pajak Bersertifikat (CTT). Menjembatani kepatuhan pajak dengan otomasi mutakhir.",
-    downloadBtn: "Unduh CV",
+    downloadBtn: "Lihat CV",
     aboutHeader: "Tentang Saya",
     aboutSub:
       "Pengenalan singkat tentang latar belakang profesional dan tujuan karir saya.",
