@@ -66,8 +66,6 @@ import {
   CertItem,
 } from "../../types";
 
-import { TextReveal } from "./TextReveal";
-
 export function SectionHeader({
   title,
   subTitle,
@@ -80,7 +78,7 @@ export function SectionHeader({
         className={`text-2xl md:text-4xl font-extrabold mb-3 flex flex-col md:flex-row items-center justify-center gap-2.5 tracking-tight ${isDark ? "text-white" : "text-slate-900"}`}
       >
         {Icon && <Icon className="text-blue-500 shrink-0" size={32} />}
-        <TextReveal className="justify-center md:justify-start">{title}</TextReveal>
+        {title}
       </h2>
       <div className="h-1.5 w-24 bg-blue-600 rounded-full shadow-[0_0_15px_rgba(37,99,235,0.4)] mb-4"></div>
       {subTitle && (
