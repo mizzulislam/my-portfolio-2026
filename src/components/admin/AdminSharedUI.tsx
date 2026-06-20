@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
-import { motion } from "motion/react";
-import { AlertTriangle } from "lucide-react";
+import { motion, AnimatePresence } from "motion/react";
+import { AlertTriangle, ChevronDown, Check } from "lucide-react";
 
 export function AdminCard({
   children,
@@ -37,19 +37,119 @@ export function AdminInput({ ...props }: React.InputHTMLAttributes<HTMLInputElem
   )
 }
 
-export function AdminSelect({
-  ...props
-}: React.SelectHTMLAttributes<HTMLSelectElement>) {
+export interface DropdownOption {
+  value: string;
+  label: string;
+}
+
+export function AdminDropdown({
+  value,
+  onChange,
+  options,
+  placeholder = "Select an option",
+  className = "",
+  size = "normal",
+}: {
+  value: string;
+  onChange: (value: string) => void;
+  options: DropdownOption[];
+  placeholder?: string;
+  className?: string;
+  size?: "normal" | "compact";
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  const selectedLabel = options.find((o) => o.value === value)?.label ?? placeholder;
+
+  useEffect(() => {
+    const handleClick = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, []);
+
+  const isCompact = size === "compact";
+
   return (
-    <select
-      {...props}
-      className="w-full bg-slate-900 border border-white/10 rounded-2xl px-5 py-3.5 text-slate-200 focus:outline-none focus:border-blue-500/50 focus:ring-4 focus:ring-blue-500/10 transition-all duration-300 mb-4 appearance-none cursor-pointer"
-      style={{
-        backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E")`,
-        backgroundRepeat: "no-repeat",
-        backgroundPosition: "right 1.25rem center",
-        colorScheme: "dark",
-      }}
+    <div ref={ref} className={`relative w-full ${className}`}>
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className={`w-full flex items-center justify-between gap-3 bg-slate-900/80 border ${
+          open ? "border-blue-500/50 ring-4 ring-blue-500/10" : "border-white/10"
+        } rounded-2xl text-slate-200 cursor-pointer transition-all duration-200 hover:border-white/20 ${
+          isCompact ? "px-3 py-2.5 text-xs" : "px-5 py-3.5 text-sm"
+        }`}
+      >
+        <span className={value ? "text-slate-200" : "text-slate-500"}>
+          {selectedLabel}
+        </span>
+        <motion.span
+          animate={{ rotate: open ? 180 : 0 }}
+          transition={{ duration: 0.2 }}
+          className="shrink-0"
+        >
+          <ChevronDown size={isCompact ? 14 : 16} className="text-slate-400" />
+        </motion.span>
+      </button>
+
+      <AnimatePresence>
+        {open && (
+          <motion.ul
+            initial={{ opacity: 0, y: -6, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -6, scale: 0.98 }}
+            transition={{ duration: 0.15, ease: "easeOut" }}
+            className="absolute z-[200] left-0 right-0 mt-2 bg-slate-900/95 backdrop-blur-xl border border-white/10 rounded-2xl overflow-hidden shadow-2xl shadow-black/50"
+          >
+            {options.map((opt) => (
+              <li key={opt.value}>
+                <button
+                  type="button"
+                  onClick={() => { onChange(opt.value); setOpen(false); }}
+                  className={`w-full flex items-center justify-between gap-3 ${
+                    isCompact ? "px-3 py-2 text-xs" : "px-5 py-3 text-sm"
+                  } font-medium transition-all duration-150 ${
+                    opt.value === value
+                      ? "bg-blue-600/20 text-blue-300"
+                      : "text-slate-300 hover:bg-white/5 hover:text-white"
+                  }`}
+                >
+                  {opt.label}
+                  {opt.value === value && (
+                    <Check size={12} className="text-blue-400 shrink-0" />
+                  )}
+                </button>
+              </li>
+            ))}
+          </motion.ul>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+/** @deprecated Use AdminDropdown instead */
+export function AdminSelect({
+  value,
+  onChange,
+  children,
+  className,
+}: React.SelectHTMLAttributes<HTMLSelectElement>) {
+  // Parse options from children for backward compat
+  const opts: DropdownOption[] = React.Children.toArray(children)
+    .filter((c): c is React.ReactElement => React.isValidElement(c))
+    .map((c) => ({ value: String(c.props.value ?? ""), label: String(c.props.children ?? "") }));
+  return (
+    <AdminDropdown
+      value={String(value ?? "")}
+      onChange={(v) => onChange?.({ target: { value: v } } as React.ChangeEvent<HTMLSelectElement>)}
+      options={opts}
+      className={className ? `mb-4 ${className}` : "mb-4"}
     />
   );
 }

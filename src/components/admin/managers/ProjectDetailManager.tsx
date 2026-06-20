@@ -8,7 +8,7 @@ import {
 import { toast } from "react-hot-toast";
 import { Project } from "@/src/types/project";
 import { projectsApi } from "@/src/lib/api/projects";
-import { AdminCard, AdminBtn, ImageUpload, AdminConfirmModal } from "../AdminSharedUI";
+import { AdminCard, AdminBtn, ImageUpload, AdminConfirmModal, AdminDropdown } from "../AdminSharedUI";
 import { supabase } from "@/src/lib/supabase";
 
 // Dnd Kit Imports
@@ -758,16 +758,17 @@ export default function ProjectDetailManager({ projectId, onBack }: ProjectDetai
                           <div className="grid grid-cols-2 gap-4">
                             <div>
                               <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block mb-2">Style</label>
-                              <select
+                              <AdminDropdown
                                 value={block.data.style}
-                                onChange={(e) => updateBlock(block.id, { style: e.target.value })}
-                                className="w-full bg-slate-950 border border-white/5 rounded-xl p-3 text-xs text-slate-300 focus:outline-none"
-                              >
-                                <option value="line">Solid Line</option>
-                                <option value="dashed">Dashed Line</option>
-                                <option value="double">Double Line</option>
-                                <option value="dots">Dotted Line</option>
-                              </select>
+                                onChange={(v) => updateBlock(block.id, { style: v })}
+                                size="compact"
+                                options={[
+                                  { value: "line", label: "Solid Line" },
+                                  { value: "dashed", label: "Dashed Line" },
+                                  { value: "double", label: "Double Line" },
+                                  { value: "dots", label: "Dotted Line" },
+                                ]}
+                              />
                             </div>
                             <div>
                               <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block mb-2">Color</label>
@@ -787,14 +788,15 @@ export default function ProjectDetailManager({ projectId, onBack }: ProjectDetai
                             <div className="grid grid-cols-2 gap-4">
                               <div>
                                 <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block mb-2">Media Type</label>
-                                <select
+                                <AdminDropdown
                                   value={block.data.mediaType}
-                                  onChange={(e) => updateBlock(block.id, { mediaType: e.target.value })}
-                                  className="w-full bg-slate-950 border border-white/5 rounded-xl p-3 text-xs text-slate-300 focus:outline-none"
-                                >
-                                  <option value="image">Image</option>
-                                  <option value="video">YouTube/Video Link</option>
-                                </select>
+                                  onChange={(v) => updateBlock(block.id, { mediaType: v })}
+                                  size="compact"
+                                  options={[
+                                    { value: "image", label: "Image" },
+                                    { value: "video", label: "YouTube / Video Link" },
+                                  ]}
+                                />
                               </div>
                               <div>
                                 <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block mb-2">Media URL</label>
@@ -1112,25 +1114,27 @@ export default function ProjectDetailManager({ projectId, onBack }: ProjectDetai
                             <div className="grid grid-cols-2 gap-4">
                               <div>
                                 <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block mb-2">Media Layout</label>
-                                <select
+                                <AdminDropdown
                                   value={block.data.layout}
-                                  onChange={(e) => updateBlock(block.id, { layout: e.target.value })}
-                                  className="w-full bg-slate-950 border border-white/5 rounded-xl p-3 text-xs text-slate-300 focus:outline-none"
-                                >
-                                  <option value="left">Media Left / Text Right</option>
-                                  <option value="right">Media Right / Text Left</option>
-                                </select>
+                                  onChange={(v) => updateBlock(block.id, { layout: v })}
+                                  size="compact"
+                                  options={[
+                                    { value: "left", label: "Media Left / Text Right" },
+                                    { value: "right", label: "Media Right / Text Left" },
+                                  ]}
+                                />
                               </div>
                               <div>
                                 <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block mb-2">Media Type</label>
-                                <select
+                                <AdminDropdown
                                   value={block.data.mediaType}
-                                  onChange={(e) => updateBlock(block.id, { mediaType: e.target.value })}
-                                  className="w-full bg-slate-950 border border-white/5 rounded-xl p-3 text-xs text-slate-300 focus:outline-none"
-                                >
-                                  <option value="image">Image</option>
-                                  <option value="video">Video URL (YouTube)</option>
-                                </select>
+                                  onChange={(v) => updateBlock(block.id, { mediaType: v })}
+                                  size="compact"
+                                  options={[
+                                    { value: "image", label: "Image" },
+                                    { value: "video", label: "Video URL (YouTube)" },
+                                  ]}
+                                />
                               </div>
                             </div>
 
