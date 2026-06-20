@@ -9,6 +9,7 @@ import { toast } from "react-hot-toast";
 import { Project } from "@/src/types/project";
 import { projectsApi } from "@/src/lib/api/projects";
 import { AdminCard, AdminBtn, ImageUpload, AdminConfirmModal, AdminDropdown } from "../AdminSharedUI";
+import RichTextEditor from "../RichTextEditor";
 import { supabase } from "@/src/lib/supabase";
 
 // Dnd Kit Imports
@@ -216,7 +217,7 @@ export default function ProjectDetailManager({ projectId, onBack }: ProjectDetai
     
     switch (type) {
       case "text":
-        defaultData = { html: "<h3>Judul Blok Baru</h3><p>Tulis penjelasan terperinci mengenai bagian ini di sini...</p>" };
+        defaultData = { html: "", mode: "rich" };
         break;
       case "divider":
         defaultData = { style: "line", color: "rgba(255,255,255,0.1)" };
@@ -748,33 +749,40 @@ export default function ProjectDetailManager({ projectId, onBack }: ProjectDetai
                           <div className="space-y-3">
                             <div className="flex items-center justify-between">
                               <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block">
-                                {block.data.mode === "plain" ? "Plain Text Content" : "HTML / Rich Text Content"}
+                                {block.data.mode === "html" ? "HTML / Raw Code" : "Rich Text (WYSIWYG)"}
                               </label>
                               <button
                                 type="button"
-                                onClick={() => updateBlock(block.id, { mode: block.data.mode === "plain" ? "html" : "plain" })}
+                                onClick={() => updateBlock(block.id, { mode: block.data.mode === "html" ? "rich" : "html" })}
                                 className="text-[8px] font-black uppercase tracking-widest px-2.5 py-1 rounded-md border transition-all"
-                                style={block.data.mode === "plain"
-                                  ? { borderColor: "rgba(255,255,255,0.1)", color: "#94a3b8", background: "rgba(255,255,255,0.04)" }
-                                  : { borderColor: "rgba(59,130,246,0.3)", color: "#60a5fa", background: "rgba(59,130,246,0.08)" }
+                                style={block.data.mode === "html"
+                                  ? { borderColor: "rgba(59,130,246,0.3)", color: "#60a5fa", background: "rgba(59,130,246,0.08)" }
+                                  : { borderColor: "rgba(255,255,255,0.1)", color: "#94a3b8", background: "rgba(255,255,255,0.04)" }
                                 }
                               >
-                                {block.data.mode === "plain" ? "⟨/⟩ Ganti ke HTML" : "Aa Ganti ke Plain Text"}
+                                {block.data.mode === "html" ? "Aa Ganti ke Rich Text" : "⟨/⟩ Ganti ke HTML"}
                               </button>
                             </div>
-                            <textarea
-                              value={block.data.html}
-                              onChange={(e) => updateBlock(block.id, { html: e.target.value })}
-                              rows={5}
-                              placeholder={block.data.mode === "plain" ? "Tulis teks biasa di sini..." : "Masukkan teks HTML di sini, contoh: <h2>Judul</h2><p>Isi paragraf</p>"}
-                              className={`w-full bg-slate-950 border border-white/5 rounded-xl p-4 text-xs text-slate-300 focus:outline-none focus:border-blue-500/40 transition-all ${
-                                block.data.mode === "plain" ? "font-sans leading-relaxed" : "font-mono"
-                              }`}
-                            />
-                            {block.data.mode !== "plain" && (
-                              <p className="text-[9px] text-slate-600 leading-relaxed">
-                                Mendukung tag HTML seperti <code className="text-blue-400/70">&lt;h2&gt;</code>, <code className="text-blue-400/70">&lt;p&gt;</code>, <code className="text-blue-400/70">&lt;ul&gt;</code>, <code className="text-blue-400/70">&lt;blockquote&gt;</code>, dll.
-                              </p>
+
+                            {block.data.mode === "html" ? (
+                              <>
+                                <textarea
+                                  value={block.data.html}
+                                  onChange={(e) => updateBlock(block.id, { html: e.target.value })}
+                                  rows={5}
+                                  placeholder="Masukkan teks HTML di sini, contoh: <h2>Judul</h2><p>Isi paragraf</p>"
+                                  className="w-full bg-slate-950 border border-white/5 rounded-xl p-4 font-mono text-xs text-slate-300 focus:outline-none focus:border-blue-500/40 transition-all"
+                                />
+                                <p className="text-[9px] text-slate-600 leading-relaxed">
+                                  Mendukung tag HTML seperti <code className="text-blue-400/70">&lt;h2&gt;</code>, <code className="text-blue-400/70">&lt;p&gt;</code>, <code className="text-blue-400/70">&lt;ul&gt;</code>, <code className="text-blue-400/70">&lt;blockquote&gt;</code>, dll.
+                                </p>
+                              </>
+                            ) : (
+                              <RichTextEditor
+                                value={block.data.html}
+                                onChange={(html) => updateBlock(block.id, { html })}
+                                placeholder="Tulis konten rich text di sini — gunakan toolbar di atas untuk format teks, heading, list, link, dan lainnya..."
+                              />
                             )}
                           </div>
                         )}
