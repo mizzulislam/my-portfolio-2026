@@ -4,7 +4,7 @@
  */
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route, useLocation } from "react-router-dom";
 import Login from "./components/Login";
 import Admin from "./components/Admin";
 import { AnimatePresence } from 'motion/react';
@@ -32,6 +32,8 @@ import { Contact } from './components/sections/Contact';
 
 export default function App() {
   const [showIntro, setShowIntro] = useState(true);
+  const location = useLocation();
+  const isHome = location.pathname === "/";
   const [lang, setLang] = useState<'en' | 'id'>('id');
   const [isDark, setIsDark] = useState(true);
   const [isMusicPlaying, setIsMusicPlaying] = useState(false);
@@ -55,12 +57,15 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    if (showIntro) {
+    if (showIntro && isHome) {
       document.body.style.overflow = 'hidden';
     } else {
       document.body.style.overflow = 'unset';
     }
-  }, [showIntro]);
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [showIntro, isHome]);
 
   const handleGlobalMouseMove = (e: React.MouseEvent | React.TouchEvent) => {
     const clientX = "touches" in e ? e.touches[0].clientX : e.clientX;
@@ -80,16 +85,16 @@ export default function App() {
   };
 
   return (
-    <ReactLenis root>
     <Routes>
       <Route path="/login" element={<Login />} />
       <Route path="/admin" element={<Admin />} />
       <Route
         path="/"
         element={
-          <div
-            className={`min-h-screen w-full overflow-x-hidden font-sans transition-colors duration-500 md:cursor-none ${isDark ? "bg-[#020617] text-slate-200" : "bg-slate-50 text-slate-900"}`}
-          >
+          <ReactLenis root>
+            <div
+              className={`min-h-screen w-full overflow-x-hidden font-sans transition-colors duration-500 md:cursor-none ${isDark ? "bg-[#020617] text-slate-200" : "bg-slate-50 text-slate-900"}`}
+            >
             <AnimatePresence>
               {showIntro && (
                 <IntroLoader onComplete={() => setShowIntro(false)} />
@@ -183,11 +188,11 @@ export default function App() {
                 </div>
               )}
             </AnimatePresence>
-          </div>
+            </div>
+          </ReactLenis>
         }
       />
     </Routes>
-    </ReactLenis>
   );
 }
 

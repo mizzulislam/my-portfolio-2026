@@ -174,6 +174,7 @@ export default function ProjectManager() {
     order: 0,
   });
   const [editId, setEditId] = useState<string | null>(null);
+  const [tagsInput, setTagsInput] = useState<string>("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -238,6 +239,7 @@ export default function ProjectManager() {
       tags_id: [],
       order: 0,
     });
+    setTagsInput("");
     setEditId(null);
   };
   
@@ -245,14 +247,19 @@ export default function ProjectManager() {
     if (!form.title.trim()) return toast.error("Judul proyek wajib diisi!");
     setIsSubmitting(true);
     try {
+      const parsedTags = tagsInput
+        .split("\n")
+        .map((s) => s.trim())
+        .filter(Boolean);
+
       const [title_id, desc_id, category_id, tags_id] = await Promise.all([
         translateToIndonesian(form.title),
         translateToIndonesian(form.description),
         translateToIndonesian(form.category),
-        translateArrayToIndonesian(form.tags),
+        translateArrayToIndonesian(parsedTags),
       ]);
 
-      const dataToSave = { ...form, title_id, desc_id, category_id, tags_id };
+      const dataToSave = { ...form, tags: parsedTags, title_id, desc_id, category_id, tags_id };
 
       if (editId) {
         await projectsApi.update(editId, dataToSave);
@@ -278,6 +285,7 @@ export default function ProjectManager() {
 
   const handleEdit = (item: Project) => {
     setForm(item);
+    setTagsInput(item.tags ? item.tags.join("\n") : "");
     setEditId(item.id!);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
@@ -355,20 +363,15 @@ export default function ProjectManager() {
             />
           </div>
 
-          {/* Baris 4: Tags */}
+          {/* Baris 4: Critical Outputs */}
           <div className="col-span-full">
             <label className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-400 mb-2 block px-2">
-              Tags (Semicolon separated)
+              Critical Outputs
             </label>
-            <AdminInput
-              placeholder="React; Tailwind; Supabase..."
-              value={form.tags.join(";")}
-              onChange={(e) =>
-                setForm({
-                  ...form,
-                  tags: e.target.value.split(";").map((s) => s.trim()).filter(Boolean),
-                })
-              }
+            <AdminTextArea
+              placeholder="Enter critical outputs (one per line)..."
+              value={tagsInput}
+              onChange={(e) => setTagsInput(e.target.value)}
             />
           </div>
 
@@ -414,6 +417,7 @@ export default function ProjectManager() {
                   tags_id: [],
                   order: 0,
                 });
+                setTagsInput("");
               }}
             >
               <X size={18} /> Cancel
