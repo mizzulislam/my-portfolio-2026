@@ -169,18 +169,18 @@ export function CertCategoryCarousel({
     <div className="w-full flex flex-col items-center">
       {/* Category Slider Container */}
       <div className="relative w-full h-[320px] md:h-[420px] flex items-center justify-center overflow-visible py-10">
-        <div className="absolute top-1/2 left-0 right-0 flex justify-between px-2 md:px-4 z-30 -translate-y-1/2 pointer-events-none max-w-6xl mx-auto w-full">
+        <div className="absolute top-1/2 left-0 right-0 flex justify-between px-0.5 md:px-4 z-30 -translate-y-1/2 pointer-events-none max-w-6xl mx-auto w-full">
           <button
             onClick={prev}
-            className={`p-3 rounded-full border pointer-events-auto transition-all ${isDark ? "bg-slate-800 border-white/10 text-white hover:bg-blue-600" : "bg-white border-slate-200 text-slate-800 hover:bg-blue-600 hover:text-white"}`}
+            className={`p-2 md:p-3 rounded-full border pointer-events-auto transition-all ${isDark ? "bg-slate-800 border-white/10 text-white hover:bg-blue-600" : "bg-white border-slate-200 text-slate-800 hover:bg-blue-600 hover:text-white"}`}
           >
-            <ChevronLeft size={24} />
+            <ChevronLeft className="w-5 h-5 md:w-6 md:h-6" />
           </button>
           <button
             onClick={next}
-            className={`p-3 rounded-full border pointer-events-auto transition-all ${isDark ? "bg-slate-800 border-white/10 text-white hover:bg-blue-600" : "bg-white border-slate-200 text-slate-800 hover:bg-blue-600 hover:text-white"}`}
+            className={`p-2 md:p-3 rounded-full border pointer-events-auto transition-all ${isDark ? "bg-slate-800 border-white/10 text-white hover:bg-blue-600" : "bg-white border-slate-200 text-slate-800 hover:bg-blue-600 hover:text-white"}`}
           >
-            <ChevronRight size={24} />
+            <ChevronRight className="w-5 h-5 md:w-6 md:h-6" />
           </button>
         </div>
 

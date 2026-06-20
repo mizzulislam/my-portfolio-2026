@@ -23,14 +23,14 @@ export function Sidebar({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={() => setIsMenuOpen(false)}
-            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[60] lg:hidden"
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[110] lg:hidden"
           />
           <motion.div
             initial={{ x: "-100%" }}
             animate={{ x: 0 }}
             exit={{ x: "-100%" }}
             transition={{ type: "spring", damping: 25, stiffness: 200 }}
-            className={`fixed top-0 left-0 h-full w-4/5 max-sm:w-[85%] z-[70] p-8 lg:hidden shadow-2xl flex flex-col transition-colors ${isDark ? "bg-[#020617] border-r border-white/5" : "bg-white border-r border-slate-200"}`}
+            className={`fixed top-0 left-0 h-full w-4/5 max-sm:w-[85%] z-[120] p-8 lg:hidden shadow-2xl flex flex-col transition-colors ${isDark ? "bg-[#020617] border-r border-white/5" : "bg-white border-r border-slate-200"}`}
           >
             <div className="flex justify-between items-center mb-12">
               <div className="flex items-center gap-2">
@@ -38,7 +38,7 @@ export function Sidebar({
                   <LayoutDashboard size={18} />
                 </div>
                 <span
-                  className={`font-bold tracking-tighter uppercase ${isDark ? "text-white" : "text-slate-900"}`}
+                  className={`font-bold tracking-tighter uppercase ml-3 ${isDark ? "text-white" : "text-slate-900"}`}
                 >
                   Menu
                 </span>
@@ -56,7 +56,7 @@ export function Sidebar({
                   key={idx}
                   href={`#${navEnKeys[idx]}`}
                   onClick={() => setIsMenuOpen(false)}
-                  className={`text-xl font-bold uppercase tracking-widest transition-colors ${isDark ? "text-slate-400 hover:text-white" : "text-slate-500 hover:text-slate-900"}`}
+                  className={`text-base font-bold tracking-widest transition-colors ${isDark ? "text-slate-400 hover:text-white" : "text-slate-500 hover:text-slate-900"}`}
                 >
                   {item}
                 </a>

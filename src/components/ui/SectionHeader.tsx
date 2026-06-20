@@ -77,10 +77,10 @@ export function SectionHeader({
   return (
     <div className="flex flex-col items-center text-center mb-16 w-full px-4">
       <h2
-        className={`text-2xl md:text-4xl font-extrabold mb-3 flex flex-wrap items-center justify-center gap-2.5 tracking-tight ${isDark ? "text-white" : "text-slate-900"}`}
+        className={`text-2xl md:text-4xl font-extrabold mb-3 flex flex-col md:flex-row items-center justify-center gap-2.5 tracking-tight ${isDark ? "text-white" : "text-slate-900"}`}
       >
         {Icon && <Icon className="text-blue-500 shrink-0" size={32} />}
-        <TextReveal>{title}</TextReveal>
+        <TextReveal className="justify-center md:justify-start">{title}</TextReveal>
       </h2>
       <div className="h-1.5 w-24 bg-blue-600 rounded-full shadow-[0_0_15px_rgba(37,99,235,0.4)] mb-4"></div>
       {subTitle && (
