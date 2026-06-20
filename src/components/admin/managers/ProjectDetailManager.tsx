@@ -1,8 +1,10 @@
 import { useState, useEffect, useRef } from "react";
 import React from "react";
+import { motion } from "motion/react";
 import { 
   ArrowLeft, Check, Trash2, Image as ImageIcon, Plus, GripVertical, 
-  FileText, Columns, Table, Film, AlignLeft, Eye, ChevronDown, ChevronUp, Link as LinkIcon
+  FileText, Columns, Table, Film, AlignLeft, Eye, ChevronDown, ChevronUp, Link as LinkIcon,
+  AlertTriangle
 } from "lucide-react";
 import { toast } from "react-hot-toast";
 import { Project } from "@/src/types/project";
@@ -111,6 +113,26 @@ export default function ProjectDetailManager({ projectId, onBack }: ProjectDetai
 
   // Accordion active index helper in preview mode
   const [activeAccordionIdx, setActiveAccordionIdx] = useState<{ [blockId: string]: number | null }>({});
+
+  // Custom Confirmation Dialog State
+  const [confirmModal, setConfirmModal] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    onConfirm: () => void;
+  } | null>(null);
+
+  const triggerConfirm = (title: string, message: string, onConfirm: () => void) => {
+    setConfirmModal({
+      isOpen: true,
+      title,
+      message,
+      onConfirm: () => {
+        onConfirm();
+        setConfirmModal(null);
+      }
+    });
+  };
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -287,10 +309,11 @@ export default function ProjectDetailManager({ projectId, onBack }: ProjectDetai
 
   // Stack/Composite Block layout presets
   const applyUXLayoutStack = (layoutType: "standard" | "showcase" | "tech") => {
-    const confirm = window.confirm("Apakah Anda ingin memuat preset gabungan blok template ini? Blok saat ini akan digantikan.");
-    if (!confirm) return;
-
-    let preset: BlockItem[] = [];
+    triggerConfirm(
+      "Terapkan Preset Tata Letak",
+      "Apakah Anda yakin ingin memuat preset gabungan blok template ini? Blok yang ada saat ini akan diganti sepenuhnya.",
+      () => {
+        let preset: BlockItem[] = [];
 
     if (layoutType === "standard") {
       preset = [
@@ -386,6 +409,8 @@ export default function ProjectDetailManager({ projectId, onBack }: ProjectDetai
 
     setBlocks(preset);
     toast.success("Preset tata letak blok UX berhasil diterapkan!");
+      }
+    );
   };
 
   if (isLoading) {
@@ -401,23 +426,20 @@ export default function ProjectDetailManager({ projectId, onBack }: ProjectDetai
     return (
       <div className="space-y-8 animate-fade-in">
         {/* Preview Floating Bar */}
-        <div className="sticky top-0 z-30 flex items-center justify-between p-5 bg-slate-950/80 backdrop-blur-md border border-white/5 rounded-3xl shadow-2xl">
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => setStep("edit")}
-              className="flex items-center gap-2 bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white px-5 py-2.5 rounded-xl border border-white/5 font-bold text-xs uppercase tracking-wider transition-all"
-            >
+        <div className="sticky top-0 z-30 flex items-center justify-between p-4 bg-slate-950/85 backdrop-blur-md border border-white/5 rounded-[2rem] shadow-2xl mb-8">
+          <div className="flex items-center gap-4">
+            <AdminBtn variant="secondary" onClick={() => setStep("edit")}>
               <ArrowLeft size={14} /> Kembali ke Edit Konten
-            </button>
+            </AdminBtn>
             <div className="h-4 w-[1px] bg-white/10" />
             <span className="text-[10px] font-black uppercase tracking-widest text-slate-500 font-mono">Step 2: Preview Mode</span>
           </div>
-          <div className="flex items-center gap-3">
-            <AdminBtn onClick={handleSave} disabled={isSaving}>
+          <div className="flex items-center gap-4">
+            <AdminBtn variant="primary" onClick={handleSave} disabled={isSaving}>
               {isSaving ? (
                 <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin" />
               ) : (
-                <Check size={18} />
+                <Check size={14} />
               )}
               Simpan &amp; Publikasikan
             </AdminBtn>
@@ -636,22 +658,19 @@ export default function ProjectDetailManager({ projectId, onBack }: ProjectDetai
   // WIZARD EDIT MODE
   return (
     <div className="space-y-10">
-      <div className="flex items-center justify-between gap-4">
-        <div className="flex items-center gap-4">
+      <div className="flex items-center justify-between gap-6 border-b border-white/5 pb-6">
+        <div className="flex items-center gap-4 min-w-0">
           <AdminBtn variant="secondary" onClick={onBack}>
-            <ArrowLeft size={16} /> Kembali ke Proyek
+            <ArrowLeft size={14} /> Kembali ke Proyek
           </AdminBtn>
-          <h3 className="text-white font-black uppercase tracking-widest text-sm">
+          <h3 className="text-white font-black uppercase tracking-widest text-xs truncate max-w-lg md:max-w-xl">
             Editor Proyek: {project?.title}
           </h3>
         </div>
-        <div className="flex gap-4">
-          <button
-            onClick={() => setStep("preview")}
-            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-7 py-3 rounded-2xl font-black text-[9.5px] tracking-widest uppercase transition-all shadow-[0_25px_40px_rgba(37,99,235,0.25)]"
-          >
-            <Eye size={15} /> Review Tampilan
-          </button>
+        <div className="flex gap-4 shrink-0">
+          <AdminBtn variant="primary" onClick={() => setStep("preview")}>
+            <Eye size={14} /> Review Tampilan
+          </AdminBtn>
         </div>
       </div>
 
@@ -1277,6 +1296,41 @@ export default function ProjectDetailManager({ projectId, onBack }: ProjectDetai
           </AdminCard>
         </aside>
       </div>
+
+      {/* Custom Confirmation Modal */}
+      {confirmModal && confirmModal.isOpen && (
+        <div className="fixed inset-0 z-[100] bg-black/85 backdrop-blur-md flex items-center justify-center p-6">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="bg-slate-900 border border-white/10 rounded-[2rem] p-8 max-w-md w-full shadow-2xl relative text-left"
+          >
+            <h3 className="text-white font-black text-sm uppercase tracking-wide flex items-center gap-3">
+              <AlertTriangle className="text-yellow-500 shrink-0" size={16} />
+              {confirmModal.title}
+            </h3>
+            <p className="text-slate-400 text-xs mt-4 leading-relaxed font-bold">
+              {confirmModal.message}
+            </p>
+            <div className="flex justify-end gap-3 mt-8">
+              <button
+                type="button"
+                onClick={() => setConfirmModal(null)}
+                className="px-5 py-2.5 rounded-xl border border-white/5 bg-slate-950 text-slate-400 hover:text-slate-200 text-[10px] font-black uppercase tracking-wider transition-all"
+              >
+                Batal
+              </button>
+              <button
+                type="button"
+                onClick={confirmModal.onConfirm}
+                className="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-[10px] font-black uppercase tracking-wider transition-all shadow-[0_10px_20px_rgba(37,99,235,0.25)]"
+              >
+                Setuju
+              </button>
+            </div>
+          </motion.div>
+        </div>
+      )}
     </div>
   );
 }
