@@ -90,7 +90,7 @@ export default function Admin() {
           animate={{ opacity: 1, x: 0 }}
           exit={{ opacity: 0, x: -20 }}
           transition={{ duration: 0.3 }}
-          className="max-w-5xl mx-auto pb-20"
+          className="max-w-7xl mx-auto pb-20"
         >
           {editDetailId ? (
             <ProjectDetailManager
