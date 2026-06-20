@@ -109,7 +109,7 @@ export default function AdminLayout({
           })}
         </nav>
 
-        <div className="mt-10 pt-6 border-t border-white/5">
+        <div className="mt-10 pt-6 border-t border-white/5 pb-4">
           <div className={`flex items-center gap-3 mb-6 ${isCollapsed ? "justify-center" : "px-2"}`}>
             <div className="w-8 h-8 rounded-full bg-slate-800 border border-white/10 flex items-center justify-center shrink-0">
               <UserIcon size={14} className="text-slate-400" />
