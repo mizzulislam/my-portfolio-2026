@@ -98,7 +98,7 @@ export function Navbar({
 
         <a
           href="#contact"
-          className="lg:hidden bg-blue-600 text-white p-2 rounded-full shadow-lg active:scale-95 flex-shrink-0"
+          className="hidden sm:flex lg:hidden bg-blue-600 text-white p-2 rounded-full shadow-lg active:scale-95 flex-shrink-0"
         >
           <Mail size={18} />
         </a>

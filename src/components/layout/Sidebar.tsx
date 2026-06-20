@@ -93,7 +93,7 @@ export function Sidebar({
               <a
                 href="#contact"
                 onClick={() => setIsMenuOpen(false)}
-                className="block w-full bg-blue-600 hover:bg-blue-700 text-white py-4 rounded-2xl text-center font-bold uppercase tracking-widest shadow-lg shadow-blue-900/20"
+                className="hidden md:block w-full bg-blue-600 hover:bg-blue-700 text-white py-4 rounded-2xl text-center font-bold uppercase tracking-widest shadow-lg shadow-blue-900/20"
               >
                 {t.contactBtn}
               </a>
