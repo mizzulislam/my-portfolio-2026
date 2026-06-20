@@ -1,74 +1,123 @@
 import { useState, useEffect, useRef } from "react";
 import React from "react";
 import { 
-  ArrowLeft, Check, Trash2, Image as ImageIcon,
-  Bold, Italic, Underline, Strikethrough,
-  AlignLeft, AlignCenter, AlignRight, AlignJustify,
-  List, ListOrdered, Link2, Quote, Code, Eye, FileText
+  ArrowLeft, Check, Trash2, Image as ImageIcon, Plus, GripVertical, 
+  FileText, Columns, Table, Film, AlignLeft, Eye, ChevronDown, ChevronUp, Link as LinkIcon
 } from "lucide-react";
 import { toast } from "react-hot-toast";
 import { Project } from "@/src/types/project";
 import { projectsApi } from "@/src/lib/api/projects";
+import { AdminCard, AdminBtn, ImageUpload } from "../AdminSharedUI";
+import { supabase } from "@/src/lib/supabase";
+
+// Dnd Kit Imports
 import {
-  AdminCard,
-  AdminBtn,
-  ImageUpload,
-} from "../AdminSharedUI";
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+  useSortable
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 
 interface ProjectDetailManagerProps {
   projectId: string;
   onBack: () => void;
 }
 
-const TEMPLATES = {
-  standard: `<h2>Latar Belakang Proyek</h2>
-<p>Tulis penjelasan mengenai latar belakang proyek di sini. Mengapa proyek ini dibuat? Masalah apa yang ingin diselesaikan?</p>
+// Block Schema type
+type BlockType = "text" | "divider" | "media" | "table" | "grid" | "carousel" | "accordion" | "split-banner";
 
-<h2>Tantangan Teknologis</h2>
-<p>Tulis tantangan teknologis utama di sini. Apa kendala performa, integrasi, atau batasan sistem yang dihadapi?</p>
+interface BlockItem {
+  id: string;
+  type: BlockType;
+  data: any;
+}
 
-<h2>Solusi Aplikasi</h2>
-<p>Tulis solusi yang dirancang dan diimplementasikan. Bagaimana arsitektur atau fitur khusus mengatasi masalah tersebut?</p>
+// Helper to generate IDs
+const generateId = () => Math.random().toString(36).substr(2, 9);
 
-<h2>Dampak &amp; Hasil Akhir</h2>
-<p>Tulis dampak positif dan hasil akhir proyek di sini. Contoh: peningkatan efisiensi, responsivitas, atau kepuasan pengguna.</p>`,
+// Sortable Wrapper Component
+function SortableBlockWrapper({ id, onDelete, onDuplicate, children }: { id: string; onDelete: () => void; onDuplicate: () => void; children: React.ReactNode }) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging
+  } = useSortable({ id });
 
-  minimalist: `<h2>Ringkasan Eksekutif</h2>
-<p>Ringkasan eksekutif singkat yang merangkum keseluruhan proyek secara praktis dan ringkas.</p>
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.6 : 1,
+    zIndex: isDragging ? 50 : 'auto',
+  };
 
-<h2>Sorotan Fitur Utama</h2>
-<ul>
-  <li><strong>Fitur Unggulan 1:</strong> Deskripsi singkat mengenai fungsionalitas dan keunggulannya.</li>
-  <li><strong>Fitur Unggulan 2:</strong> Deskripsi singkat mengenai fungsionalitas dan keunggulannya.</li>
-  <li><strong>Fitur Unggulan 3:</strong> Deskripsi singkat mengenai fungsionalitas dan keunggulannya.</li>
-</ul>
-
-<h2>Testimoni / Feedback</h2>
-<blockquote>"Proyek ini memberikan nilai luar biasa bagi operasional kami, menyederhanakan alur kerja yang sebelumnya rumit."</blockquote>`,
-
-  technical: `<h2>Arsitektur Sistem</h2>
-<p>Penjelasan mendalam mengenai arsitektur sistem, pilihan kerangka kerja, integrasi API, dan alur data.</p>
-
-<h2>Struktur Skema Database &amp; API</h2>
-<p>Rincian tabel database utama, relasi data, atau titik akhir API kritis yang digunakan dalam aplikasi.</p>
-<blockquote>Gunakan layout tabel atau skema untuk menggambarkan relasi data.</blockquote>
-
-<h2>Proses Deployment</h2>
-<p>Langkah-langkah deployment, manajemen environment, CI/CD, dan hosting server yang diterapkan.</p>
-
-<h2>Refleksi Masa Depan</h2>
-<p>Rencana pengembangan selanjutnya, optimalisasi yang belum selesai, atau pelajaran berharga yang dipetik dari proyek ini.</p>`
-};
+  return (
+    <div ref={setNodeRef} style={style} className="relative group border border-white/5 bg-slate-900/40 p-6 rounded-2xl transition-all hover:border-blue-500/20 hover:bg-slate-900/70">
+      {/* Drag & Action Header */}
+      <div className="flex items-center justify-between mb-4 border-b border-white/5 pb-3">
+        <div 
+          {...attributes} 
+          {...listeners} 
+          className="flex items-center gap-2 cursor-grab active:cursor-grabbing text-slate-500 hover:text-white rounded-lg hover:bg-white/5 py-1 px-2.5 transition-all"
+          title="Drag to reorder"
+        >
+          <GripVertical size={14} />
+          <span className="text-[10px] font-bold uppercase tracking-wider font-mono">Move Block</span>
+        </div>
+        <div className="flex items-center gap-2 opacity-60 group-hover:opacity-100 transition-opacity">
+          <button
+            type="button"
+            onClick={onDuplicate}
+            className="text-[9px] font-bold uppercase tracking-wider bg-white/5 hover:bg-white/10 text-slate-300 py-1 px-2.5 rounded-md transition-all"
+          >
+            Duplicate
+          </button>
+          <button
+            type="button"
+            onClick={onDelete}
+            className="text-[9px] font-bold uppercase tracking-wider bg-red-950/40 hover:bg-red-900/60 text-red-400 py-1 px-2.5 rounded-md transition-all"
+          >
+            Delete
+          </button>
+        </div>
+      </div>
+      {children}
+    </div>
+  );
+}
 
 export default function ProjectDetailManager({ projectId, onBack }: ProjectDetailManagerProps) {
   const [project, setProject] = useState<Project | null>(null);
-  const [detailedContent, setDetailedContent] = useState("");
+  const [blocks, setBlocks] = useState<BlockItem[]>([]);
   const [galleryImages, setGalleryImages] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
-  const [isSourceView, setIsSourceView] = useState(false);
+  
+  // Step Wizard State
+  const [step, setStep] = useState<"edit" | "preview">("edit");
 
-  const editorRef = useRef<HTMLDivElement>(null);
+  // Accordion active index helper in preview mode
+  const [activeAccordionIdx, setActiveAccordionIdx] = useState<{ [blockId: string]: number | null }>({});
+
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
 
   useEffect(() => {
     const loadProject = async () => {
@@ -78,8 +127,22 @@ export default function ProjectDetailManager({ projectId, onBack }: ProjectDetai
         const found = data.find((p) => p.id === projectId);
         if (found) {
           setProject(found);
-          setDetailedContent(found.detailed_content || "");
           setGalleryImages(found.gallery_images || []);
+          
+          const rawContent = found.detailed_content || "";
+          // Parse if it looks like a JSON array
+          if (rawContent.trim().startsWith("[")) {
+            try {
+              const parsed = JSON.parse(rawContent);
+              setBlocks(parsed);
+            } catch (err) {
+              // fallback
+              setBlocks([{ id: "text-init", type: "text", data: { html: rawContent } }]);
+            }
+          } else {
+            // legacy markdown / html content
+            setBlocks([{ id: "text-init", type: "text", data: { html: rawContent } }]);
+          }
         } else {
           toast.error("Proyek tidak ditemukan");
           onBack();
@@ -96,30 +159,119 @@ export default function ProjectDetailManager({ projectId, onBack }: ProjectDetai
     }
   }, [projectId, onBack]);
 
-  // Synchronize editor innerHTML with state initially or on toggling view mode
-  useEffect(() => {
-    if (editorRef.current && !isSourceView) {
-      // Avoid setting innerHTML if it's already matching to prevent resetting cursor
-      if (editorRef.current.innerHTML !== detailedContent) {
-        editorRef.current.innerHTML = detailedContent;
-      }
-    }
-  }, [isSourceView, isLoading]);
-
   const handleSave = async () => {
     setIsSaving(true);
     try {
+      const jsonString = JSON.stringify(blocks);
       await projectsApi.update(projectId, {
-        detailed_content: detailedContent,
-        detailed_content_id: detailedContent, // Set both to keep same layout tags safely without translating HTML
+        detailed_content: jsonString,
+        detailed_content_id: jsonString, // Set both same to secure block layout HTML parsing
         gallery_images: galleryImages,
       });
-      toast.success("Detail proyek / studi kasus berhasil disimpan! 📝");
+      toast.success("Tata letak blok & studi kasus berhasil disimpan! 🚀");
+      setStep("edit"); // return to editor
     } catch (err) {
       console.error(err);
       toast.error("Gagal menyimpan detail proyek");
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (over && active.id !== over.id) {
+      setBlocks((items) => {
+        const oldIndex = items.findIndex((item) => item.id === active.id);
+        const newIndex = items.findIndex((item) => item.id === over.id);
+        return arrayMove(items, oldIndex, newIndex);
+      });
+    }
+  };
+
+  // Add block action
+  const addBlock = (type: BlockType) => {
+    let defaultData: any = {};
+    
+    switch (type) {
+      case "text":
+        defaultData = { html: "<h3>Judul Blok Baru</h3><p>Tulis penjelasan terperinci mengenai bagian ini di sini...</p>" };
+        break;
+      case "divider":
+        defaultData = { style: "line", color: "rgba(255,255,255,0.1)" };
+        break;
+      case "media":
+        defaultData = { mediaType: "image", url: "", caption: "Keterangan gambar atau video." };
+        break;
+      case "table":
+        defaultData = { 
+          headers: ["Kolom A", "Kolom B"], 
+          rows: [["Baris 1 Sel A", "Baris 1 Sel B"], ["Baris 2 Sel A", "Baris 2 Sel B"]] 
+        };
+        break;
+      case "grid":
+        defaultData = { 
+          columns: 2, 
+          items: [
+            { title: "Fitur Unggulan 1", content: "Penjelasan detail mengenai fitur atau poin unggulan ini." },
+            { title: "Fitur Unggulan 2", content: "Penjelasan detail mengenai fitur atau poin unggulan ini." }
+          ] 
+        };
+        break;
+      case "carousel":
+        defaultData = { images: [] };
+        break;
+      case "accordion":
+        defaultData = { 
+          items: [
+            { title: "Poin Pembahasan 1 (FAQ)", content: "Detail jawaban atau penjelasan poin di sini." }
+          ] 
+        };
+        break;
+      case "split-banner":
+        defaultData = { 
+          layout: "left", 
+          mediaUrl: "", 
+          mediaType: "image", 
+          title: "Judul Sorotan Utama", 
+          content: "Penjelasan studi kasus yang disandingkan dengan media representatif di sebelahnya." 
+        };
+        break;
+    }
+
+    const newBlock: BlockItem = {
+      id: generateId(),
+      type,
+      data: defaultData
+    };
+
+    setBlocks(prev => [...prev, newBlock]);
+    toast.success(`Blok ${type.toUpperCase()} berhasil ditambahkan!`);
+  };
+
+  const updateBlock = (blockId: string, updatedData: any) => {
+    setBlocks(prev => prev.map(b => b.id === blockId ? { ...b, data: { ...b.data, ...updatedData } } : b));
+  };
+
+  const deleteBlock = (blockId: string) => {
+    setBlocks(prev => prev.filter(b => b.id !== blockId));
+  };
+
+  const duplicateBlock = (blockId: string) => {
+    const blockToCopy = blocks.find(b => b.id === blockId);
+    if (blockToCopy) {
+      const duplicated: BlockItem = {
+        id: generateId(),
+        type: blockToCopy.type,
+        // Deep copy data object
+        data: JSON.parse(JSON.stringify(blockToCopy.data))
+      };
+      // Insert duplicate right below
+      const idx = blocks.findIndex(b => b.id === blockId);
+      const newBlocks = [...blocks];
+      newBlocks.splice(idx + 1, 0, duplicated);
+      setBlocks(newBlocks);
+      toast.success("Blok berhasil diduplikasi!");
     }
   };
 
@@ -133,41 +285,107 @@ export default function ProjectDetailManager({ projectId, onBack }: ProjectDetai
     setGalleryImages((prev) => prev.filter((_, idx) => idx !== indexToRemove));
   };
 
-  // Editor command executer
-  const executeCommand = (command: string, value: string = "") => {
-    if (isSourceView) return;
-    
-    // Restore focus if lost
-    if (editorRef.current) {
-      editorRef.current.focus();
-    }
-    
-    document.execCommand(command, false, value);
-    
-    // Sync state
-    if (editorRef.current) {
-      setDetailedContent(editorRef.current.innerHTML);
-    }
-  };
+  // Stack/Composite Block layout presets
+  const applyUXLayoutStack = (layoutType: "standard" | "showcase" | "tech") => {
+    const confirm = window.confirm("Apakah Anda ingin memuat preset gabungan blok template ini? Blok saat ini akan digantikan.");
+    if (!confirm) return;
 
-  const handleLinkInsertion = () => {
-    const url = prompt("Masukkan URL Tautan:", "https://");
-    if (url) {
-      executeCommand("createLink", url);
-    }
-  };
+    let preset: BlockItem[] = [];
 
-  const handleApplyTemplate = (type: keyof typeof TEMPLATES) => {
-    const confirm = window.confirm(
-      "Apakah Anda yakin ingin menggunakan template ini? Konten studi kasus yang sedang Anda tulis akan diganti sepenuhnya."
-    );
-    if (confirm) {
-      const html = TEMPLATES[type];
-      setDetailedContent(html);
-      if (editorRef.current && !isSourceView) {
-        editorRef.current.innerHTML = html;
-      }
+    if (layoutType === "standard") {
+      preset = [
+        {
+          id: generateId(),
+          type: "split-banner",
+          data: {
+            layout: "left",
+            mediaUrl: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=800",
+            mediaType: "image",
+            title: "Latar Belakang & Ringkasan Eksekutif",
+            content: "Proyek ini dirancang untuk menyederhanakan alur kerja keuangan. Kami mengidentifikasi masalah utama dan merumuskan strategi matang."
+          }
+        },
+        {
+          id: generateId(),
+          type: "grid",
+          data: {
+            columns: 2,
+            items: [
+              { title: "Tantangan Utama", content: "Performa query yang lambat dan sinkronisasi data real-time." },
+              { title: "Solusi Cerdas", content: "Optimasi indexing PostgreSQL dan integrasi Supabase realtime channels." }
+            ]
+          }
+        },
+        {
+          id: generateId(),
+          type: "text",
+          data: {
+            html: "<h2>Hasil Akhir & Dampak Proyek</h2><p>Setelah diimplementasikan secara penuh, proyek ini berhasil meningkatkan efisiensi pembukuan hingga 45% dan mempercepat pelaporan pajak.</p>"
+          }
+        }
+      ];
+    } else if (layoutType === "showcase") {
+      preset = [
+        {
+          id: generateId(),
+          type: "split-banner",
+          data: {
+            layout: "right",
+            mediaUrl: "https://images.unsplash.com/photo-1531403009284-440f080d1e12?w=800",
+            mediaType: "image",
+            title: "Feyment Pajak: Platform Cerdas",
+            content: "Pengembangan platform manajemen kepatuhan pajak terintegrasi AI, mempercepat perolehan critical outputs wajib pajak."
+          }
+        },
+        {
+          id: generateId(),
+          type: "carousel",
+          data: { images: [] }
+        },
+        {
+          id: generateId(),
+          type: "accordion",
+          data: {
+            items: [
+              { title: "Bagaimana cara kerja sinkronisasi data?", content: "Data disinkronisasikan menggunakan background queue workers." },
+              { title: "Apakah sistem ini aman?", content: "Platform ini menggunakan enkripsi JWT standar industri dan PostgreSQL RLS." }
+            ]
+          }
+        }
+      ];
+    } else if (layoutType === "tech") {
+      preset = [
+        {
+          id: generateId(),
+          type: "text",
+          data: {
+            html: "<h2>Arsitektur Sistem & Tech-Stack</h2><p>Kami merancang arsitektur microservices berbasis Next.js dan Supabase DB dengan performa tinggi.</p>"
+          }
+        },
+        {
+          id: generateId(),
+          type: "table",
+          data: {
+            headers: ["Komponen Utama", "Teknologi", "Keterangan"],
+            rows: [
+              ["Web Framework", "React 19, Vite, TypeScript", "Stabilitas rendering"],
+              ["Database & Realtime", "Supabase (PostgreSQL)", "Relasi data & realtime triggers"],
+              ["Style Engine", "Tailwind CSS v4", "Desain visual premium & responsif"]
+            ]
+          }
+        },
+        {
+          id: generateId(),
+          type: "text",
+          data: {
+            html: "<blockquote>Proses deployment dilakukan secara otomatis menggunakan Vercel CI/CD hooks yang terhubung ke repositori GitHub utama.</blockquote>"
+          }
+        }
+      ];
     }
+
+    setBlocks(preset);
+    toast.success("Preset tata letak blok UX berhasil diterapkan!");
   };
 
   if (isLoading) {
@@ -178,6 +396,244 @@ export default function ProjectDetailManager({ projectId, onBack }: ProjectDetai
     );
   }
 
+  // WIZARD PREVIEW MODE
+  if (step === "preview") {
+    return (
+      <div className="space-y-8 animate-fade-in">
+        {/* Preview Floating Bar */}
+        <div className="sticky top-0 z-30 flex items-center justify-between p-5 bg-slate-950/80 backdrop-blur-md border border-white/5 rounded-3xl shadow-2xl">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setStep("edit")}
+              className="flex items-center gap-2 bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white px-5 py-2.5 rounded-xl border border-white/5 font-bold text-xs uppercase tracking-wider transition-all"
+            >
+              <ArrowLeft size={14} /> Kembali ke Edit Konten
+            </button>
+            <div className="h-4 w-[1px] bg-white/10" />
+            <span className="text-[10px] font-black uppercase tracking-widest text-slate-500 font-mono">Step 2: Preview Mode</span>
+          </div>
+          <div className="flex items-center gap-3">
+            <AdminBtn onClick={handleSave} disabled={isSaving}>
+              {isSaving ? (
+                <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+              ) : (
+                <Check size={18} />
+              )}
+              Simpan &amp; Publikasikan
+            </AdminBtn>
+          </div>
+        </div>
+
+        {/* Client-Side Mock Page Rendering */}
+        <div className="max-w-4xl mx-auto p-8 md:p-12 rounded-3xl border border-white/5 bg-[#020617] shadow-2xl space-y-12">
+          {/* Header Specs Preview */}
+          <div className="border-b border-white/5 pb-8">
+            <span className="inline-block bg-blue-600 text-white text-[9px] font-black uppercase tracking-[0.2em] px-4 py-2 rounded-lg mb-6">
+              {project?.category || "Project Category"}
+            </span>
+            <h1 className="text-3xl md:text-5xl font-black tracking-tight leading-tight text-white mb-6">
+              {project?.title}
+            </h1>
+            <p className="text-slate-400 text-base md:text-lg leading-relaxed">
+              {project?.description}
+            </p>
+          </div>
+
+          {/* Dynamic Blocks Renderer */}
+          <div className="space-y-12">
+            {blocks.map((block) => {
+              switch (block.type) {
+                case "text":
+                  return (
+                    <div 
+                      key={block.id}
+                      className="case-study-content text-slate-300"
+                      dangerouslySetInnerHTML={{ __html: block.data.html }}
+                    />
+                  );
+                  
+                case "divider":
+                  const divStyle = block.data.style || "line";
+                  const divColor = block.data.color || "rgba(255,255,255,0.1)";
+                  return (
+                    <div key={block.id} className="py-2">
+                      {divStyle === "line" && <hr className="border-t" style={{ borderColor: divColor }} />}
+                      {divStyle === "dashed" && <hr className="border-t border-dashed" style={{ borderColor: divColor }} />}
+                      {divStyle === "double" && <div className="border-t border-b h-1" style={{ borderColor: divColor }} />}
+                      {divStyle === "dots" && <hr className="border-t border-dotted border-spacing-2" style={{ borderColor: divColor }} />}
+                    </div>
+                  );
+                  
+                case "media":
+                  const isVid = block.data.mediaType === "video";
+                  return (
+                    <div key={block.id} className="space-y-3">
+                      {isVid ? (
+                        <div className="relative aspect-video w-full rounded-2xl overflow-hidden border border-white/10 bg-slate-950">
+                          {block.data.url ? (
+                            <iframe 
+                              src={block.data.url.replace("watch?v=", "embed/")} 
+                              className="w-full h-full"
+                              title="Video embed"
+                              allowFullScreen
+                            />
+                          ) : (
+                            <div className="flex items-center justify-center h-full text-slate-500 font-bold text-xs">Video Embed URL Not Provided</div>
+                          )}
+                        </div>
+                      ) : (
+                        <div className="rounded-2xl overflow-hidden border border-white/10 aspect-video bg-slate-950 flex items-center justify-center">
+                          {block.data.url ? (
+                            <img src={block.data.url} alt="" className="w-full h-full object-cover" />
+                          ) : (
+                            <div className="text-slate-500 font-bold text-xs">No Image Loaded</div>
+                          )}
+                        </div>
+                      )}
+                      {block.data.caption && <p className="text-center text-xs italic text-slate-500">{block.data.caption}</p>}
+                    </div>
+                  );
+                  
+                case "table":
+                  return (
+                    <div key={block.id} className="overflow-x-auto rounded-2xl border border-white/10">
+                      <table className="w-full border-collapse text-left text-xs">
+                        <thead>
+                          <tr className="bg-white/[0.03] border-b border-white/10 text-blue-400 font-bold">
+                            {block.data.headers.map((h: string, idx: number) => (
+                              <th key={idx} className="p-4 uppercase tracking-wider">{h}</th>
+                            ))}
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-white/5">
+                          {block.data.rows.map((row: string[], rowIdx: number) => (
+                            <tr key={rowIdx} className="hover:bg-white/[0.01]">
+                              {row.map((cell: string, cellIdx: number) => (
+                                <td key={cellIdx} className="p-4 text-slate-300 font-medium">{cell}</td>
+                              ))}
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  );
+                  
+                case "grid":
+                  const cols = block.data.columns || 2;
+                  return (
+                    <div key={block.id} className={`grid grid-cols-1 md:grid-cols-${cols} gap-6`}>
+                      {block.data.items.map((item: any, idx: number) => (
+                        <div key={idx} className="p-6 rounded-2xl border border-white/5 bg-white/[0.02]">
+                          <h4 className="text-white font-bold text-sm mb-2">{item.title}</h4>
+                          <p className="text-slate-400 text-xs leading-relaxed">{item.content}</p>
+                        </div>
+                      ))}
+                    </div>
+                  );
+                  
+                case "carousel":
+                  const hasImgs = block.data.images && block.data.images.length > 0;
+                  return (
+                    <div key={block.id} className="space-y-4">
+                      {hasImgs ? (
+                        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                          {block.data.images.map((img: string, idx: number) => (
+                            <div key={idx} className="aspect-video rounded-xl overflow-hidden border border-white/5">
+                              <img src={img} alt="" className="w-full h-full object-cover" />
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="py-12 border border-dashed border-white/10 rounded-2xl text-center text-slate-600 text-xs font-bold">
+                          Galeri Foto Carousel Kosong
+                        </div>
+                      )}
+                    </div>
+                  );
+                  
+                case "accordion":
+                  return (
+                    <div key={block.id} className="space-y-3">
+                      {block.data.items.map((item: any, idx: number) => {
+                        const isOpen = activeAccordionIdx[block.id] === idx;
+                        return (
+                          <div key={idx} className="rounded-xl border border-white/5 bg-white/[0.01] overflow-hidden">
+                            <button
+                              onClick={() => setActiveAccordionIdx(prev => ({
+                                ...prev,
+                                [block.id]: isOpen ? null : idx
+                              }))}
+                              className="w-full flex items-center justify-between p-4 font-bold text-xs uppercase tracking-wider text-left text-slate-300 hover:text-white"
+                            >
+                              <span>{item.title}</span>
+                              {isOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                            </button>
+                            {isOpen && (
+                              <div className="p-4 border-t border-white/5 text-slate-400 text-xs leading-relaxed bg-black/10">
+                                {item.content}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  );
+                  
+                case "split-banner":
+                  const leftLayout = block.data.layout === "left";
+                  const splitVid = block.data.mediaType === "video";
+                  return (
+                    <div key={block.id} className={`flex flex-col md:flex-row items-center gap-8 ${leftLayout ? "" : "md:flex-row-reverse"}`}>
+                      {/* Media block */}
+                      <div className="w-full md:w-1/2 aspect-video rounded-2xl overflow-hidden border border-white/10 bg-slate-950 flex items-center justify-center shrink-0">
+                        {block.data.mediaUrl ? (
+                          splitVid ? (
+                            <iframe 
+                              src={block.data.mediaUrl.replace("watch?v=", "embed/")} 
+                              className="w-full h-full"
+                              title="Embed video"
+                              allowFullScreen
+                            />
+                          ) : (
+                            <img src={block.data.mediaUrl} alt="" className="w-full h-full object-cover" />
+                          )
+                        ) : (
+                          <div className="text-slate-500 font-bold text-xs">No Media Specified</div>
+                        )}
+                      </div>
+                      {/* Text block */}
+                      <div className="w-full md:w-1/2 text-left space-y-4">
+                        <h3 className="text-xl font-black text-white">{block.data.title}</h3>
+                        <p className="text-slate-400 text-xs leading-relaxed">{block.data.content}</p>
+                      </div>
+                    </div>
+                  );
+                  
+                default:
+                  return null;
+              }
+            })}
+          </div>
+
+          {/* Gallery mock render */}
+          {galleryImages.length > 0 && (
+            <div className="border-t border-white/5 pt-8">
+              <h3 className="text-white font-bold text-sm mb-4">Galeri Foto Proyek</h3>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                {galleryImages.map((url, idx) => (
+                  <div key={idx} className="aspect-video rounded-xl overflow-hidden border border-white/5 bg-slate-950">
+                    <img src={url} alt="" className="w-full h-full object-cover" />
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // WIZARD EDIT MODE
   return (
     <div className="space-y-10">
       <div className="flex items-center justify-between gap-4">
@@ -186,322 +642,640 @@ export default function ProjectDetailManager({ projectId, onBack }: ProjectDetai
             <ArrowLeft size={16} /> Kembali ke Proyek
           </AdminBtn>
           <h3 className="text-white font-black uppercase tracking-widest text-sm">
-            Edit Detail: {project?.title}
+            Editor Proyek: {project?.title}
           </h3>
         </div>
         <div className="flex gap-4">
-          <AdminBtn onClick={handleSave} disabled={isSaving}>
-            {isSaving ? (
-              <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin" />
-            ) : (
-              <Check size={18} />
-            )}
-            Simpan Detail
-          </AdminBtn>
+          <button
+            onClick={() => setStep("preview")}
+            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-7 py-3 rounded-2xl font-black text-[9.5px] tracking-widest uppercase transition-all shadow-[0_25px_40px_rgba(37,99,235,0.25)]"
+          >
+            <Eye size={15} /> Review Tampilan
+          </button>
         </div>
       </div>
 
-      {/* Split Screen Editor & Preview */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
-        {/* Left Side: Rich Text Editor */}
-        <AdminCard title="Editor Studi Kasus" icon={ImageIcon}>
-          <div className="space-y-6">
+      {/* Editor Main Content Builder */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+        {/* Left Side: Drag & Drop Blocks Manager */}
+        <div className="lg:col-span-2 space-y-6">
+          <AdminCard title="No-Code Page Blocks Builder" icon={ImageIcon}>
             
-            {/* Template Selector Button Group */}
-            <div>
-              <label className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-400 mb-3 block px-1">
-                Pilih Layout Template
+            {/* Template Presets Composite Selector */}
+            <div className="mb-6 p-4 rounded-xl bg-slate-950/60 border border-white/5">
+              <label className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-400 mb-3 block">
+                Terapkan Preset Gabungan Blok UX (UX Layout Presets)
               </label>
-              <div className="grid grid-cols-3 gap-2 bg-slate-950/60 p-1.5 rounded-2xl border border-white/5">
+              <div className="grid grid-cols-3 gap-2">
                 <button
                   type="button"
-                  onClick={() => handleApplyTemplate("standard")}
-                  className="flex items-center justify-center gap-2 py-2 px-3 rounded-xl font-bold text-[10px] uppercase tracking-wider text-slate-400 hover:text-white hover:bg-white/5 transition-all"
+                  onClick={() => applyUXLayoutStack("standard")}
+                  className="flex items-center justify-center gap-2 py-2 px-3 rounded-xl font-bold text-[9px] uppercase tracking-wider border border-white/5 text-slate-400 hover:text-white hover:bg-white/5 transition-all"
                 >
-                  <FileText size={12} /> Standar
+                  Standard Stack
                 </button>
                 <button
                   type="button"
-                  onClick={() => handleApplyTemplate("minimalist")}
-                  className="flex items-center justify-center gap-2 py-2 px-3 rounded-xl font-bold text-[10px] uppercase tracking-wider text-slate-400 hover:text-white hover:bg-white/5 transition-all"
+                  onClick={() => applyUXLayoutStack("showcase")}
+                  className="flex items-center justify-center gap-2 py-2 px-3 rounded-xl font-bold text-[9px] uppercase tracking-wider border border-white/5 text-slate-400 hover:text-white hover:bg-white/5 transition-all"
                 >
-                  <FileText size={12} /> Minimalis
+                  Showcase Stack
                 </button>
                 <button
                   type="button"
-                  onClick={() => handleApplyTemplate("technical")}
-                  className="flex items-center justify-center gap-2 py-2 px-3 rounded-xl font-bold text-[10px] uppercase tracking-wider text-slate-400 hover:text-white hover:bg-white/5 transition-all"
+                  onClick={() => applyUXLayoutStack("tech")}
+                  className="flex items-center justify-center gap-2 py-2 px-3 rounded-xl font-bold text-[9px] uppercase tracking-wider border border-white/5 text-slate-400 hover:text-white hover:bg-white/5 transition-all"
                 >
-                  <Code size={12} /> Teknis
+                  Tech Stack
                 </button>
               </div>
             </div>
 
-            {/* WYSIWYG Word/Canva Toolbar */}
-            <div className="bg-slate-950/80 rounded-2xl border border-white/5 p-2 flex flex-wrap gap-1.5 items-center">
-              
-              {/* Text formatting group */}
-              <div className="flex items-center gap-1 border-r border-white/5 pr-2.5">
-                <button
-                  type="button"
-                  onClick={() => executeCommand("bold")}
-                  disabled={isSourceView}
-                  className="p-2 hover:bg-white/5 disabled:opacity-30 disabled:hover:bg-transparent rounded-lg text-slate-400 hover:text-white transition-all"
-                  title="Teks Tebal (Bold)"
-                >
-                  <Bold size={15} />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => executeCommand("italic")}
-                  disabled={isSourceView}
-                  className="p-2 hover:bg-white/5 disabled:opacity-30 disabled:hover:bg-transparent rounded-lg text-slate-400 hover:text-white transition-all"
-                  title="Teks Miring (Italic)"
-                >
-                  <Italic size={15} />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => executeCommand("underline")}
-                  disabled={isSourceView}
-                  className="p-2 hover:bg-white/5 disabled:opacity-30 disabled:hover:bg-transparent rounded-lg text-slate-400 hover:text-white transition-all"
-                  title="Garis Bawah (Underline)"
-                >
-                  <Underline size={15} />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => executeCommand("strikeThrough")}
-                  disabled={isSourceView}
-                  className="p-2 hover:bg-white/5 disabled:opacity-30 disabled:hover:bg-transparent rounded-lg text-slate-400 hover:text-white transition-all"
-                  title="Coret Teks (Strikethrough)"
-                >
-                  <Strikethrough size={15} />
-                </button>
-              </div>
-
-              {/* Headings formatting group */}
-              <div className="flex items-center gap-1 border-r border-white/5 pr-2.5">
-                <button
-                  type="button"
-                  onClick={() => executeCommand("formatBlock", "<h1>")}
-                  disabled={isSourceView}
-                  className="px-2 py-1.5 hover:bg-white/5 disabled:opacity-30 disabled:hover:bg-transparent rounded-lg text-xs font-black text-slate-400 hover:text-white transition-all"
-                  title="Heading 1"
-                >
-                  H1
-                </button>
-                <button
-                  type="button"
-                  onClick={() => executeCommand("formatBlock", "<h2>")}
-                  disabled={isSourceView}
-                  className="px-2 py-1.5 hover:bg-white/5 disabled:opacity-30 disabled:hover:bg-transparent rounded-lg text-xs font-black text-slate-400 hover:text-white transition-all"
-                  title="Heading 2"
-                >
-                  H2
-                </button>
-                <button
-                  type="button"
-                  onClick={() => executeCommand("formatBlock", "<h3>")}
-                  disabled={isSourceView}
-                  className="px-2 py-1.5 hover:bg-white/5 disabled:opacity-30 disabled:hover:bg-transparent rounded-lg text-xs font-black text-slate-400 hover:text-white transition-all"
-                  title="Heading 3"
-                >
-                  H3
-                </button>
-              </div>
-
-              {/* Align group */}
-              <div className="flex items-center gap-1 border-r border-white/5 pr-2.5">
-                <button
-                  type="button"
-                  onClick={() => executeCommand("justifyLeft")}
-                  disabled={isSourceView}
-                  className="p-2 hover:bg-white/5 disabled:opacity-30 disabled:hover:bg-transparent rounded-lg text-slate-400 hover:text-white transition-all"
-                  title="Rata Kiri"
-                >
-                  <AlignLeft size={15} />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => executeCommand("justifyCenter")}
-                  disabled={isSourceView}
-                  className="p-2 hover:bg-white/5 disabled:opacity-30 disabled:hover:bg-transparent rounded-lg text-slate-400 hover:text-white transition-all"
-                  title="Rata Tengah"
-                >
-                  <AlignCenter size={15} />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => executeCommand("justifyRight")}
-                  disabled={isSourceView}
-                  className="p-2 hover:bg-white/5 disabled:opacity-30 disabled:hover:bg-transparent rounded-lg text-slate-400 hover:text-white transition-all"
-                  title="Rata Kanan"
-                >
-                  <AlignRight size={15} />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => executeCommand("justifyFull")}
-                  disabled={isSourceView}
-                  className="p-2 hover:bg-white/5 disabled:opacity-30 disabled:hover:bg-transparent rounded-lg text-slate-400 hover:text-white transition-all"
-                  title="Rata Kiri Kanan (Justify)"
-                >
-                  <AlignJustify size={15} />
-                </button>
-              </div>
-
-              {/* Lists and others */}
-              <div className="flex items-center gap-1 border-r border-white/5 pr-2.5">
-                <button
-                  type="button"
-                  onClick={() => executeCommand("insertUnorderedList")}
-                  disabled={isSourceView}
-                  className="p-2 hover:bg-white/5 disabled:opacity-30 disabled:hover:bg-transparent rounded-lg text-slate-400 hover:text-white transition-all"
-                  title="Bullet List"
-                >
-                  <List size={15} />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => executeCommand("insertOrderedList")}
-                  disabled={isSourceView}
-                  className="p-2 hover:bg-white/5 disabled:opacity-30 disabled:hover:bg-transparent rounded-lg text-slate-400 hover:text-white transition-all"
-                  title="Numbered List"
-                >
-                  <ListOrdered size={15} />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => executeCommand("formatBlock", "<blockquote>")}
-                  disabled={isSourceView}
-                  className="p-2 hover:bg-white/5 disabled:opacity-30 disabled:hover:bg-transparent rounded-lg text-slate-400 hover:text-white transition-all"
-                  title="Blockquote"
-                >
-                  <Quote size={15} />
-                </button>
-                <button
-                  type="button"
-                  onClick={handleLinkInsertion}
-                  disabled={isSourceView}
-                  className="p-2 hover:bg-white/5 disabled:opacity-30 disabled:hover:bg-transparent rounded-lg text-slate-400 hover:text-white transition-all"
-                  title="Sisipkan Link"
-                >
-                  <Link2 size={15} />
-                </button>
-              </div>
-
-              {/* Toggling Source Code (HTML View) */}
-              <button
-                type="button"
-                onClick={() => setIsSourceView(!isSourceView)}
-                className={`p-2 rounded-lg transition-all ml-auto ${
-                  isSourceView 
-                    ? "bg-blue-600 text-white" 
-                    : "text-slate-400 hover:text-white hover:bg-white/5"
-                }`}
-                title={isSourceView ? "Kembali ke Tampilan Visual" : "Lihat Source Code HTML"}
+            {/* Blocks Drag Drop Sortable Wrapper */}
+            <DndContext
+              sensors={sensors}
+              collisionDetection={closestCenter}
+              onDragEnd={handleDragEnd}
+            >
+              <SortableContext
+                items={blocks.map(b => b.id)}
+                strategy={verticalListSortingStrategy}
               >
-                <Code size={15} />
-              </button>
-
-            </div>
-
-            {/* Editable Canvas Area */}
-            <div className="relative">
-              {isSourceView ? (
-                <textarea
-                  value={detailedContent}
-                  onChange={(e) => setDetailedContent(e.target.value)}
-                  rows={20}
-                  className="w-full min-h-[400px] p-6 rounded-2xl border border-white/10 bg-slate-950 font-mono text-xs text-emerald-400 focus:outline-none focus:ring-2 focus:ring-blue-500/50 resize-y"
-                  placeholder="Masukkan HTML di sini..."
-                />
-              ) : (
-                <div
-                  ref={editorRef}
-                  contentEditable
-                  onInput={(e) => setDetailedContent(e.currentTarget.innerHTML)}
-                  className="w-full min-h-[400px] max-h-[600px] overflow-y-auto p-8 rounded-2xl border border-white/10 bg-[#0B0E14] text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/50 case-study-content"
-                />
-              )}
-            </div>
-          </div>
-
-          {/* Gallery image upload */}
-          <div className="mt-8 pt-6 border-t border-white/5">
-            <label className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-400 mb-4 block px-1">
-              Galeri Foto Proyek ({galleryImages.length} Foto)
-            </label>
-            
-            {galleryImages.length > 0 && (
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-4">
-                {galleryImages.map((url, idx) => (
-                  <div key={idx} className="relative aspect-video rounded-xl overflow-hidden border border-white/10 group bg-slate-950">
-                    <img src={url} alt={`Gallery ${idx}`} className="w-full h-full object-cover" />
-                    <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveImage(idx)}
-                        className="p-2 bg-red-600/90 hover:bg-red-700 text-white rounded-lg transition-all"
-                      >
-                        <Trash2 size={14} />
-                      </button>
+                <div className="space-y-6">
+                  {blocks.length === 0 ? (
+                    <div className="text-center py-20 border border-dashed border-white/10 rounded-2xl opacity-40">
+                      <Plus size={40} className="mx-auto mb-4 text-slate-500" />
+                      <p className="text-xs font-bold uppercase tracking-wider">Mulai tambahkan blok layout di bawah</p>
                     </div>
-                  </div>
-                ))}
+                  ) : (
+                    blocks.map((block) => (
+                      <SortableBlockWrapper 
+                        key={block.id} 
+                        id={block.id} 
+                        onDelete={() => deleteBlock(block.id)}
+                        onDuplicate={() => duplicateBlock(block.id)}
+                      >
+                        {/* Type Indicator */}
+                        <div className="flex items-center gap-2 mb-4">
+                          <span className="text-[8px] font-black uppercase tracking-[0.2em] bg-blue-600/20 text-blue-400 px-3 py-1 rounded-md border border-blue-500/10">
+                            {block.type}
+                          </span>
+                        </div>
+
+                        {/* Rendering dynamic editors based on block type */}
+                        {block.type === "text" && (
+                          <div className="space-y-3">
+                            <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block">HTML / Text Content</label>
+                            <textarea
+                              value={block.data.html}
+                              onChange={(e) => updateBlock(block.id, { html: e.target.value })}
+                              rows={5}
+                              placeholder="Masukkan teks HTML di sini..."
+                              className="w-full bg-slate-950 border border-white/5 rounded-xl p-4 font-mono text-xs text-slate-300 focus:outline-none focus:border-blue-500/40"
+                            />
+                          </div>
+                        )}
+
+                        {block.type === "divider" && (
+                          <div className="grid grid-cols-2 gap-4">
+                            <div>
+                              <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block mb-2">Style</label>
+                              <select
+                                value={block.data.style}
+                                onChange={(e) => updateBlock(block.id, { style: e.target.value })}
+                                className="w-full bg-slate-950 border border-white/5 rounded-xl p-3 text-xs text-slate-300 focus:outline-none"
+                              >
+                                <option value="line">Solid Line</option>
+                                <option value="dashed">Dashed Line</option>
+                                <option value="double">Double Line</option>
+                                <option value="dots">Dotted Line</option>
+                              </select>
+                            </div>
+                            <div>
+                              <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block mb-2">Color</label>
+                              <input
+                                type="text"
+                                value={block.data.color}
+                                onChange={(e) => updateBlock(block.id, { color: e.target.value })}
+                                placeholder="Color code e.g. rgba(255,255,255,0.1) or #3b82f6"
+                                className="w-full bg-slate-950 border border-white/5 rounded-xl p-3 text-xs text-slate-300 focus:outline-none focus:border-blue-500/40"
+                              />
+                            </div>
+                          </div>
+                        )}
+
+                        {block.type === "media" && (
+                          <div className="space-y-4">
+                            <div className="grid grid-cols-2 gap-4">
+                              <div>
+                                <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block mb-2">Media Type</label>
+                                <select
+                                  value={block.data.mediaType}
+                                  onChange={(e) => updateBlock(block.id, { mediaType: e.target.value })}
+                                  className="w-full bg-slate-950 border border-white/5 rounded-xl p-3 text-xs text-slate-300 focus:outline-none"
+                                >
+                                  <option value="image">Image</option>
+                                  <option value="video">YouTube/Video Link</option>
+                                </select>
+                              </div>
+                              <div>
+                                <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block mb-2">Media URL</label>
+                                <input
+                                  type="text"
+                                  value={block.data.url}
+                                  onChange={(e) => updateBlock(block.id, { url: e.target.value })}
+                                  placeholder="Masukkan URL foto/video..."
+                                  className="w-full bg-slate-950 border border-white/5 rounded-xl p-3 text-xs text-slate-300 focus:outline-none focus:border-blue-500/40"
+                                />
+                              </div>
+                            </div>
+                            
+                            {block.data.mediaType === "image" && (
+                              <div>
+                                <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block mb-2">Upload Foto</label>
+                                <ImageUpload
+                                  value=""
+                                  onChange={(url) => updateBlock(block.id, { url })}
+                                  label="Upload Ke ImgBB &amp; Isi URL"
+                                />
+                              </div>
+                            )}
+
+                            <div>
+                              <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block mb-2">Caption</label>
+                              <input
+                                type="text"
+                                value={block.data.caption}
+                                onChange={(e) => updateBlock(block.id, { caption: e.target.value })}
+                                placeholder="Tulis caption di sini..."
+                                className="w-full bg-slate-950 border border-white/5 rounded-xl p-3 text-xs text-slate-300 focus:outline-none focus:border-blue-500/40"
+                              />
+                            </div>
+                          </div>
+                        )}
+
+                        {block.type === "table" && (
+                          <div className="space-y-4">
+                            <div className="flex items-center justify-between">
+                              <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Table Controller</span>
+                              <div className="flex gap-2">
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    const colCount = block.data.headers.length;
+                                    const nextRow = Array(colCount).fill("Sel Baru");
+                                    updateBlock(block.id, { rows: [...block.data.rows, nextRow] });
+                                  }}
+                                  className="text-[9px] font-bold bg-white/5 hover:bg-white/10 text-slate-300 py-1 px-2.5 rounded-md"
+                                >
+                                  + Row
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    updateBlock(block.id, { 
+                                      headers: [...block.data.headers, `Kolom ${block.data.headers.length + 1}`],
+                                      rows: block.data.rows.map((row: string[]) => [...row, "Sel Baru"])
+                                    });
+                                  }}
+                                  className="text-[9px] font-bold bg-white/5 hover:bg-white/10 text-slate-300 py-1 px-2.5 rounded-md"
+                                >
+                                  + Column
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    if (block.data.rows.length > 1) {
+                                      updateBlock(block.id, { rows: block.data.rows.slice(0, -1) });
+                                    }
+                                  }}
+                                  className="text-[9px] font-bold bg-red-950/20 text-red-400 py-1 px-2.5 rounded-md"
+                                >
+                                  - Row
+                                </button>
+                              </div>
+                            </div>
+
+                            {/* Render inputs grid */}
+                            <div className="overflow-x-auto bg-slate-950/80 rounded-xl border border-white/5 p-4">
+                              <table className="w-full border-collapse">
+                                <thead>
+                                  <tr>
+                                    {block.data.headers.map((h: string, idx: number) => (
+                                      <th key={idx} className="p-1">
+                                        <input
+                                          type="text"
+                                          value={h}
+                                          onChange={(e) => {
+                                            const newHeaders = [...block.data.headers];
+                                            newHeaders[idx] = e.target.value;
+                                            updateBlock(block.id, { headers: newHeaders });
+                                          }}
+                                          className="w-full bg-slate-900 border border-white/5 rounded-md p-1.5 text-[10px] font-bold text-blue-400 focus:outline-none"
+                                        />
+                                      </th>
+                                    ))}
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  {block.data.rows.map((row: string[], rowIdx: number) => (
+                                    <tr key={rowIdx}>
+                                      {row.map((cell: string, cellIdx: number) => (
+                                        <td key={cellIdx} className="p-1">
+                                          <input
+                                            type="text"
+                                            value={cell}
+                                            onChange={(e) => {
+                                              const newRows = [...block.data.rows];
+                                              newRows[rowIdx][cellIdx] = e.target.value;
+                                              updateBlock(block.id, { rows: newRows });
+                                            }}
+                                            className="w-full bg-slate-900 border border-white/5 rounded-md p-1.5 text-[10px] text-slate-300 focus:outline-none"
+                                          />
+                                        </td>
+                                      ))}
+                                    </tr>
+                                  ))}
+                                </tbody>
+                              </table>
+                            </div>
+                          </div>
+                        )}
+
+                        {block.type === "grid" && (
+                          <div className="space-y-4">
+                            <div className="flex items-center justify-between">
+                              <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Kolom Grid</label>
+                              <div className="flex gap-2">
+                                <button
+                                  type="button"
+                                  onClick={() => updateBlock(block.id, { columns: 2 })}
+                                  className={`text-[9px] font-bold py-1 px-2.5 rounded ${block.data.columns === 2 ? 'bg-blue-600 text-white' : 'bg-white/5 text-slate-400'}`}
+                                >
+                                  2 Columns
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => updateBlock(block.id, { columns: 3 })}
+                                  className={`text-[9px] font-bold py-1 px-2.5 rounded ${block.data.columns === 3 ? 'bg-blue-600 text-white' : 'bg-white/5 text-slate-400'}`}
+                                >
+                                  3 Columns
+                                </button>
+                              </div>
+                            </div>
+
+                            {/* Grid items editor list */}
+                            <div className="space-y-4 pt-2 border-t border-white/5">
+                              {block.data.items.map((item: any, idx: number) => (
+                                <div key={idx} className="p-4 rounded-xl bg-slate-950/60 border border-white/5 space-y-3">
+                                  <div className="flex items-center justify-between">
+                                    <span className="text-[9px] font-black text-slate-500 uppercase">Item #{idx + 1}</span>
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        if (block.data.items.length > 1) {
+                                          updateBlock(block.id, {
+                                            items: block.data.items.filter((_: any, i: number) => i !== idx)
+                                          });
+                                        }
+                                      }}
+                                      className="text-[8px] font-bold text-red-400 hover:underline"
+                                    >
+                                      Remove Item
+                                    </button>
+                                  </div>
+                                  <input
+                                    type="text"
+                                    value={item.title}
+                                    onChange={(e) => {
+                                      const newItems = [...block.data.items];
+                                      newItems[idx].title = e.target.value;
+                                      updateBlock(block.id, { items: newItems });
+                                    }}
+                                    placeholder="Judul Poin..."
+                                    className="w-full bg-slate-900 border border-white/5 rounded-lg p-2 text-xs font-bold text-white focus:outline-none"
+                                  />
+                                  <textarea
+                                    value={item.content}
+                                    onChange={(e) => {
+                                      const newItems = [...block.data.items];
+                                      newItems[idx].content = e.target.value;
+                                      updateBlock(block.id, { items: newItems });
+                                    }}
+                                    placeholder="Penjelasan detail..."
+                                    rows={2}
+                                    className="w-full bg-slate-900 border border-white/5 rounded-lg p-2 text-xs text-slate-300 focus:outline-none"
+                                  />
+                                </div>
+                              ))}
+                              
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  updateBlock(block.id, {
+                                    items: [...block.data.items, { title: "Poin Baru", content: "Penjelasan detail..." }]
+                                  });
+                                }}
+                                className="w-full py-2 bg-white/5 hover:bg-white/10 rounded-xl font-bold text-[9px] uppercase tracking-wider text-slate-300 hover:text-white transition-all border border-dashed border-white/10"
+                              >
+                                + Add Grid Item
+                              </button>
+                            </div>
+                          </div>
+                        )}
+
+                        {block.type === "carousel" && (
+                          <div className="space-y-4">
+                            <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block">Images List</label>
+                            
+                            {block.data.images && block.data.images.length > 0 && (
+                              <div className="grid grid-cols-3 gap-3">
+                                {block.data.images.map((url: string, imgIdx: number) => (
+                                  <div key={imgIdx} className="relative aspect-video rounded-xl overflow-hidden border border-white/10 group bg-slate-950">
+                                    <img src={url} alt="" className="w-full h-full object-cover" />
+                                    <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          updateBlock(block.id, {
+                                            images: block.data.images.filter((_: string, i: number) => i !== imgIdx)
+                                          });
+                                        }}
+                                        className="p-1.5 bg-red-600 hover:bg-red-700 rounded text-white"
+                                      >
+                                        <Trash2 size={12} />
+                                      </button>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+
+                            <div>
+                              <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block mb-2">Upload foto ke carousel</label>
+                              <ImageUpload
+                                value=""
+                                onChange={(url) => {
+                                  updateBlock(block.id, {
+                                    images: [...(block.data.images || []), url]
+                                  });
+                                }}
+                                label="Upload Foto Baru"
+                              />
+                            </div>
+                          </div>
+                        )}
+
+                        {block.type === "accordion" && (
+                          <div className="space-y-4">
+                            <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block">Accordion Items</label>
+                            
+                            <div className="space-y-4">
+                              {block.data.items.map((item: any, idx: number) => (
+                                <div key={idx} className="p-4 rounded-xl bg-slate-950/60 border border-white/5 space-y-3">
+                                  <div className="flex items-center justify-between">
+                                    <span className="text-[9px] font-black text-slate-500 uppercase">Item #{idx + 1}</span>
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        if (block.data.items.length > 1) {
+                                          updateBlock(block.id, {
+                                            items: block.data.items.filter((_: any, i: number) => i !== idx)
+                                          });
+                                        }
+                                      }}
+                                      className="text-[8px] font-bold text-red-400 hover:underline"
+                                    >
+                                      Remove Item
+                                    </button>
+                                  </div>
+                                  <input
+                                    type="text"
+                                    value={item.title}
+                                    onChange={(e) => {
+                                      const newItems = [...block.data.items];
+                                      newItems[idx].title = e.target.value;
+                                      updateBlock(block.id, { items: newItems });
+                                    }}
+                                    placeholder="Judul Accordion (FAQ)..."
+                                    className="w-full bg-slate-900 border border-white/5 rounded-lg p-2 text-xs font-bold text-white focus:outline-none"
+                                  />
+                                  <textarea
+                                    value={item.content}
+                                    onChange={(e) => {
+                                      const newItems = [...block.data.items];
+                                      newItems[idx].content = e.target.value;
+                                      updateBlock(block.id, { items: newItems });
+                                    }}
+                                    placeholder="Penjelasan accordion..."
+                                    rows={2}
+                                    className="w-full bg-slate-900 border border-white/5 rounded-lg p-2 text-xs text-slate-300 focus:outline-none"
+                                  />
+                                </div>
+                              ))}
+                              
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  updateBlock(block.id, {
+                                    items: [...block.data.items, { title: "Poin Baru FAQ", content: "Jawaban/detail FAQ..." }]
+                                  });
+                                }}
+                                className="w-full py-2 bg-white/5 hover:bg-white/10 rounded-xl font-bold text-[9px] uppercase tracking-wider text-slate-300 hover:text-white transition-all border border-dashed border-white/10"
+                              >
+                                + Add Accordion Item
+                              </button>
+                            </div>
+                          </div>
+                        )}
+
+                        {block.type === "split-banner" && (
+                          <div className="space-y-4">
+                            <div className="grid grid-cols-2 gap-4">
+                              <div>
+                                <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block mb-2">Media Layout</label>
+                                <select
+                                  value={block.data.layout}
+                                  onChange={(e) => updateBlock(block.id, { layout: e.target.value })}
+                                  className="w-full bg-slate-950 border border-white/5 rounded-xl p-3 text-xs text-slate-300 focus:outline-none"
+                                >
+                                  <option value="left">Media Left / Text Right</option>
+                                  <option value="right">Media Right / Text Left</option>
+                                </select>
+                              </div>
+                              <div>
+                                <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block mb-2">Media Type</label>
+                                <select
+                                  value={block.data.mediaType}
+                                  onChange={(e) => updateBlock(block.id, { mediaType: e.target.value })}
+                                  className="w-full bg-slate-950 border border-white/5 rounded-xl p-3 text-xs text-slate-300 focus:outline-none"
+                                >
+                                  <option value="image">Image</option>
+                                  <option value="video">Video URL (YouTube)</option>
+                                </select>
+                              </div>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-4">
+                              <div className="col-span-2">
+                                <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block mb-2">Media URL</label>
+                                <input
+                                  type="text"
+                                  value={block.data.mediaUrl}
+                                  onChange={(e) => updateBlock(block.id, { mediaUrl: e.target.value })}
+                                  placeholder="Masukkan URL foto/video..."
+                                  className="w-full bg-slate-950 border border-white/5 rounded-xl p-3 text-xs text-slate-300 focus:outline-none focus:border-blue-500/40"
+                                />
+                              </div>
+                            </div>
+                            
+                            {block.data.mediaType === "image" && (
+                              <div>
+                                <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block mb-2">Upload Banner Image</label>
+                                <ImageUpload
+                                  value=""
+                                  onChange={(mediaUrl) => updateBlock(block.id, { mediaUrl })}
+                                  label="Upload Foto Banner"
+                                />
+                              </div>
+                            )}
+
+                            <div className="space-y-3">
+                              <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block">Judul Banner</label>
+                              <input
+                                type="text"
+                                value={block.data.title}
+                                onChange={(e) => updateBlock(block.id, { title: e.target.value })}
+                                placeholder="Judul Banner..."
+                                className="w-full bg-slate-950 border border-white/5 rounded-xl p-3 text-xs font-bold text-white focus:outline-none focus:border-blue-500/40"
+                              />
+                            </div>
+
+                            <div className="space-y-3">
+                              <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block">Konten Banner</label>
+                              <textarea
+                                value={block.data.content}
+                                onChange={(e) => updateBlock(block.id, { content: e.target.value })}
+                                placeholder="Tulis deskripsi penjelasan di sini..."
+                                rows={3}
+                                className="w-full bg-slate-950 border border-white/5 rounded-xl p-3 text-xs text-slate-300 focus:outline-none focus:border-blue-500/40"
+                              />
+                            </div>
+                          </div>
+                        )}
+                      </SortableBlockWrapper>
+                    ))
+                  )}
+                </div>
+              </SortableContext>
+            </DndContext>
+
+            {/* Quick Add Block Bar */}
+            <div className="mt-8 pt-6 border-t border-white/5">
+              <label className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-400 mb-4 block px-1">
+                + Tambah Blok Konten Baru (Insert Block Elements)
+              </label>
+              
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <button
+                  type="button"
+                  onClick={() => addBlock("text")}
+                  className="flex items-center gap-3 bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white p-4 rounded-xl border border-white/5 text-xs font-bold transition-all"
+                >
+                  <FileText size={16} className="text-blue-500" /> Teks / Rich Text
+                </button>
+                <button
+                  type="button"
+                  onClick={() => addBlock("media")}
+                  className="flex items-center gap-3 bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white p-4 rounded-xl border border-white/5 text-xs font-bold transition-all"
+                >
+                  <ImageIcon size={16} className="text-blue-500" /> Foto / Video
+                </button>
+                <button
+                  type="button"
+                  onClick={() => addBlock("grid")}
+                  className="flex items-center gap-3 bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white p-4 rounded-xl border border-white/5 text-xs font-bold transition-all"
+                >
+                  <Columns size={16} className="text-blue-500" /> Grid Kolom
+                </button>
+                <button
+                  type="button"
+                  onClick={() => addBlock("split-banner")}
+                  className="flex items-center gap-3 bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white p-4 rounded-xl border border-white/5 text-xs font-bold transition-all"
+                >
+                  <AlignLeft size={16} className="text-blue-500" /> Split Banner
+                </button>
+                <button
+                  type="button"
+                  onClick={() => addBlock("table")}
+                  className="flex items-center gap-3 bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white p-4 rounded-xl border border-white/5 text-xs font-bold transition-all"
+                >
+                  <Table size={16} className="text-blue-500" /> Tabel Data
+                </button>
+                <button
+                  type="button"
+                  onClick={() => addBlock("accordion")}
+                  className="flex items-center gap-3 bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white p-4 rounded-xl border border-white/5 text-xs font-bold transition-all"
+                >
+                  <ChevronDown size={16} className="text-blue-500" /> Accordion (FAQ)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => addBlock("carousel")}
+                  className="flex items-center gap-3 bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white p-4 rounded-xl border border-white/5 text-xs font-bold transition-all"
+                >
+                  <Film size={16} className="text-blue-500" /> Galeri Slider
+                </button>
+                <button
+                  type="button"
+                  onClick={() => addBlock("divider")}
+                  className="flex items-center gap-3 bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white p-4 rounded-xl border border-white/5 text-xs font-bold transition-all"
+                >
+                  <LinkIcon size={16} className="text-blue-500" /> Divider kustom
+                </button>
               </div>
-            )}
-
-            <div className="max-w-md">
-              <ImageUpload
-                value=""
-                onChange={handleAddImage}
-                label="Tambahkan Foto ke Galeri"
-              />
-            </div>
-          </div>
-        </AdminCard>
-
-        {/* Right Side: Live Preview Panel */}
-        <AdminCard title="Live Preview (Real-Time)" icon={Eye}>
-          <div className="space-y-6">
-            <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-500">
-              <Eye size={12} className="text-blue-500" /> Hasil render studi kasus di halaman portfolio
             </div>
 
-            {/* Preview Area container styled exactly as in the client page */}
-            <div className="p-8 rounded-2xl border border-white/5 bg-[#0B0E14]/40 min-h-[460px] overflow-y-auto max-h-[600px] custom-scrollbar">
-              {detailedContent ? (
-                <div 
-                  className="case-study-content text-slate-300"
-                  dangerouslySetInnerHTML={{ __html: detailedContent }}
-                />
-              ) : (
-                <div className="flex flex-col items-center justify-center py-20 opacity-40 text-center">
-                  <FileText size={40} className="mb-4 text-slate-600" />
-                  <p className="text-xs">Belum ada konten untuk ditampilkan.</p>
-                </div>
-              )}
+          </AdminCard>
+        </div>
 
-              {/* Show uploaded gallery in preview */}
+        {/* Right Side: Media Gallery Manager Card */}
+        <aside className="space-y-6">
+          <AdminCard title="Galeri Foto Proyek" icon={ImageIcon}>
+            <div className="space-y-4">
+              <p className="text-[10px] text-slate-500 leading-relaxed">
+                Foto-foto ini tersimpan pada database gallery proyek dan dapat digunakan di dalam carousel maupun media blocks.
+              </p>
+
               {galleryImages.length > 0 && (
-                <div className="mt-12 pt-8 border-t border-white/5">
-                  <h4 className="text-xs font-black uppercase tracking-[0.2em] text-blue-400 mb-4">
-                    Galeri Foto Proyek
-                  </h4>
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                    {galleryImages.map((img, idx) => (
-                      <div key={idx} className="aspect-video rounded-xl overflow-hidden border border-white/5">
-                        <img src={img} alt="" className="w-full h-full object-cover" />
+                <div className="grid grid-cols-2 gap-2.5">
+                  {galleryImages.map((url, idx) => (
+                    <div key={idx} className="relative aspect-video rounded-xl overflow-hidden border border-white/5 group bg-slate-950">
+                      <img src={url} alt="" className="w-full h-full object-cover" />
+                      <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveImage(idx)}
+                          className="p-1.5 bg-red-600 hover:bg-red-700 rounded text-white"
+                        >
+                          <Trash2 size={12} />
+                        </button>
                       </div>
-                    ))}
-                  </div>
+                    </div>
+                  ))}
                 </div>
               )}
+
+              <div className="pt-2 border-t border-white/5">
+                <ImageUpload
+                  value=""
+                  onChange={handleAddImage}
+                  label="Tambah foto galeri utama"
+                />
+              </div>
             </div>
-          </div>
-        </AdminCard>
+          </AdminCard>
+        </aside>
       </div>
     </div>
   );

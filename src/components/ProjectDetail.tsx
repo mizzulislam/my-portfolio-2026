@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
-import { ArrowLeft, ExternalLink, Globe, Github, Layers, CheckCircle2, Sun, Moon } from "lucide-react";
+import { 
+  ArrowLeft, ExternalLink, Globe, Github, Layers, CheckCircle2, 
+  Sun, Moon, ChevronDown, ChevronUp 
+} from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { supabase } from "../lib/supabase";
 import { Project } from "../types/project";
@@ -42,6 +45,243 @@ const detailTranslations = {
     technologies: "Teknologi Digunakan",
   }
 };
+
+// Divider Block Renderer
+function DividerBlock({ block }: { block: any }) {
+  const divStyle = block.data.style || "line";
+  const divColor = block.data.color || "rgba(255,255,255,0.1)";
+  return (
+    <div className="py-4">
+      {divStyle === "line" && <hr className="border-t" style={{ borderColor: divColor }} />}
+      {divStyle === "dashed" && <hr className="border-t border-dashed" style={{ borderColor: divColor }} />}
+      {divStyle === "double" && <div className="border-t border-b h-1" style={{ borderColor: divColor }} />}
+      {divStyle === "dots" && <hr className="border-t border-dotted border-spacing-2" style={{ borderColor: divColor }} />}
+    </div>
+  );
+}
+
+// Media Block Renderer (Photo/Video Link)
+function MediaBlock({ block, isDark }: { block: any; isDark: boolean }) {
+  const isVid = block.data.mediaType === "video";
+  return (
+    <div className="space-y-4">
+      {isVid ? (
+        <div className="relative aspect-video w-full rounded-3xl overflow-hidden border border-white/10 bg-slate-950 shadow-2xl">
+          {block.data.url ? (
+            <iframe 
+              src={block.data.url.replace("watch?v=", "embed/")} 
+              className="w-full h-full"
+              title="Case study video"
+              allowFullScreen
+            />
+          ) : (
+            <div className="flex items-center justify-center h-full text-slate-500 font-bold text-xs">Video URL Not Provided</div>
+          )}
+        </div>
+      ) : (
+        <div className={`rounded-3xl overflow-hidden border aspect-video bg-slate-950 flex items-center justify-center shadow-2xl ${
+          isDark ? "border-white/10" : "border-slate-200"
+        }`}>
+          {block.data.url ? (
+            <img src={block.data.url} alt="" className="w-full h-full object-cover" />
+          ) : (
+            <div className="text-slate-500 font-bold text-xs">No Image Loaded</div>
+          )}
+        </div>
+      )}
+      {block.data.caption && <p className="text-center text-xs italic text-slate-500 font-medium">{block.data.caption}</p>}
+    </div>
+  );
+}
+
+// Custom Data Table Renderer
+function TableBlock({ block, isDark }: { block: any; isDark: boolean }) {
+  return (
+    <div className={`overflow-x-auto rounded-2xl border ${
+      isDark ? "border-white/10 bg-slate-950/20" : "border-slate-200 bg-white shadow-md"
+    }`}>
+      <table className="w-full border-collapse text-left text-xs">
+        <thead>
+          <tr className={`border-b font-bold ${
+            isDark ? "bg-white/[0.03] border-white/10 text-blue-400" : "bg-slate-50 border-slate-200 text-blue-600"
+          }`}>
+            {block.data.headers.map((h: string, idx: number) => (
+              <th key={idx} className="p-4 uppercase tracking-wider font-mono">{h}</th>
+            ))}
+          </tr>
+        </thead>
+        <tbody className={`divide-y ${isDark ? "divide-white/5" : "divide-slate-200"}`}>
+          {block.data.rows.map((row: string[], rowIdx: number) => (
+            <tr key={rowIdx} className={isDark ? "hover:bg-white/[0.01]" : "hover:bg-slate-50/50"}>
+              {row.map((cell: string, cellIdx: number) => (
+                <td key={cellIdx} className={`p-4 font-bold ${
+                  isDark ? "text-slate-300" : "text-slate-700"
+                }`}>{cell}</td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+// 2/3 Column Grid Renderer
+function GridBlock({ block, isDark }: { block: any; isDark: boolean }) {
+  const cols = block.data.columns || 2;
+  return (
+    <div className={`grid grid-cols-1 md:grid-cols-${cols} gap-6`}>
+      {block.data.items.map((item: any, idx: number) => (
+        <div 
+          key={idx} 
+          className={`p-6 rounded-2xl border ${
+            isDark 
+              ? "bg-[#0b1329]/40 border-white/5 hover:border-white/10 hover:bg-white/[0.04]" 
+              : "bg-white border-slate-200 hover:border-slate-300 shadow-md"
+          } transition-all`}
+        >
+          <h4 className={`font-black text-sm mb-2 ${isDark ? "text-white" : "text-slate-900"}`}>{item.title}</h4>
+          <p className={`text-xs leading-relaxed font-medium ${isDark ? "text-slate-400" : "text-slate-500"}`}>{item.content}</p>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// Image Carousel Slider Renderer
+function CarouselBlock({ block, isDark }: { block: any; isDark: boolean }) {
+  const hasImgs = block.data.images && block.data.images.length > 0;
+  if (!hasImgs) return null;
+  return (
+    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+      {block.data.images.map((img: string, idx: number) => (
+        <div 
+          key={idx} 
+          className={`aspect-video rounded-2xl overflow-hidden border shadow-lg hover:scale-[1.02] transition-transform ${
+            isDark ? "border-white/5 bg-slate-950" : "border-slate-200 bg-white"
+          }`}
+        >
+          <img src={img} alt="" className="w-full h-full object-cover" />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// Interactive Accordion (FAQ Style) Renderer
+function AccordionBlock({ block, isDark }: { block: any; isDark: boolean }) {
+  const [activeIndex, setActiveIndex] = useState<number | null>(null);
+
+  return (
+    <div className="space-y-3">
+      {block.data.items.map((item: any, idx: number) => {
+        const isOpen = activeIndex === idx;
+        return (
+          <div 
+            key={idx} 
+            className={`rounded-2xl border transition-all ${
+              isDark 
+                ? "bg-[#0b1329]/20 border-white/5 hover:bg-white/[0.02]" 
+                : "bg-slate-50 border-slate-200 hover:bg-slate-100/50 shadow-sm"
+            } overflow-hidden`}
+          >
+            <button
+              onClick={() => setActiveIndex(isOpen ? null : idx)}
+              className={`w-full flex items-center justify-between p-5 font-black text-xs uppercase tracking-wider text-left transition-colors ${
+                isDark 
+                  ? "text-slate-300 hover:text-white" 
+                  : "text-slate-700 hover:text-slate-900"
+              }`}
+            >
+              <span>{item.title}</span>
+              {isOpen ? (
+                <ChevronUp size={14} className="text-blue-500" />
+              ) : (
+                <ChevronDown size={14} className="text-blue-500" />
+              )}
+            </button>
+            {isOpen && (
+              <div 
+                className={`p-5 border-t text-xs leading-relaxed transition-all ${
+                  isDark 
+                    ? "border-white/5 text-slate-400 bg-black/10" 
+                    : "border-slate-200 text-slate-600 bg-slate-100/30"
+                }`}
+              >
+                {item.content}
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+// Split Banner (Media + Text Layout) Renderer
+function SplitBannerBlock({ block, isDark }: { block: any; isDark: boolean }) {
+  const leftLayout = block.data.layout === "left";
+  const splitVid = block.data.mediaType === "video";
+  return (
+    <div className={`flex flex-col md:flex-row items-center gap-8 my-4 ${leftLayout ? "" : "md:flex-row-reverse"}`}>
+      {/* Media block */}
+      <div className={`w-full md:w-1/2 aspect-video rounded-3xl overflow-hidden border bg-slate-950 flex items-center justify-center shrink-0 shadow-2xl ${
+        isDark ? "border-white/10" : "border-slate-200"
+      }`}>
+        {block.data.mediaUrl ? (
+          splitVid ? (
+            <iframe 
+              src={block.data.mediaUrl.replace("watch?v=", "embed/")} 
+              className="w-full h-full"
+              title="Split banner media"
+              allowFullScreen
+            />
+          ) : (
+            <img src={block.data.mediaUrl} alt="" className="w-full h-full object-cover" />
+          )
+        ) : (
+          <div className="text-slate-500 font-bold text-xs font-mono">No Media Configured</div>
+        )}
+      </div>
+      {/* Text block */}
+      <div className="w-full md:w-1/2 text-left space-y-4">
+        <h3 className={`text-2xl font-black ${isDark ? "text-white" : "text-slate-900"}`}>{block.data.title}</h3>
+        <p className={`text-xs md:text-sm leading-relaxed font-medium ${
+          isDark ? "text-slate-400" : "text-slate-600"
+        }`}>{block.data.content}</p>
+      </div>
+    </div>
+  );
+}
+
+// Root Block Router
+function BlockRenderer({ block, isDark }: { block: any; isDark: boolean }) {
+  switch (block.type) {
+    case "text":
+      return (
+        <div 
+          className="case-study-content"
+          dangerouslySetInnerHTML={{ __html: block.data.html }}
+        />
+      );
+    case "divider":
+      return <DividerBlock block={block} />;
+    case "media":
+      return <MediaBlock block={block} isDark={isDark} />;
+    case "table":
+      return <TableBlock block={block} isDark={isDark} />;
+    case "grid":
+      return <GridBlock block={block} isDark={isDark} />;
+    case "carousel":
+      return <CarouselBlock block={block} isDark={isDark} />;
+    case "accordion":
+      return <AccordionBlock block={block} isDark={isDark} />;
+    case "split-banner":
+      return <SplitBannerBlock block={block} isDark={isDark} />;
+    default:
+      return null;
+  }
+}
 
 export default function ProjectDetail({ isDark, setIsDark, lang, setLang }: ProjectDetailProps) {
   const { id } = useParams<{ id: string }>();
@@ -109,6 +349,43 @@ export default function ProjectDetail({ isDark, setIsDark, lang, setLang }: Proj
   const projectDesc = lang === "id" && project.desc_id ? project.desc_id : project.description;
   const detailedContent = lang === "id" && project.detailed_content_id ? project.detailed_content_id : project.detailed_content;
   const tags = lang === "id" && project.tags_id && project.tags_id.length > 0 ? project.tags_id : project.tags || [];
+
+  // Parse blocks or render HTML directly
+  const renderCaseStudyContent = () => {
+    if (!detailedContent) {
+      return (
+        <div className="text-center py-10 opacity-60">
+          <p className="text-sm font-medium">{t.noStudy}</p>
+        </div>
+      );
+    }
+
+    const trimmed = detailedContent.trim();
+    if (trimmed.startsWith("[")) {
+      try {
+        const parsedBlocks = JSON.parse(trimmed);
+        if (Array.isArray(parsedBlocks)) {
+          return (
+            <div className="space-y-12">
+              {parsedBlocks.map((block: any) => (
+                <BlockRenderer key={block.id} block={block} isDark={isDark} />
+              ))}
+            </div>
+          );
+        }
+      } catch (err) {
+        console.error("JSON block parsing failed, falling back to HTML renderer:", err);
+      }
+    }
+
+    // Default HTML renderer fallback (backward compatibility)
+    return (
+      <div
+        className={`case-study-content ${isDark ? "text-slate-300" : "text-slate-700"}`}
+        dangerouslySetInnerHTML={{ __html: detailedContent }}
+      />
+    );
+  };
 
   return (
     <div className={`min-h-screen w-full transition-colors duration-500 font-sans ${isDark ? "bg-[#020617] text-slate-200" : "bg-slate-50 text-slate-900"}`}>
@@ -199,16 +476,7 @@ export default function ProjectDetail({ isDark, setIsDark, lang, setLang }: Proj
             <div className={`p-8 md:p-12 rounded-3xl border ${
               isDark ? "bg-[#0b1329]/30 border-white/5" : "bg-white border-slate-200 shadow-lg"
             }`}>
-              {detailedContent ? (
-                <div
-                  className={`case-study-content ${isDark ? "text-slate-300" : "text-slate-700"}`}
-                  dangerouslySetInnerHTML={{ __html: detailedContent }}
-                />
-              ) : (
-                <div className="text-center py-10 opacity-60">
-                  <p className="text-sm font-medium">{t.noStudy}</p>
-                </div>
-              )}
+              {renderCaseStudyContent()}
             </div>
 
             {/* Project Gallery */}
@@ -352,7 +620,7 @@ export default function ProjectDetail({ isDark, setIsDark, lang, setLang }: Proj
             >
               <img
                 src={selectedImage}
-                alt="Enlarged gallery view"
+                alt="Enlarged view"
                 className="w-full h-full max-h-[85vh] object-contain"
               />
             </motion.div>
