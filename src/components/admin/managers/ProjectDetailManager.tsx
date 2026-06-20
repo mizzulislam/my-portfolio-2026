@@ -658,21 +658,18 @@ export default function ProjectDetailManager({ projectId, onBack }: ProjectDetai
   return (
     <div className="space-y-10">
       <div className="flex items-center justify-between gap-4 border-b border-white/5 pb-5">
-        {/* Left: back button + divider + title */}
-        <div className="flex items-center gap-3 min-w-0 flex-1">
+        {/* Left: title block */}
+        <div className="min-w-0 flex-1">
+          <p className="text-[9px] font-bold text-slate-500 uppercase tracking-[0.18em]">Editor Proyek</p>
+          <h3 className="text-white font-black text-xs tracking-wide truncate leading-tight">
+            {project?.title}
+          </h3>
+        </div>
+        {/* Right: back button + review button */}
+        <div className="flex items-center gap-2 shrink-0">
           <AdminBtn variant="secondary" onClick={onBack}>
             <ArrowLeft size={13} /> Kembali ke Proyek
           </AdminBtn>
-          <div className="h-5 w-px bg-white/10 shrink-0" />
-          <div className="min-w-0">
-            <p className="text-[9px] font-bold text-slate-500 uppercase tracking-[0.18em]">Editor Proyek</p>
-            <h3 className="text-white font-black text-xs tracking-wide truncate leading-tight">
-              {project?.title}
-            </h3>
-          </div>
-        </div>
-        {/* Right: action button */}
-        <div className="shrink-0">
           <AdminBtn variant="primary" onClick={() => setStep("preview")}>
             <Eye size={13} /> Review Tampilan
           </AdminBtn>
