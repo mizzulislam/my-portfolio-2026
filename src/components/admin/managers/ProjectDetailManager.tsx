@@ -657,21 +657,24 @@ export default function ProjectDetailManager({ projectId, onBack }: ProjectDetai
   // WIZARD EDIT MODE
   return (
     <div className="space-y-10">
-      <div className="border-b border-white/5 pb-6 space-y-3">
-        {/* Title row */}
-        <div className="flex items-center gap-3 min-w-0">
+      <div className="flex items-center justify-between gap-4 border-b border-white/5 pb-5">
+        {/* Left: back button + divider + title */}
+        <div className="flex items-center gap-3 min-w-0 flex-1">
           <AdminBtn variant="secondary" onClick={onBack}>
-            <ArrowLeft size={14} /> Kembali ke Proyek
+            <ArrowLeft size={13} /> Kembali ke Proyek
           </AdminBtn>
-          <div className="h-4 w-[1px] bg-white/10 shrink-0" />
-          <h3 className="text-white font-black uppercase tracking-widest text-xs truncate">
-            Editor Proyek: {project?.title}
-          </h3>
+          <div className="h-5 w-px bg-white/10 shrink-0" />
+          <div className="min-w-0">
+            <p className="text-[9px] font-bold text-slate-500 uppercase tracking-[0.18em]">Editor Proyek</p>
+            <h3 className="text-white font-black text-xs tracking-wide truncate leading-tight">
+              {project?.title}
+            </h3>
+          </div>
         </div>
-        {/* Action buttons row */}
-        <div className="flex gap-3 pl-1">
+        {/* Right: action button */}
+        <div className="shrink-0">
           <AdminBtn variant="primary" onClick={() => setStep("preview")}>
-            <Eye size={14} /> Review Tampilan
+            <Eye size={13} /> Review Tampilan
           </AdminBtn>
         </div>
       </div>
