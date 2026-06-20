@@ -657,16 +657,19 @@ export default function ProjectDetailManager({ projectId, onBack }: ProjectDetai
   // WIZARD EDIT MODE
   return (
     <div className="space-y-10">
-      <div className="flex items-center justify-between gap-6 border-b border-white/5 pb-6">
-        <div className="flex items-center gap-4 min-w-0">
+      <div className="border-b border-white/5 pb-6 space-y-3">
+        {/* Title row */}
+        <div className="flex items-center gap-3 min-w-0">
           <AdminBtn variant="secondary" onClick={onBack}>
             <ArrowLeft size={14} /> Kembali ke Proyek
           </AdminBtn>
-          <h3 className="text-white font-black uppercase tracking-widest text-xs truncate max-w-lg md:max-w-xl">
+          <div className="h-4 w-[1px] bg-white/10 shrink-0" />
+          <h3 className="text-white font-black uppercase tracking-widest text-xs truncate">
             Editor Proyek: {project?.title}
           </h3>
         </div>
-        <div className="flex gap-4 shrink-0">
+        {/* Action buttons row */}
+        <div className="flex gap-3 pl-1">
           <AdminBtn variant="primary" onClick={() => setStep("preview")}>
             <Eye size={14} /> Review Tampilan
           </AdminBtn>
@@ -743,14 +746,36 @@ export default function ProjectDetailManager({ projectId, onBack }: ProjectDetai
                         {/* Rendering dynamic editors based on block type */}
                         {block.type === "text" && (
                           <div className="space-y-3">
-                            <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block">HTML / Text Content</label>
+                            <div className="flex items-center justify-between">
+                              <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block">
+                                {block.data.mode === "plain" ? "Plain Text Content" : "HTML / Rich Text Content"}
+                              </label>
+                              <button
+                                type="button"
+                                onClick={() => updateBlock(block.id, { mode: block.data.mode === "plain" ? "html" : "plain" })}
+                                className="text-[8px] font-black uppercase tracking-widest px-2.5 py-1 rounded-md border transition-all"
+                                style={block.data.mode === "plain"
+                                  ? { borderColor: "rgba(255,255,255,0.1)", color: "#94a3b8", background: "rgba(255,255,255,0.04)" }
+                                  : { borderColor: "rgba(59,130,246,0.3)", color: "#60a5fa", background: "rgba(59,130,246,0.08)" }
+                                }
+                              >
+                                {block.data.mode === "plain" ? "⟨/⟩ Ganti ke HTML" : "Aa Ganti ke Plain Text"}
+                              </button>
+                            </div>
                             <textarea
                               value={block.data.html}
                               onChange={(e) => updateBlock(block.id, { html: e.target.value })}
                               rows={5}
-                              placeholder="Masukkan teks HTML di sini..."
-                              className="w-full bg-slate-950 border border-white/5 rounded-xl p-4 font-mono text-xs text-slate-300 focus:outline-none focus:border-blue-500/40"
+                              placeholder={block.data.mode === "plain" ? "Tulis teks biasa di sini..." : "Masukkan teks HTML di sini, contoh: <h2>Judul</h2><p>Isi paragraf</p>"}
+                              className={`w-full bg-slate-950 border border-white/5 rounded-xl p-4 text-xs text-slate-300 focus:outline-none focus:border-blue-500/40 transition-all ${
+                                block.data.mode === "plain" ? "font-sans leading-relaxed" : "font-mono"
+                              }`}
                             />
+                            {block.data.mode !== "plain" && (
+                              <p className="text-[9px] text-slate-600 leading-relaxed">
+                                Mendukung tag HTML seperti <code className="text-blue-400/70">&lt;h2&gt;</code>, <code className="text-blue-400/70">&lt;p&gt;</code>, <code className="text-blue-400/70">&lt;ul&gt;</code>, <code className="text-blue-400/70">&lt;blockquote&gt;</code>, dll.
+                              </p>
+                            )}
                           </div>
                         )}
 
@@ -1197,68 +1222,68 @@ export default function ProjectDetailManager({ projectId, onBack }: ProjectDetai
               <label className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-400 mb-4 block px-1">
                 + Tambah Blok Konten Baru (Insert Block Elements)
               </label>
-              
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                 <button
                   type="button"
                   onClick={() => addBlock("text")}
-                  className="flex items-center gap-3 bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white p-4 rounded-xl border border-white/5 text-xs font-bold transition-all"
+                  className="flex items-center gap-2 bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white p-3 rounded-xl border border-white/5 text-[10px] font-bold transition-all"
                 >
-                  <FileText size={16} className="text-blue-500" /> Teks / Rich Text
+                  <FileText size={14} className="text-blue-500 shrink-0" /> Teks / Rich Text
                 </button>
                 <button
                   type="button"
                   onClick={() => addBlock("media")}
-                  className="flex items-center gap-3 bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white p-4 rounded-xl border border-white/5 text-xs font-bold transition-all"
+                  className="flex items-center gap-2 bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white p-3 rounded-xl border border-white/5 text-[10px] font-bold transition-all"
                 >
-                  <ImageIcon size={16} className="text-blue-500" /> Foto / Video
+                  <ImageIcon size={14} className="text-blue-500 shrink-0" /> Foto / Video
                 </button>
                 <button
                   type="button"
                   onClick={() => addBlock("grid")}
-                  className="flex items-center gap-3 bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white p-4 rounded-xl border border-white/5 text-xs font-bold transition-all"
+                  className="flex items-center gap-2 bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white p-3 rounded-xl border border-white/5 text-[10px] font-bold transition-all"
                 >
-                  <Columns size={16} className="text-blue-500" /> Grid Kolom
+                  <Columns size={14} className="text-blue-500 shrink-0" /> Grid Kolom
                 </button>
                 <button
                   type="button"
                   onClick={() => addBlock("split-banner")}
-                  className="flex items-center gap-3 bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white p-4 rounded-xl border border-white/5 text-xs font-bold transition-all"
+                  className="flex items-center gap-2 bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white p-3 rounded-xl border border-white/5 text-[10px] font-bold transition-all"
                 >
-                  <AlignLeft size={16} className="text-blue-500" /> Split Banner
+                  <AlignLeft size={14} className="text-blue-500 shrink-0" /> Split Banner
                 </button>
                 <button
                   type="button"
                   onClick={() => addBlock("table")}
-                  className="flex items-center gap-3 bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white p-4 rounded-xl border border-white/5 text-xs font-bold transition-all"
+                  className="flex items-center gap-2 bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white p-3 rounded-xl border border-white/5 text-[10px] font-bold transition-all"
                 >
-                  <Table size={16} className="text-blue-500" /> Tabel Data
+                  <Table size={14} className="text-blue-500 shrink-0" /> Tabel Data
                 </button>
                 <button
                   type="button"
                   onClick={() => addBlock("accordion")}
-                  className="flex items-center gap-3 bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white p-4 rounded-xl border border-white/5 text-xs font-bold transition-all"
+                  className="flex items-center gap-2 bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white p-3 rounded-xl border border-white/5 text-[10px] font-bold transition-all"
                 >
-                  <ChevronDown size={16} className="text-blue-500" /> Accordion (FAQ)
+                  <ChevronDown size={14} className="text-blue-500 shrink-0" /> Accordion (FAQ)
                 </button>
                 <button
                   type="button"
                   onClick={() => addBlock("carousel")}
-                  className="flex items-center gap-3 bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white p-4 rounded-xl border border-white/5 text-xs font-bold transition-all"
+                  className="flex items-center gap-2 bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white p-3 rounded-xl border border-white/5 text-[10px] font-bold transition-all"
                 >
-                  <Film size={16} className="text-blue-500" /> Galeri Slider
+                  <Film size={14} className="text-blue-500 shrink-0" /> Galeri Slider
                 </button>
                 <button
                   type="button"
                   onClick={() => addBlock("divider")}
-                  className="flex items-center gap-3 bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white p-4 rounded-xl border border-white/5 text-xs font-bold transition-all"
+                  className="flex items-center gap-2 bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white p-3 rounded-xl border border-white/5 text-[10px] font-bold transition-all"
                 >
-                  <LinkIcon size={16} className="text-blue-500" /> Divider kustom
+                  <LinkIcon size={14} className="text-blue-500 shrink-0" /> Divider Kustom
                 </button>
               </div>
             </div>
 
           </AdminCard>
+
         </div>
 
         {/* Right Side: Media Gallery Manager Card */}
