@@ -40,6 +40,7 @@ export default function AdminLayout({
   children,
 }: AdminLayoutProps) {
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isLogoHovered, setIsLogoHovered] = useState(false);
 
   return (
     <div className="flex flex-col md:flex-row h-screen overflow-hidden bg-[#020617] text-slate-200 font-sans">
@@ -49,38 +50,31 @@ export default function AdminLayout({
           isCollapsed ? "w-20 px-3 py-6" : "w-72 p-6"
         }`}
       >
-        <div className={`flex items-center justify-between mb-10 gap-3 ${isCollapsed ? "flex-col" : "flex-row px-1 pt-2"}`}>
-          {!isCollapsed ? (
-            <div className="flex items-center gap-3 overflow-hidden">
-              <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center shadow-lg shadow-blue-500/30 shrink-0">
-                <LayoutDashboard className="text-white" size={20} />
-              </div>
-              <div className="overflow-hidden">
-                <h2 className="font-black text-lg tracking-tighter text-white uppercase leading-none truncate">
-                  Admin
-                </h2>
-                <span className="text-[10px] font-bold text-blue-500 tracking-[0.2em] uppercase whitespace-nowrap">
-                  Control Center
-                </span>
-              </div>
-            </div>
-          ) : (
-            <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center shadow-lg shadow-blue-500/30 shrink-0 mx-auto">
-              <LayoutDashboard className="text-white" size={20} />
-            </div>
-          )}
-
+        <div className={`flex items-center mb-10 gap-3 px-1 pt-2 ${isCollapsed ? "justify-center" : ""}`}>
           <button
             onClick={() => setIsCollapsed(!isCollapsed)}
-            className={`p-2 rounded-lg bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white transition-all ${isCollapsed ? "mt-2" : ""}`}
+            onMouseEnter={() => setIsLogoHovered(true)}
+            onMouseLeave={() => setIsLogoHovered(false)}
+            className="w-10 h-10 rounded-xl bg-blue-600 hover:bg-blue-700 text-white flex items-center justify-center shadow-lg shadow-blue-500/30 transition-all shrink-0 cursor-pointer"
             title={isCollapsed ? "Expand Sidebar" : "Collapse Sidebar"}
           >
-            {isCollapsed ? (
-              <ChevronRight size={14} />
+            {isLogoHovered ? (
+              isCollapsed ? <ChevronRight size={20} /> : <ChevronLeft size={20} />
             ) : (
-              <ChevronLeft size={14} />
+              <LayoutDashboard size={20} />
             )}
           </button>
+
+          {!isCollapsed && (
+            <div className="overflow-hidden">
+              <h2 className="font-black text-lg tracking-tighter text-white uppercase leading-none truncate">
+                Admin
+              </h2>
+              <span className="text-[10px] font-bold text-blue-500 tracking-[0.2em] uppercase whitespace-nowrap">
+                Control Center
+              </span>
+            </div>
+          )}
         </div>
 
         <nav className="flex-1 space-y-2">
