@@ -7,7 +7,7 @@ import { Message } from "@/src/types/message";
 interface MessageDetailProps {
   selectedMessage: Message;
   onBack: () => void; // Fungsi untuk kembali
-  onDelete: (id: string) => Promise<void>; // Fungsi untuk menghapus
+  onDelete: (id: string) => void; // Fungsi untuk menghapus
   onReply: () => void; // Fungsi untuk memicu modal balas (Ini kuncinya!)
 }
 

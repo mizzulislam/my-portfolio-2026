@@ -46,6 +46,7 @@ import {
   AdminTextArea,
   AdminSelect,
   ImageUpload,
+  AdminConfirmModal,
 } from "../AdminSharedUI";
 
 function SortableCard({
@@ -165,7 +166,12 @@ export default function ProjectManager() {
   const [dragSuccess, setDragSuccess] = useState(false);
   const [isReordering, setIsReordering] = useState(false);
   const [pendingOrder, setPendingOrder] = useState<Project[]>([]);
-  const [showConfirm, setShowConfirm] = useState(false);
+  const [confirmModal, setConfirmModal] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    onConfirm: () => void;
+  } | null>(null);
   const { items, setItems, fetchItems } = useProjects();
   const [form, setForm] = useState<Project>({
     title: "",
@@ -209,7 +215,7 @@ export default function ProjectManager() {
       await projectsApi.updateOrder(pendingOrder);
 
       setPendingOrder([]);
-      setShowConfirm(false);
+      setConfirmModal(null);
       setIsReordering(false);
       setDragSuccess(true);
 
@@ -221,10 +227,6 @@ export default function ProjectManager() {
       console.error(err);
       toast.error("Gagal memperbarui urutan");
     }
-  };
-
-  const handleCancelOrder = () => {
-    setShowConfirm(false);
   };
 
   const handleDiscardOrder = () => {
@@ -304,16 +306,22 @@ export default function ProjectManager() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  const handleDelete = async (id: string) => {
-    if (confirm("Apakah anda yakin ingin menghapus proyek ini secara permanen?")) {
-      try {
-        await projectsApi.delete(id);
-        toast.success("Proyek berhasil dihapus");
-        fetchItems();
-      } catch (err) {
-        toast.error("Gagal menghapus proyek");
-      }
-    }
+  const handleDelete = (id: string) => {
+    setConfirmModal({
+      isOpen: true,
+      title: "Hapus Proyek secara Permanen?",
+      message: "Proyek ini akan dihapus secara permanen dan tidak dapat dikembalikan.",
+      onConfirm: async () => {
+        try {
+          await projectsApi.delete(id);
+          toast.success("Proyek berhasil dihapus");
+          fetchItems();
+        } catch (err) {
+          toast.error("Gagal menghapus proyek");
+        }
+        setConfirmModal(null);
+      },
+    });
   };
 
   return (
@@ -454,7 +462,16 @@ export default function ProjectManager() {
           {isReordering ? (
             <>
               {pendingOrder.length > 0 && (
-                <AdminBtn onClick={() => setShowConfirm(true)}>
+                <AdminBtn
+                  onClick={() =>
+                    setConfirmModal({
+                      isOpen: true,
+                      title: "Simpan Urutan Baru?",
+                      message: "Urutan project akan diperbarui dan langsung terlihat di halaman portfolio.",
+                      onConfirm: handleConfirmOrder,
+                    })
+                  }
+                >
                   <Check size={16} /> Simpan Urutan
                 </AdminBtn>
               )}
@@ -506,28 +523,14 @@ export default function ProjectManager() {
           </div>
         </SortableContext>
       </DndContext>
-      {/* Popup Konfirmasi */}
-      {showConfirm && (
-        <div className="fixed inset-0 z-[999] flex items-end justify-center pb-12 px-4 bg-black/50 backdrop-blur-sm">
-          <div className="bg-slate-900 border border-white/10 rounded-3xl p-8 shadow-2xl max-w-md w-full">
-            <h3 className="text-white font-black text-lg uppercase tracking-tight mb-2">
-              Simpan Urutan Baru?
-            </h3>
-            <p className="text-slate-400 text-sm mb-6">
-              Urutan project akan diperbarui dan langsung terlihat di halaman
-              portfolio.
-            </p>
-            <div className="flex gap-3">
-              <AdminBtn onClick={handleConfirmOrder}>
-                <Check size={16} /> Ya, Simpan
-              </AdminBtn>
-              <AdminBtn variant="secondary" onClick={handleCancelOrder}>
-                <X size={16} /> Batal
-              </AdminBtn>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Custom Confirmation Modal */}
+      <AdminConfirmModal
+        isOpen={confirmModal?.isOpen || false}
+        title={confirmModal?.title || ""}
+        message={confirmModal?.message || ""}
+        onConfirm={confirmModal?.onConfirm || (() => {})}
+        onCancel={() => setConfirmModal(null)}
+      />
 
       {/* Notifikasi Sukses */}
       {dragSuccess && (

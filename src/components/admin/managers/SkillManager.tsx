@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 import {
   AdminCard, AdminInput,
-  AdminBtn, AdminTextArea, ImageUpload,
+  AdminBtn, AdminTextArea, ImageUpload, AdminConfirmModal,
 } from "../AdminSharedUI";
 import type { SoftSkillDB, HardSkillDB, TechnicalSkillDB } from "@/src/types/skill";
 
@@ -24,6 +24,12 @@ function SoftSkillsManager() {
   const [form, setForm] = useState({ name: "" });
   const [editId, setEditId] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [confirmModal, setConfirmModal] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    onConfirm: () => void;
+  } | null>(null);
 
   const handleSave = async () => {
     if (!form.name.trim()) return toast.error("Nama skill wajib diisi!");
@@ -57,16 +63,22 @@ function SoftSkillsManager() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  const handleDelete = async (id: string) => {
-    if (confirm("Hapus skill ini?")) {
-      try {
-        await skillsApi.delete("soft_skills", id);
-        toast.success("Skill berhasil dihapus");
-        fetchAllSkills();
-      } catch (err) {
-        toast.error("Gagal menghapus skill");
-      }
-    }
+  const handleDelete = (id: string) => {
+    setConfirmModal({
+      isOpen: true,
+      title: "Hapus Soft Skill?",
+      message: "Apakah Anda yakin ingin menghapus soft skill ini?",
+      onConfirm: async () => {
+        try {
+          await skillsApi.delete("soft_skills", id);
+          toast.success("Skill berhasil dihapus");
+          fetchAllSkills();
+        } catch (err) {
+          toast.error("Gagal menghapus skill");
+        }
+        setConfirmModal(null);
+      },
+    });
   };
 
   const softIcons: Record<string, any> = {
@@ -173,6 +185,13 @@ function SoftSkillsManager() {
           );
         })}
       </div>
+      <AdminConfirmModal
+        isOpen={confirmModal?.isOpen || false}
+        title={confirmModal?.title || ""}
+        message={confirmModal?.message || ""}
+        onConfirm={confirmModal?.onConfirm || (() => {})}
+        onCancel={() => setConfirmModal(null)}
+      />
     </div>
   );
 }
@@ -183,6 +202,12 @@ function HardSkillsManager() {
   const [form, setForm] = useState({ name: "" });
   const [editId, setEditId] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [confirmModal, setConfirmModal] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    onConfirm: () => void;
+  } | null>(null);
 
   const handleSave = async () => {
     if (!form.name.trim()) return toast.error("Nama skill wajib diisi!");
@@ -216,16 +241,22 @@ function HardSkillsManager() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  const handleDelete = async (id: string) => {
-    if (confirm("Hapus skill ini?")) {
-      try {
-        await skillsApi.delete("hard_skills", id);
-        toast.success("Skill berhasil dihapus");
-        fetchAllSkills();
-      } catch (err) {
-        toast.error("Gagal menghapus skill");
-      }
-    }
+  const handleDelete = (id: string) => {
+    setConfirmModal({
+      isOpen: true,
+      title: "Hapus Hard Skill?",
+      message: "Apakah Anda yakin ingin menghapus hard skill ini?",
+      onConfirm: async () => {
+        try {
+          await skillsApi.delete("hard_skills", id);
+          toast.success("Skill berhasil dihapus");
+          fetchAllSkills();
+        } catch (err) {
+          toast.error("Gagal menghapus skill");
+        }
+        setConfirmModal(null);
+      },
+    });
   };
 
   return (
@@ -297,6 +328,13 @@ function HardSkillsManager() {
           </div>
         ))}
       </div>
+      <AdminConfirmModal
+        isOpen={confirmModal?.isOpen || false}
+        title={confirmModal?.title || ""}
+        message={confirmModal?.message || ""}
+        onConfirm={confirmModal?.onConfirm || (() => {})}
+        onCancel={() => setConfirmModal(null)}
+      />
     </div>
   );
 }
@@ -312,6 +350,12 @@ function TechnicalSkillsManager() {
   const [editId, setEditId] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [imageResetKey, setImageResetKey] = useState(0);
+  const [confirmModal, setConfirmModal] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    onConfirm: () => void;
+  } | null>(null);
 
   const handleSave = async () => {
     if (!form.name.trim()) return toast.error("Nama tool wajib diisi!");
@@ -355,16 +399,22 @@ function TechnicalSkillsManager() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  const handleDelete = async (id: string) => {
-    if (confirm("Hapus tool ini?")) {
-      try {
-        await skillsApi.delete("skills", id);
-        toast.success("Tool berhasil dihapus");
-        fetchAllSkills();
-      } catch (err) {
-        toast.error("Gagal menghapus tool");
-      }
-    }
+  const handleDelete = (id: string) => {
+    setConfirmModal({
+      isOpen: true,
+      title: "Hapus Technical Tool?",
+      message: "Apakah Anda yakin ingin menghapus technical tool ini?",
+      onConfirm: async () => {
+        try {
+          await skillsApi.delete("skills", id);
+          toast.success("Tool berhasil dihapus");
+          fetchAllSkills();
+        } catch (err) {
+          toast.error("Gagal menghapus tool");
+        }
+        setConfirmModal(null);
+      },
+    });
   };
 
   return (
@@ -476,6 +526,13 @@ function TechnicalSkillsManager() {
           </div>
         ))}
       </div>
+      <AdminConfirmModal
+        isOpen={confirmModal?.isOpen || false}
+        title={confirmModal?.title || ""}
+        message={confirmModal?.message || ""}
+        onConfirm={confirmModal?.onConfirm || (() => {})}
+        onCancel={() => setConfirmModal(null)}
+      />
     </div>
   );
 }

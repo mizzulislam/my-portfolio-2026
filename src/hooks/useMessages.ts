@@ -45,11 +45,9 @@ export function useMessages() {
 
   const handleDeleteSelected = async () => {
     if (selectedIds.length === 0) return;
-    if (confirm(`Hapus ${selectedIds.length} pesan terpilih?`)) {
-      await supabase.from("messages").delete().in("id", selectedIds);
-      setMessages((prev) => prev.filter((m) => !selectedIds.includes(m.id!)));
-      setSelectedIds([]);
-    }
+    await supabase.from("messages").delete().in("id", selectedIds);
+    setMessages((prev) => prev.filter((m) => !selectedIds.includes(m.id!)));
+    setSelectedIds([]);
   };
 
   const selectedMessages = messages.filter((m) => selectedIds.includes(m.id!));

@@ -3,13 +3,12 @@ import React from "react";
 import { motion } from "motion/react";
 import { 
   ArrowLeft, Check, Trash2, Image as ImageIcon, Plus, GripVertical, 
-  FileText, Columns, Table, Film, AlignLeft, Eye, ChevronDown, ChevronUp, Link as LinkIcon,
-  AlertTriangle
+  FileText, Columns, Table, Film, AlignLeft, Eye, ChevronDown, ChevronUp, Link as LinkIcon
 } from "lucide-react";
 import { toast } from "react-hot-toast";
 import { Project } from "@/src/types/project";
 import { projectsApi } from "@/src/lib/api/projects";
-import { AdminCard, AdminBtn, ImageUpload } from "../AdminSharedUI";
+import { AdminCard, AdminBtn, ImageUpload, AdminConfirmModal } from "../AdminSharedUI";
 import { supabase } from "@/src/lib/supabase";
 
 // Dnd Kit Imports
@@ -1298,39 +1297,13 @@ export default function ProjectDetailManager({ projectId, onBack }: ProjectDetai
       </div>
 
       {/* Custom Confirmation Modal */}
-      {confirmModal && confirmModal.isOpen && (
-        <div className="fixed inset-0 z-[100] bg-black/85 backdrop-blur-md flex items-center justify-center p-6">
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="bg-slate-900 border border-white/10 rounded-[2rem] p-8 max-w-md w-full shadow-2xl relative text-left"
-          >
-            <h3 className="text-white font-black text-sm uppercase tracking-wide flex items-center gap-3">
-              <AlertTriangle className="text-yellow-500 shrink-0" size={16} />
-              {confirmModal.title}
-            </h3>
-            <p className="text-slate-400 text-xs mt-4 leading-relaxed font-bold">
-              {confirmModal.message}
-            </p>
-            <div className="flex justify-end gap-3 mt-8">
-              <button
-                type="button"
-                onClick={() => setConfirmModal(null)}
-                className="px-5 py-2.5 rounded-xl border border-white/5 bg-slate-950 text-slate-400 hover:text-slate-200 text-[10px] font-black uppercase tracking-wider transition-all"
-              >
-                Batal
-              </button>
-              <button
-                type="button"
-                onClick={confirmModal.onConfirm}
-                className="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-[10px] font-black uppercase tracking-wider transition-all shadow-[0_10px_20px_rgba(37,99,235,0.25)]"
-              >
-                Setuju
-              </button>
-            </div>
-          </motion.div>
-        </div>
-      )}
+      <AdminConfirmModal
+        isOpen={confirmModal?.isOpen || false}
+        title={confirmModal?.title || ""}
+        message={confirmModal?.message || ""}
+        onConfirm={confirmModal?.onConfirm || (() => {})}
+        onCancel={() => setConfirmModal(null)}
+      />
     </div>
   );
 }

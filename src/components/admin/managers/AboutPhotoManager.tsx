@@ -2,7 +2,7 @@ import { useState } from "react";
 import React from "react";
 import { Image, Plus, Trash2, Edit2, Check, X } from "lucide-react";
 import { toast } from "react-hot-toast";
-import { AdminCard, AdminInput, AdminBtn, ImageUpload } from "../AdminSharedUI";
+import { AdminCard, AdminInput, AdminBtn, ImageUpload, AdminConfirmModal } from "../AdminSharedUI";
 import { useAboutPhotos } from "@/src/hooks/useAboutPhotos";
 import { aboutPhotosApi } from "@/src/lib/api/aboutPhotos";
 import type { AboutPhoto } from "@/src/types";
@@ -17,6 +17,12 @@ export default function AboutPhotoManager() {
   });
   const [editId, setEditId] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [confirmModal, setConfirmModal] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    onConfirm: () => void;
+  } | null>(null);
 
   const resetForm = () => {
     setForm({ image_url: "", alt: "", caption: "", order: 0 });
@@ -63,16 +69,23 @@ export default function AboutPhotoManager() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm("Hapus foto ini dari About section?")) return;
-    try {
-      await aboutPhotosApi.delete(id);
-      toast.success("Foto About berhasil dihapus");
-      fetchItems();
-    } catch (err) {
-      console.error(err);
-      toast.error("Gagal menghapus foto");
-    }
+  const handleDelete = (id: string) => {
+    setConfirmModal({
+      isOpen: true,
+      title: "Hapus Foto About?",
+      message: "Apakah Anda yakin ingin menghapus foto ini dari About section?",
+      onConfirm: async () => {
+        try {
+          await aboutPhotosApi.delete(id);
+          toast.success("Foto About berhasil dihapus");
+          fetchItems();
+        } catch (err) {
+          console.error(err);
+          toast.error("Gagal menghapus foto");
+        }
+        setConfirmModal(null);
+      },
+    });
   };
 
   return (
@@ -161,6 +174,13 @@ export default function AboutPhotoManager() {
           )}
         </div>
       </AdminCard>
+      <AdminConfirmModal
+        isOpen={confirmModal?.isOpen || false}
+        title={confirmModal?.title || ""}
+        message={confirmModal?.message || ""}
+        onConfirm={confirmModal?.onConfirm || (() => {})}
+        onCancel={() => setConfirmModal(null)}
+      />
     </div>
   );
 }

@@ -46,6 +46,7 @@ import {
   AdminTextArea,
   AdminSelect,
   ImageUpload,
+  AdminConfirmModal,
 } from "../AdminSharedUI";
 
 function SortableExperienceCard({
@@ -165,7 +166,12 @@ export default function ExperienceManager() {
   const { items, setItems, isLoading, fetchItems } = useExperience();
   const [isReordering, setIsReordering] = useState(false);
   const [pendingOrder, setPendingOrder] = useState<Experience[]>([]);
-  const [showConfirm, setShowConfirm] = useState(false);
+  const [confirmModal, setConfirmModal] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    onConfirm: () => void;
+  } | null>(null);
   const [dragSuccess, setDragSuccess] = useState(false);
   const [form, setForm] = useState<Experience>({
     company: "",
@@ -209,7 +215,7 @@ export default function ExperienceManager() {
         ),
       );
       setPendingOrder([]);
-      setShowConfirm(false);
+      setConfirmModal(null);
       setIsReordering(false);
       setDragSuccess(true);
       setTimeout(() => setDragSuccess(false), 3000);
@@ -220,8 +226,6 @@ export default function ExperienceManager() {
       toast.error("Gagal memperbarui urutan");
     }
   };
-
-  const handleCancelOrder = () => setShowConfirm(false);
 
   const handleDiscardOrder = () => {
     fetchItems();
@@ -287,16 +291,22 @@ export default function ExperienceManager() {
     setForm(item);
     setEditId(item.id!);
   };
-  const handleDelete = async (id: string) => {
-    if (confirm("Delete this experience entry?")) {
-      try {
-        await experienceApi.delete(id);
-        toast.success("Pengalaman berhasil dihapus");
-        fetchItems();
-      } catch (err) {
-        toast.error("Gagal menghapus data");
-      }
-    }
+  const handleDelete = (id: string) => {
+    setConfirmModal({
+      isOpen: true,
+      title: "Hapus Pengalaman Kerja / Organisasi?",
+      message: "Apakah Anda yakin ingin menghapus riwayat pengalaman ini secara permanen?",
+      onConfirm: async () => {
+        try {
+          await experienceApi.delete(id);
+          toast.success("Pengalaman berhasil dihapus");
+          fetchItems();
+        } catch (err) {
+          toast.error("Gagal menghapus data");
+        }
+        setConfirmModal(null);
+      },
+    });
   };
 
   return (
@@ -452,7 +462,16 @@ export default function ExperienceManager() {
           {isReordering ? (
             <>
               {pendingOrder.length > 0 && (
-                <AdminBtn onClick={() => setShowConfirm(true)}>
+                <AdminBtn
+                  onClick={() =>
+                    setConfirmModal({
+                      isOpen: true,
+                      title: "Simpan Urutan Baru?",
+                      message: "Urutan pengalaman akan diperbarui dan langsung terlihat di halaman portfolio.",
+                      onConfirm: handleConfirmOrder,
+                    })
+                  }
+                >
                   <Check size={16} /> Simpan Urutan
                 </AdminBtn>
               )}
@@ -503,28 +522,14 @@ export default function ExperienceManager() {
           </div>
         </SortableContext>
       </DndContext>
-      {/* Popup Konfirmasi */}
-      {showConfirm && (
-        <div className="fixed inset-0 z-[999] flex items-end justify-center pb-12 px-4 bg-black/50 backdrop-blur-sm">
-          <div className="bg-slate-900 border border-white/10 rounded-3xl p-8 shadow-2xl max-w-md w-full">
-            <h3 className="text-white font-black text-lg uppercase tracking-tight mb-2">
-              Simpan Urutan Baru?
-            </h3>
-            <p className="text-slate-400 text-sm mb-6">
-              Urutan experience akan diperbarui dan langsung terlihat di halaman
-              portfolio.
-            </p>
-            <div className="flex gap-3">
-              <AdminBtn onClick={handleConfirmOrder}>
-                <Check size={16} /> Ya, Simpan
-              </AdminBtn>
-              <AdminBtn variant="secondary" onClick={handleCancelOrder}>
-                <X size={16} /> Batal
-              </AdminBtn>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Custom Confirmation Modal */}
+      <AdminConfirmModal
+        isOpen={confirmModal?.isOpen || false}
+        title={confirmModal?.title || ""}
+        message={confirmModal?.message || ""}
+        onConfirm={confirmModal?.onConfirm || (() => {})}
+        onCancel={() => setConfirmModal(null)}
+      />
 
       {/* Notifikasi Sukses */}
       {dragSuccess && (

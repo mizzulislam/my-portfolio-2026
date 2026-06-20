@@ -43,6 +43,7 @@ import {
   AdminTextArea,
   AdminSelect,
   ImageUpload,
+  AdminConfirmModal,
 } from "../AdminSharedUI";
 
 // --- Helper Constants & Functions ---
@@ -233,7 +234,12 @@ export default function CertificateManager() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isReordering, setIsReordering] = useState(false);
   const [pendingOrder, setPendingOrder] = useState<CertificationItem[]>([]);
-  const [showConfirm, setShowConfirm] = useState(false);
+  const [confirmModal, setConfirmModal] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    onConfirm: () => void;
+  } | null>(null);
   const [dragSuccess, setDragSuccess] = useState(false);
   const [filterCategory, setFilterCategory] = useState<string>("all");
   const [dbCategories, setDbCategories] = useState<{ id: string; name: string; icon: string; description: string }[]>([]);
@@ -333,20 +339,22 @@ export default function CertificateManager() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  const handleDeleteCategory = async (id: string) => {
-    if (
-      confirm(
-        "Hapus kategori ini? Semua sertifikat di dalamnya akan ikut terhapus!",
-      )
-    ) {
-      try {
-        await certificationsApi.deleteCategory(id);
-        toast.success("Kategori berhasil dihapus");
-        fetchAllData();
-      } catch (err) {
-        toast.error("Gagal menghapus kategori");
-      }
-    }
+  const handleDeleteCategory = (id: string) => {
+    setConfirmModal({
+      isOpen: true,
+      title: "Hapus Kategori Sertifikat?",
+      message: "Hapus kategori ini? Semua sertifikat di dalamnya akan ikut terhapus!",
+      onConfirm: async () => {
+        try {
+          await certificationsApi.deleteCategory(id);
+          toast.success("Kategori berhasil dihapus");
+          fetchAllData();
+        } catch (err) {
+          toast.error("Gagal menghapus kategori");
+        }
+        setConfirmModal(null);
+      },
+    });
   };
 
   const handleSave = async () => {
@@ -395,16 +403,22 @@ export default function CertificateManager() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  const handleDelete = async (id: string) => {
-    if (confirm("Hapus sertifikat ini secara permanen?")) {
-      try {
-        await certificationsApi.deleteCertification(id);
-        toast.success("Sertifikat berhasil dihapus");
-        fetchAllData();
-      } catch (err) {
-        toast.error("Gagal menghapus sertifikat");
-      }
-    }
+  const handleDelete = (id: string) => {
+    setConfirmModal({
+      isOpen: true,
+      title: "Hapus Sertifikat secara Permanen?",
+      message: "Apakah Anda yakin ingin menghapus sertifikat ini secara permanen?",
+      onConfirm: async () => {
+        try {
+          await certificationsApi.deleteCertification(id);
+          toast.success("Sertifikat berhasil dihapus");
+          fetchAllData();
+        } catch (err) {
+          toast.error("Gagal menghapus sertifikat");
+        }
+        setConfirmModal(null);
+      },
+    });
   };
 
   // ── Drag & Drop ──
@@ -442,7 +456,7 @@ export default function CertificateManager() {
         ),
       );
       setPendingOrder([]);
-      setShowConfirm(false);
+      setConfirmModal(null);
       setIsReordering(false);
       setDragSuccess(true);
       fetchAllData();
@@ -1122,7 +1136,17 @@ export default function CertificateManager() {
           {/* TOMBOL REORDER */}
           {isReordering ? (
             <div className="flex gap-2">
-              <AdminBtn onClick={() => setShowConfirm(true)} size="normal">
+              <AdminBtn
+                onClick={() =>
+                  setConfirmModal({
+                    isOpen: true,
+                    title: "Simpan Urutan Baru?",
+                    message: "Urutan sertifikat akan diperbarui dan langsung terlihat di halaman portfolio.",
+                    onConfirm: handleConfirmOrder,
+                  })
+                }
+                size="normal"
+              >
                 <Check size={16} /> Save
               </AdminBtn>
               <AdminBtn
@@ -1199,30 +1223,13 @@ export default function CertificateManager() {
       )}
 
       {/* ── Popup Konfirmasi ── */}
-      {showConfirm && (
-        <div className="fixed inset-0 z-[999] flex items-end justify-center pb-12 px-4 bg-black/50 backdrop-blur-sm">
-          <div className="bg-slate-900 border border-white/10 rounded-3xl p-8 shadow-2xl max-w-md w-full">
-            <h3 className="text-white font-black text-lg uppercase tracking-tight mb-2">
-              Save New Order?
-            </h3>
-            <p className="text-slate-400 text-sm mb-6">
-              The certificate order will be updated and immediately reflected on
-              the portfolio page.
-            </p>
-            <div className="flex gap-3">
-              <AdminBtn onClick={handleConfirmOrder}>
-                <Check size={16} /> Yes, Save
-              </AdminBtn>
-              <AdminBtn
-                variant="secondary"
-                onClick={() => setShowConfirm(false)}
-              >
-                <X size={16} /> Cancel
-              </AdminBtn>
-            </div>
-          </div>
-        </div>
-      )}
+      <AdminConfirmModal
+        isOpen={confirmModal?.isOpen || false}
+        title={confirmModal?.title || ""}
+        message={confirmModal?.message || ""}
+        onConfirm={confirmModal?.onConfirm || (() => {})}
+        onCancel={() => setConfirmModal(null)}
+      />
 
       {/* ── Notifikasi Sukses ── */}
       {dragSuccess && (

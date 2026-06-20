@@ -7,6 +7,7 @@ import MessageDetail from "./MessageDetail";
 import { ReplyModal } from "../../../ReplyModal";
 import toast from "react-hot-toast";
 import { messagesApi } from "@/src/lib/api/messages";
+import { AdminConfirmModal } from "../../AdminSharedUI";
 
 export default function MessageManager() {
   const {
@@ -18,6 +19,25 @@ export default function MessageManager() {
     formatGmailDate, MESSAGES_PER_PAGE
   } = useMessages();
   const [isReplyModalOpen, setIsReplyModalOpen] = useState(false);
+  const [confirmModal, setConfirmModal] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    onConfirm: () => void;
+  } | null>(null);
+
+  const triggerDeleteSelected = () => {
+    if (selectedIds.length === 0) return;
+    setConfirmModal({
+      isOpen: true,
+      title: "Hapus Pesan Terpilih?",
+      message: `Apakah Anda yakin ingin menghapus ${selectedIds.length} pesan terpilih secara permanen?`,
+      onConfirm: async () => {
+        await handleDeleteSelected();
+        setConfirmModal(null);
+      }
+    });
+  };
 
   return (
     <div className="space-y-4">
@@ -26,21 +46,27 @@ export default function MessageManager() {
         <MessageDetail
           selectedMessage={selectedMessage}
           onBack={() => setSelectedMessage(null)}
-          onDelete={async (id) => {
-            if (confirm("Hapus pesan ini secara permanen?")) {
-              try {
-                // 1. Eksekusi hapus di API
-                await messagesApi.delete(id);
-                // 2. Jika berhasil, update state lokal
-                setMessages((prev) => prev.filter((m) => m.id !== id));
-                setSelectedMessage(null);
-                toast.success("Pesan telah dihapus");
-              } catch (err) {
-                // 3. Jika gagal, err akan ditangkap di sini
-                console.error(err);
-                toast.error("Gagal menghapus pesan");
+          onDelete={(id) => {
+            setConfirmModal({
+              isOpen: true,
+              title: "Hapus Pesan?",
+              message: "Apakah Anda yakin ingin menghapus pesan ini secara permanen?",
+              onConfirm: async () => {
+                try {
+                  // 1. Eksekusi hapus di API
+                  await messagesApi.delete(id);
+                  // 2. Jika berhasil, update state lokal
+                  setMessages((prev) => prev.filter((m) => m.id !== id));
+                  setSelectedMessage(null);
+                  toast.success("Pesan telah dihapus");
+                } catch (err) {
+                  // 3. Jika gagal, err akan ditangkap di sini
+                  console.error(err);
+                  toast.error("Gagal menghapus pesan");
+                }
+                setConfirmModal(null);
               }
-            }
+            });
           }}
           onReply={() => setIsReplyModalOpen(true)}
         />
@@ -76,7 +102,7 @@ export default function MessageManager() {
             allCurrentSelected={allCurrentSelected}
             handleSelectAll={handleSelectAll}
             selectedIds={selectedIds}
-            handleDeleteSelected={handleDeleteSelected}
+            handleDeleteSelected={triggerDeleteSelected}
             selectedHasUnread={selectedHasUnread}
             handleToggleMarkSelected={handleToggleMarkSelected}
             searchQuery={searchQuery}
@@ -218,6 +244,13 @@ export default function MessageManager() {
           }}
         />
       )}
+      <AdminConfirmModal
+        isOpen={confirmModal?.isOpen || false}
+        title={confirmModal?.title || ""}
+        message={confirmModal?.message || ""}
+        onConfirm={confirmModal?.onConfirm || (() => {})}
+        onCancel={() => setConfirmModal(null)}
+      />
     </div>
   );
 }
