@@ -40,7 +40,7 @@ export default function AdminLayout({
   return (
     <div className="flex flex-col md:flex-row h-screen overflow-hidden bg-[#020617] text-slate-200 font-sans">
       {/* Sidebar */}
-      <aside className="w-full md:w-72 bg-slate-950/50 backdrop-blur-2xl border-b md:border-b-0 md:border-r border-white/5 flex flex-col p-6 md:sticky md:top-0 z-50 md:h-screen md:overflow-y-auto">
+      <aside className="w-full md:w-72 bg-slate-950/50 backdrop-blur-2xl border-b md:border-b-0 md:border-r border-white/5 flex flex-col p-6 md:sticky md:top-0 z-50 md:h-screen md:overflow-y-auto no-scrollbar">
         <div className="flex items-center gap-3 mb-10 px-2 pt-2">
           <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center shadow-lg shadow-blue-500/30">
             <LayoutDashboard className="text-white" size={20} />
@@ -110,7 +110,7 @@ export default function AdminLayout({
       </aside>
 
       {/* Content */}
-      <main className="flex-1 p-6 md:p-12 overflow-y-auto h-full">
+      <main className="flex-1 p-6 md:p-12 overflow-y-auto h-full no-scrollbar">
         {children}
       </main>
     </div>

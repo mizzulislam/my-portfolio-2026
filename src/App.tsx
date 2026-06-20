@@ -7,6 +7,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Routes, Route, useLocation } from "react-router-dom";
 import Login from "./components/Login";
 import Admin from "./components/Admin";
+import ProjectDetail from "./components/ProjectDetail";
 import { AnimatePresence } from 'motion/react';
 import { translations } from './constants';
 import { Toaster } from "react-hot-toast";
@@ -89,6 +90,17 @@ export default function App() {
       <Route path="/login" element={<Login />} />
       <Route path="/admin" element={<Admin />} />
       <Route path="/admin/projects/edit-detail/:id" element={<Admin />} />
+      <Route
+        path="/project/:id"
+        element={
+          <ProjectDetail
+            isDark={isDark}
+            setIsDark={setIsDark}
+            lang={lang}
+            setLang={setLang}
+          />
+        }
+      />
       <Route
         path="/"
         element={

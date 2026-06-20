@@ -25,7 +25,7 @@ export function TextReveal({
       y: "0%",
       opacity: 1,
       transition: {
-        type: "spring",
+        type: "spring" as const,
         damping: 20,
         stiffness: 100,
       },
@@ -34,7 +34,7 @@ export function TextReveal({
       y: "120%",
       opacity: 0,
       transition: {
-        type: "spring",
+        type: "spring" as const,
         damping: 20,
         stiffness: 100,
       },

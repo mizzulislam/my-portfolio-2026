@@ -35,5 +35,6 @@ export interface ProjectFoldersProps {
     criticalOutputs: string;
     viewProjectBtn: string;
     launchArchive: string;
+    caseStudyBtn?: string;
   };
 }

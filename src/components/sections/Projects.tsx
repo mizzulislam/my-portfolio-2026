@@ -76,6 +76,7 @@ export function Projects({ isDark, t, lang }: ProjectsProps) {
               projectCriticalOutputs: t.projectCriticalOutputs,
               launchArchive: t.launchArchive,
               viewProjectBtn: t.viewProjectBtn,
+              caseStudyBtn: t.caseStudyBtn,
             }}
           />
         )}

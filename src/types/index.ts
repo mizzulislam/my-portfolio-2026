@@ -68,6 +68,7 @@ export interface Translation {
   projectCriticalOutputs: string;
   launchArchive: string;
   viewProjectBtn: string;
+  caseStudyBtn: string;
   projectsData: import("./project").ProjectItem[];
   skillsHeader: string;
   skillsSub: string;
