@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { CheckCircle2, ExternalLink } from "lucide-react";
+import { CheckCircle2, ExternalLink, ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
 import { ProjectFoldersProps, ProjectItem } from "@/src/types";
 
@@ -174,18 +174,18 @@ export function ProjectFolders({
               <div className="pt-8 flex justify-end items-center gap-4 transform -translate-y-3 md:translate-y-0 md:translate-x-4">
                 {activeProject.id && (
                   <motion.div
-                    whileHover={{ scale: 1.05, x: -5 }}
+                    whileHover={{ scale: 1.05, x: 5 }}
                     whileTap={{ scale: 0.95 }}
                   >
                     <Link
                       to={`/project/${activeProject.id}`}
-                      className={`group inline-flex items-center gap-2 px-7 md:px-9 py-3.5 md:py-4 rounded-2xl font-black text-[8.5px] md:text-[10.5px] tracking-[0.2em] uppercase transition-all border ${
-                        isDark
-                          ? "bg-slate-950/80 hover:bg-slate-900 text-slate-300 border-white/10 shadow-[0_20px_40px_rgba(0,0,0,0.4)] hover:text-white"
-                          : "bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-200 shadow-md hover:text-slate-900"
-                      }`}
+                      className="group inline-flex items-center gap-4 bg-blue-600 hover:bg-blue-700 text-white px-7 md:px-9 py-3.5 md:py-4 rounded-2xl font-black text-[8.5px] md:text-[10.5px] tracking-[0.2em] uppercase transition-all shadow-[0_20px_40px_rgba(37,99,235,0.25)]"
                     >
-                      {labels?.caseStudyBtn || "Studi Kasus"}
+                      {labels?.caseStudyBtn || "Lihat Selengkapnya"}{" "}
+                      <ArrowRight
+                        size={15}
+                        className="group-hover:translate-x-1 transition-transform"
+                      />
                     </Link>
                   </motion.div>
                 )}

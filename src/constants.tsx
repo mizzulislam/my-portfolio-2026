@@ -47,7 +47,7 @@ export const translations = {
     projectCriticalOutputs: "Critical Outputs",
     launchArchive: "View Project",
     viewProjectBtn: "View Project",
-    caseStudyBtn: "Case Study",
+    caseStudyBtn: "More Details",
     timelineHeader: "Professional Roadmap",
     milestones: [
       {
@@ -644,7 +644,7 @@ export const translations = {
     projectCriticalOutputs: "Output Kritis",
     launchArchive: "Lihat Proyek",
     viewProjectBtn: "Lihat Proyek",
-    caseStudyBtn: "Studi Kasus",
+    caseStudyBtn: "Lihat Selengkapnya",
     timelineHeader: "Peta Jalan Karir",
     milestones: [
       {
