@@ -46,11 +46,11 @@ export default function AdminLayout({
     <div className="flex flex-col md:flex-row h-screen overflow-hidden bg-[#020617] text-slate-200 font-sans">
       {/* Sidebar */}
       <aside 
-        className={`fixed left-0 top-0 h-screen z-50 bg-slate-950/50 backdrop-blur-2xl border-r border-white/5 flex flex-col transition-all duration-300 no-scrollbar ${
-          isCollapsed ? "w-20 px-3 py-6" : "w-72 p-6"
+        className={`fixed left-0 top-0 h-screen z-50 bg-slate-950/50 backdrop-blur-2xl border-r border-white/5 flex flex-col transition-all duration-300 overflow-y-auto no-scrollbar ${
+          isCollapsed ? "w-20 px-3 pt-6" : "w-72 pt-6 px-6"
         }`}
       >
-        <div className={`flex items-center mb-10 gap-3 px-1 pt-2 ${isCollapsed ? "justify-center" : ""}`}>
+        <div className={`flex items-center mb-6 gap-3 px-1 pt-2 ${isCollapsed ? "justify-center" : ""}`}>
           <button
             onClick={() => setIsCollapsed(!isCollapsed)}
             onMouseEnter={() => setIsLogoHovered(true)}
@@ -87,7 +87,7 @@ export default function AdminLayout({
                 className={`flex items-center transition-all duration-300 group ${
                   isCollapsed 
                     ? "w-10 h-10 justify-center rounded-xl mx-auto" 
-                    : "w-full px-5 py-4 rounded-2xl text-sm font-bold gap-4"
+                    : "w-full px-5 py-3 rounded-2xl text-sm font-bold gap-4"
                 } ${
                   isTabActive
                     ? "bg-blue-600 text-white shadow-lg shadow-blue-500/20"
@@ -109,8 +109,8 @@ export default function AdminLayout({
           })}
         </nav>
 
-        <div className="mt-10 pt-6 border-t border-white/5 pb-4">
-          <div className={`flex items-center gap-3 mb-6 ${isCollapsed ? "justify-center" : "px-2"}`}>
+        <div className="mt-auto pt-6 pb-8 border-t border-white/5 shrink-0">
+          <div className={`flex items-center gap-3 mb-4 ${isCollapsed ? "justify-center" : "px-2"}`}>
             <div className="w-8 h-8 rounded-full bg-slate-800 border border-white/10 flex items-center justify-center shrink-0">
               <UserIcon size={14} className="text-slate-400" />
             </div>
@@ -127,7 +127,7 @@ export default function AdminLayout({
             className={`flex items-center transition-all duration-300 text-red-400 hover:bg-red-500/10 ${
               isCollapsed 
                 ? "w-10 h-10 justify-center rounded-xl mx-auto" 
-                : "w-full px-5 py-4 rounded-2xl font-bold text-sm gap-4"
+                : "w-full px-5 py-3 rounded-2xl font-bold text-sm gap-4"
             }`}
             title={isCollapsed ? "Sign Out" : undefined}
           >
