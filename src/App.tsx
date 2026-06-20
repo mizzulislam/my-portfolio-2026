@@ -88,6 +88,7 @@ export default function App() {
     <Routes>
       <Route path="/login" element={<Login />} />
       <Route path="/admin" element={<Admin />} />
+      <Route path="/admin/projects/edit-detail/:id" element={<Admin />} />
       <Route
         path="/"
         element={

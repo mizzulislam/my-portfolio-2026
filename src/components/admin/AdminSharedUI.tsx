@@ -56,8 +56,8 @@ export function AdminSelect({
 export function AdminTextArea({ ...props }: React.TextareaHTMLAttributes<HTMLTextAreaElement>) {
   return (
     <textarea 
-      {...props} 
       rows={4}
+      {...props} 
       className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-3.5 text-slate-200 placeholder:text-slate-500 focus:outline-none focus:border-blue-500/50 focus:ring-4 focus:ring-blue-500/10 transition-all duration-300 mb-4 resize-none"
     />
   )

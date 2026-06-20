@@ -56,33 +56,36 @@ export default function AdminLayout({
         </div>
 
         <nav className="flex-1 space-y-1">
-          {MENUS.map((m) => (
-            <button
-              key={m.key}
-              onClick={() => setActiveMenu(m.key)}
-              className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl font-bold text-sm transition-all duration-300 group ${
-                activeMenu === m.key
-                  ? "bg-blue-600 text-white shadow-lg shadow-blue-500/20 translate-x-1"
-                  : "text-slate-500 hover:text-slate-300 hover:bg-white/5"
-              }`}
-            >
-              <m.icon
-                size={20}
-                className={
-                  activeMenu === m.key
-                    ? "text-white"
-                    : "text-slate-600 group-hover:text-blue-400"
-                }
-              />
-              {m.label}
-              {activeMenu === m.key && (
-                <motion.div
-                  layoutId="activeInd"
-                  className="ml-auto w-1.5 h-6 bg-white/40 rounded-full"
+          {MENUS.map((m) => {
+            const isTabActive = activeMenu === m.key || (m.key === "projects" && activeMenu === "project-detail");
+            return (
+              <button
+                key={m.key}
+                onClick={() => setActiveMenu(m.key)}
+                className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl font-bold text-sm transition-all duration-300 group ${
+                  isTabActive
+                    ? "bg-blue-600 text-white shadow-lg shadow-blue-500/20 translate-x-1"
+                    : "text-slate-500 hover:text-slate-300 hover:bg-white/5"
+                }`}
+              >
+                <m.icon
+                  size={20}
+                  className={
+                    isTabActive
+                      ? "text-white"
+                      : "text-slate-600 group-hover:text-blue-400"
+                  }
                 />
-              )}
-            </button>
-          ))}
+                {m.label}
+                {isTabActive && (
+                  <motion.div
+                    layoutId="activeInd"
+                    className="ml-auto w-1.5 h-6 bg-white/40 rounded-full"
+                  />
+                )}
+              </button>
+            );
+          })}
         </nav>
 
         <div className="mt-10 pt-6 border-t border-white/5 px-2">

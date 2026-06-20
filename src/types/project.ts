@@ -12,6 +12,9 @@ export interface Project {
   tags: string[];
   tags_id: string[];
   order: number;
+  detailed_content?: string;
+  detailed_content_id?: string;
+  gallery_images?: string[];
 }
 
 export interface ProjectItem {

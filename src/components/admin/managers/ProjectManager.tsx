@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import React from "react";
+import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "motion/react";
 import { Project } from "@/src/types/project";
 import { translateToIndonesian } from "@/src/lib/translate";
@@ -36,6 +37,7 @@ import {
   ChevronDown,
   Eye,
   GripVertical,
+  FileText,
 } from "lucide-react";
 import {
   AdminCard,
@@ -50,11 +52,13 @@ function SortableCard({
   item,
   onEdit,
   onDelete,
+  onEditDetail,
   isDraggable = false,
 }: {
   item: Project;
   onEdit: (item: Project) => void;
   onDelete: (id: string) => void;
+  onEditDetail: (id: string) => void;
   isDraggable?: boolean;
 }) {
   const {
@@ -139,9 +143,12 @@ function SortableCard({
             </span>
           ))}
         </div>
-        <div className="pt-4 flex gap-3 border-t border-white/5 mt-4">
+        <div className="pt-4 flex flex-wrap gap-2 border-t border-white/5 mt-4">
           <AdminBtn variant="secondary" onClick={() => onEdit(item)}>
             <Edit2 size={14} /> Edit
+          </AdminBtn>
+          <AdminBtn variant="ghost" onClick={() => onEditDetail(item.id!)}>
+            <FileText size={14} /> Detail
           </AdminBtn>
           <AdminBtn variant="danger" onClick={() => onDelete(item.id!)}>
             <Trash2 size={14} />
@@ -154,6 +161,7 @@ function SortableCard({
 
 // ─── Projects Manager ─────────────────────────────────
 export default function ProjectManager() {
+  const navigate = useNavigate();
   const [dragSuccess, setDragSuccess] = useState(false);
   const [isReordering, setIsReordering] = useState(false);
   const [pendingOrder, setPendingOrder] = useState<Project[]>([]);
@@ -261,21 +269,27 @@ export default function ProjectManager() {
 
       const dataToSave = { ...form, tags: parsedTags, title_id, desc_id, category_id, tags_id };
 
+      let newProjectId = "";
       if (editId) {
         await projectsApi.update(editId, dataToSave);
         toast.success("Proyek berhasil diperbarui! ✅");
+        resetForm();
+        fetchItems();
       } else {
         // Logika order otomatis: ambil max order + 1
         const maxOrder =
           items.length > 0
             ? Math.max(...items.map((i) => i.order || 0)) + 1
             : 1;
-        await projectsApi.create({ ...dataToSave, order: maxOrder } as Omit<Project, 'id'>);
+        const newProject = await projectsApi.create({ ...dataToSave, order: maxOrder } as Omit<Project, 'id'>);
+        newProjectId = newProject.id!;
         toast.success("Proyek baru berhasil diluncurkan! 🚀");
+        resetForm();
+        fetchItems();
+        if (newProjectId) {
+          navigate(`/admin/projects/edit-detail/${newProjectId}`);
+        }
       }
-
-      resetForm(); // Pindahkan logika reset form ke fungsi tersendiri agar rapi
-      fetchItems();
     } catch (err) {
       toast.error("Gagal menyimpan proyek");
     } finally {
@@ -485,6 +499,7 @@ export default function ProjectManager() {
                 item={item}
                 onEdit={handleEdit}
                 onDelete={handleDelete}
+                onEditDetail={(id) => navigate(`/admin/projects/edit-detail/${id}`)}
                 isDraggable={isReordering} // ← tambahkan prop ini
               />
             ))}
