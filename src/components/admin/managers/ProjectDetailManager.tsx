@@ -49,6 +49,26 @@ interface BlockItem {
 // Helper to generate IDs
 const generateId = () => Math.random().toString(36).substr(2, 9);
 
+// Helper to extract hex color from hex/rgb/rgba string
+const getHexColor = (colorStr: string) => {
+  if (!colorStr) return "#ffffff";
+  const trimmed = colorStr.trim();
+  if (trimmed.startsWith("#")) {
+    if (trimmed.length === 4) {
+      return "#" + trimmed[1] + trimmed[1] + trimmed[2] + trimmed[2] + trimmed[3] + trimmed[3];
+    }
+    return trimmed.substring(0, 7);
+  }
+  const rgbMatch = trimmed.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
+  if (rgbMatch) {
+    const r = parseInt(rgbMatch[1]).toString(16).padStart(2, '0');
+    const g = parseInt(rgbMatch[2]).toString(16).padStart(2, '0');
+    const b = parseInt(rgbMatch[3]).toString(16).padStart(2, '0');
+    return `#${r}${g}${b}`;
+  }
+  return "#ffffff";
+};
+
 // Sortable Wrapper Component
 function SortableBlockWrapper({ id, onDelete, onDuplicate, children }: { id: string; onDelete: () => void; onDuplicate: () => void; children: React.ReactNode }) {
   const {
@@ -362,7 +382,10 @@ export default function ProjectDetailManager({ projectId, onBack }: ProjectDetai
       case "table":
         defaultData = { 
           headers: ["Kolom A", "Kolom B"], 
-          rows: [["Baris 1 Sel A", "Baris 1 Sel B"], ["Baris 2 Sel A", "Baris 2 Sel B"]] 
+          rows: [["Baris 1 Sel A", "Baris 1 Sel B"], ["Baris 2 Sel A", "Baris 2 Sel B"]],
+          columnWidths: ["", ""],
+          cellPadding: "standard",
+          rowHeight: ""
         };
         break;
       case "grid":
@@ -686,21 +709,32 @@ export default function ProjectDetailManager({ projectId, onBack }: ProjectDetai
                   );
                   
                 case "table":
+                  const previewPadClass = block.data.cellPadding === "compact" ? "p-2" : block.data.cellPadding === "spacious" ? "p-6" : "p-4";
                   return (
                     <div key={block.id} className="overflow-x-auto rounded-2xl border border-white/10">
                       <table className="w-full border-collapse text-left text-xs">
                         <thead>
                           <tr className="bg-white/[0.03] border-b border-white/10 text-blue-400 font-bold">
                             {block.data.headers.map((h: string, idx: number) => (
-                              <th key={idx} className="p-4 uppercase tracking-wider">{h}</th>
+                              <th 
+                                key={idx} 
+                                className={`${previewPadClass} uppercase tracking-wider`}
+                                style={{ width: block.data.columnWidths?.[idx] || 'auto' }}
+                              >
+                                {h}
+                              </th>
                             ))}
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-white/5">
                           {block.data.rows.map((row: string[], rowIdx: number) => (
-                            <tr key={rowIdx} className="hover:bg-white/[0.01]">
+                            <tr 
+                              key={rowIdx} 
+                              className="hover:bg-white/[0.01]"
+                              style={{ height: block.data.rowHeight || 'auto' }}
+                            >
                               {row.map((cell: string, cellIdx: number) => (
-                                <td key={cellIdx} className="p-4 text-slate-300 font-medium">{cell}</td>
+                                <td key={cellIdx} className={`${previewPadClass} text-slate-300 font-medium`}>{cell}</td>
                               ))}
                             </tr>
                           ))}
@@ -1053,14 +1087,22 @@ export default function ProjectDetailManager({ projectId, onBack }: ProjectDetai
                             />
                           </div>
                           <div>
-                            <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block mb-2">Color</label>
-                            <input
-                              type="text"
-                              value={block.data.color}
-                              onChange={(e) => updateBlock(block.id, { color: e.target.value })}
-                              placeholder="Color code e.g. rgba(255,255,255,0.1) or #3b82f6"
-                              className="w-full bg-slate-950 border border-white/5 rounded-xl p-3 text-xs text-slate-300 focus:outline-none focus:border-blue-500/40"
-                            />
+                            <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block mb-2">Color Picker &amp; Code</label>
+                            <div className="flex items-center gap-2">
+                              <input
+                                type="color"
+                                value={getHexColor(block.data.color)}
+                                onChange={(e) => updateBlock(block.id, { color: e.target.value })}
+                                className="w-10 h-10 border-0 bg-transparent cursor-pointer rounded overflow-hidden"
+                              />
+                              <input
+                                type="text"
+                                value={block.data.color}
+                                onChange={(e) => updateBlock(block.id, { color: e.target.value })}
+                                placeholder="e.g. rgba(255,255,255,0.1) or #3b82f6"
+                                className="flex-1 bg-slate-950 border border-white/5 rounded-xl p-3 text-xs text-slate-300 focus:outline-none focus:border-blue-500/40"
+                              />
+                            </div>
                           </div>
                         </div>
                       )}
@@ -1135,9 +1177,13 @@ export default function ProjectDetailManager({ projectId, onBack }: ProjectDetai
                               <button
                                 type="button"
                                 onClick={() => {
+                                  const newHeaders = [...block.data.headers, `Kolom ${block.data.headers.length + 1}`];
+                                  const newRows = block.data.rows.map((row: string[]) => [...row, "Sel Baru"]);
+                                  const newWidths = [...(block.data.columnWidths || Array(block.data.headers.length).fill("")), ""];
                                   updateBlock(block.id, { 
-                                    headers: [...block.data.headers, `Kolom ${block.data.headers.length + 1}`],
-                                    rows: block.data.rows.map((row: string[]) => [...row, "Sel Baru"])
+                                    headers: newHeaders,
+                                    rows: newRows,
+                                    columnWidths: newWidths
                                   });
                                 }}
                                 className="text-[9px] font-bold bg-white/5 hover:bg-white/10 text-slate-300 py-1 px-2.5 rounded-md"
@@ -1155,6 +1201,76 @@ export default function ProjectDetailManager({ projectId, onBack }: ProjectDetai
                               >
                                 - Row
                               </button>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  if (block.data.headers.length > 1) {
+                                    const newHeaders = block.data.headers.slice(0, -1);
+                                    const newRows = block.data.rows.map((row: string[]) => row.slice(0, -1));
+                                    const newWidths = block.data.columnWidths ? block.data.columnWidths.slice(0, -1) : [];
+                                    updateBlock(block.id, { 
+                                      headers: newHeaders, 
+                                      rows: newRows,
+                                      columnWidths: newWidths
+                                    });
+                                  } else {
+                                    toast.error("Tabel harus memiliki minimal 1 kolom!");
+                                  }
+                                }}
+                                className="text-[9px] font-bold bg-red-950/20 text-red-400 py-1 px-2.5 rounded-md"
+                              >
+                                - Column
+                              </button>
+                            </div>
+                          </div>
+
+                          {/* Row & Column Sizing Controls */}
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 rounded-xl bg-slate-950/60 border border-white/5">
+                            <div>
+                              <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block mb-2">Cell Padding (Tinggi Baris)</label>
+                              <AdminDropdown
+                                value={block.data.cellPadding || "standard"}
+                                onChange={(v) => updateBlock(block.id, { cellPadding: v })}
+                                size="compact"
+                                options={[
+                                  { value: "compact", label: "Compact (Padat)" },
+                                  { value: "standard", label: "Standard" },
+                                  { value: "spacious", label: "Spacious (Longgar)" },
+                                ]}
+                              />
+                            </div>
+                            <div>
+                              <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block mb-2">Custom Row Height</label>
+                              <input
+                                type="text"
+                                value={block.data.rowHeight || ""}
+                                onChange={(e) => updateBlock(block.id, { rowHeight: e.target.value })}
+                                placeholder="e.g. auto, 50px, 80px"
+                                className="w-full bg-slate-950 border border-white/5 rounded-xl p-3 text-xs text-slate-300 focus:outline-none focus:border-blue-500/40"
+                              />
+                            </div>
+
+                            {/* Column Widths Config */}
+                            <div className="col-span-1 md:col-span-2 space-y-2 pt-2 border-t border-white/5">
+                              <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block">Lebar Kolom (Column Widths)</label>
+                              <div className="flex gap-2 flex-wrap">
+                                {block.data.headers.map((_: string, idx: number) => (
+                                  <div key={idx} className="flex-1 min-w-[70px]">
+                                    <label className="text-[8px] font-black text-slate-500 uppercase block mb-1">Kolom {idx + 1}</label>
+                                    <input
+                                      type="text"
+                                      value={block.data.columnWidths?.[idx] || ""}
+                                      onChange={(e) => {
+                                        const newWidths = [...(block.data.columnWidths || Array(block.data.headers.length).fill(""))];
+                                        newWidths[idx] = e.target.value;
+                                        updateBlock(block.id, { columnWidths: newWidths });
+                                      }}
+                                      placeholder="auto, 30%, 150px"
+                                      className="w-full bg-slate-950 border border-white/5 rounded-lg p-2 text-[10px] text-slate-300 focus:outline-none focus:border-blue-500/40"
+                                    />
+                                  </div>
+                                ))}
+                              </div>
                             </div>
                           </div>
 

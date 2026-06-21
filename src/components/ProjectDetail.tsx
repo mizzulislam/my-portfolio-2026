@@ -96,6 +96,7 @@ function MediaBlock({ block, isDark }: { block: any; isDark: boolean }) {
 
 // Custom Data Table Renderer
 function TableBlock({ block, isDark }: { block: any; isDark: boolean }) {
+  const padClass = block.data.cellPadding === "compact" ? "p-2" : block.data.cellPadding === "spacious" ? "p-6" : "p-4";
   return (
     <div className={`overflow-x-auto rounded-2xl border ${
       isDark ? "border-white/10 bg-slate-950/20" : "border-slate-200 bg-white shadow-md"
@@ -106,15 +107,25 @@ function TableBlock({ block, isDark }: { block: any; isDark: boolean }) {
             isDark ? "bg-white/[0.03] border-white/10 text-blue-400" : "bg-slate-50 border-slate-200 text-blue-600"
           }`}>
             {block.data.headers.map((h: string, idx: number) => (
-              <th key={idx} className="p-4 uppercase tracking-wider font-mono">{h}</th>
+              <th 
+                key={idx} 
+                className={`${padClass} uppercase tracking-wider font-mono`}
+                style={{ width: block.data.columnWidths?.[idx] || 'auto' }}
+              >
+                {h}
+              </th>
             ))}
           </tr>
         </thead>
         <tbody className={`divide-y ${isDark ? "divide-white/5" : "divide-slate-200"}`}>
           {block.data.rows.map((row: string[], rowIdx: number) => (
-            <tr key={rowIdx} className={isDark ? "hover:bg-white/[0.01]" : "hover:bg-slate-50/50"}>
+            <tr 
+              key={rowIdx} 
+              className={isDark ? "hover:bg-white/[0.01]" : "hover:bg-slate-50/50"}
+              style={{ height: block.data.rowHeight || 'auto' }}
+            >
               {row.map((cell: string, cellIdx: number) => (
-                <td key={cellIdx} className={`p-4 font-bold ${
+                <td key={cellIdx} className={`${padClass} font-bold ${
                   isDark ? "text-slate-300" : "text-slate-700"
                 }`}>{cell}</td>
               ))}
