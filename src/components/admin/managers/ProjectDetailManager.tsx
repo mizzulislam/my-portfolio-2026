@@ -2015,21 +2015,36 @@ export default function ProjectDetailManager({ projectId, onBack }: ProjectDetai
 
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2 border-t border-white/5">
                             {/* Add Image from URL */}
-                            <button
-                              type="button"
-                              onClick={() => {
-                                const url = window.prompt("Masukkan URL Gambar:");
-                                if (url) {
-                                  updateBlock(block.id, {
-                                    images: [...(block.data.images || []), url]
-                                  });
-                                  toast.success("Gambar berhasil ditambahkan dari URL!");
-                                }
-                              }}
-                              className="flex items-center justify-center gap-2 py-3 bg-white/5 hover:bg-white/10 border border-white/10 text-slate-300 hover:text-white rounded-xl text-[10px] font-bold uppercase tracking-wider transition-all"
-                            >
-                              <Plus size={12} /> Tambah dari URL
-                            </button>
+                            <div className="mb-4">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const url = window.prompt("Masukkan URL Gambar:");
+                                  if (url) {
+                                    updateBlock(block.id, {
+                                      images: [...(block.data.images || []), url]
+                                    });
+                                    toast.success("Gambar berhasil ditambahkan dari URL!");
+                                  }
+                                }}
+                                className="w-full h-32 rounded-2xl border-2 border-dashed border-white/10 hover:border-blue-500/50 hover:bg-blue-500/5 transition-all flex flex-col items-center justify-center gap-2 text-slate-500 hover:text-blue-400"
+                              >
+                                <svg
+                                  width="32"
+                                  height="32"
+                                  viewBox="0 0 24 24"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  strokeWidth="1.5"
+                                >
+                                  <path d="M12 5v14M5 12h14" />
+                                </svg>
+                                <span className="text-xs font-bold uppercase tracking-widest">
+                                  Tambah dari URL
+                                </span>
+                                <span className="text-[10px] text-slate-600">Alamat Web / External URL</span>
+                              </button>
+                            </div>
 
                             {/* Upload Image with resetKey */}
                             <ImageUpload

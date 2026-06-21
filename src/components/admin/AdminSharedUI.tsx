@@ -79,10 +79,10 @@ export function AdminDropdown({
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className={`w-full h-full flex items-center justify-between gap-3 bg-slate-900/80 border ${
+        className={`w-full flex items-center justify-between gap-3 bg-slate-900/80 border ${
           open ? "border-blue-500/50 ring-4 ring-blue-500/10" : "border-white/10"
         } rounded-2xl text-slate-200 cursor-pointer transition-all duration-200 hover:border-white/20 ${
-          isCompact ? "px-3 py-2 text-xs" : "px-5 py-3 text-sm"
+          isCompact ? "h-11 px-3 text-xs" : "h-14 px-5 text-sm"
         }`}
       >
         <span className={value ? "text-slate-200" : "text-slate-500"}>
