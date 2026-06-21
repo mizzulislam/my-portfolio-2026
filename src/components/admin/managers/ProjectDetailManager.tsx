@@ -69,6 +69,441 @@ const getHexColor = (colorStr: string) => {
   return "#ffffff";
 };
 
+function CustomColorPicker({ value, onChange }: { value: string; onChange: (val: string) => void }) {
+  const [isOpen, setIsOpen] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+  
+  // HSV state: h (0-360), s (0-100), v (0-100), a (0-1)
+  const [hsv, setHsv] = useState({ h: 0, s: 0, v: 100, a: 1.0 });
+
+  // Convert HSV to RGB
+  const hsvToRgb = (h: number, s: number, v: number) => {
+    s = s / 100;
+    v = v / 100;
+    let r = 0, g = 0, b = 0;
+    const i = Math.floor(h / 60) % 6;
+    const f = h / 60 - Math.floor(h / 60);
+    const p = v * (1 - s);
+    const q = v * (1 - f * s);
+    const t = v * (1 - (1 - f) * s);
+    switch (i) {
+      case 0: r = v; g = t; b = p; break;
+      case 1: r = q; g = v; b = p; break;
+      case 2: r = p; g = v; b = t; break;
+      case 3: r = p; g = q; b = v; break;
+      case 4: r = t; g = p; b = v; break;
+      case 5: r = v; g = p; b = q; break;
+    }
+    return {
+      r: Math.round(r * 255),
+      g: Math.round(g * 255),
+      b: Math.round(b * 255),
+    };
+  };
+
+  // Convert RGB to HSV
+  const rgbToHsv = (r: number, g: number, b: number) => {
+    r = r / 255;
+    g = g / 255;
+    b = b / 255;
+    const max = Math.max(r, g, b);
+    const min = Math.min(r, g, b);
+    const d = max - min;
+    let h = 0;
+    if (d !== 0) {
+      if (max === r) {
+        h = ((g - b) / d) % 6;
+      } else if (max === g) {
+        h = (b - r) / d + 2;
+      } else if (max === b) {
+        h = (r - g) / d + 4;
+      }
+      h = Math.round(h * 60);
+      if (h < 0) h += 360;
+    }
+    const s = max === 0 ? 0 : Math.round((d / max) * 100);
+    const v = Math.round(max * 100);
+    return { h, s, v };
+  };
+
+  // RGB to HEX String (#rrggbb)
+  const rgbToHex = (r: number, g: number, b: number) => {
+    const hexR = Math.max(0, Math.min(255, r)).toString(16).padStart(2, '0');
+    const hexG = Math.max(0, Math.min(255, g)).toString(16).padStart(2, '0');
+    const hexB = Math.max(0, Math.min(255, b)).toString(16).padStart(2, '0');
+    return `#${hexR}${hexG}${hexB}`;
+  };
+
+  // Parse color string to RGBA values
+  const parseColor = (colorStr: string) => {
+    let r = 255, g = 255, b = 255, a = 1.0;
+    const trimmed = (colorStr || "").trim().toLowerCase();
+
+    if (trimmed.startsWith("#")) {
+      let hex = trimmed.substring(1);
+      if (hex.length === 3) {
+        hex = hex[0] + hex[0] + hex[1] + hex[1] + hex[2] + hex[2];
+      }
+      if (hex.length === 4) {
+        hex = hex[0] + hex[0] + hex[1] + hex[1] + hex[2] + hex[2] + hex[3] + hex[3];
+      }
+      if (hex.length === 6) {
+        r = parseInt(hex.substring(0, 2), 16) || 0;
+        g = parseInt(hex.substring(2, 4), 16) || 0;
+        b = parseInt(hex.substring(4, 6), 16) || 0;
+        a = 1.0;
+      } else if (hex.length === 8) {
+        r = parseInt(hex.substring(0, 2), 16) || 0;
+        g = parseInt(hex.substring(2, 4), 16) || 0;
+        b = parseInt(hex.substring(4, 6), 16) || 0;
+        a = Math.round((parseInt(hex.substring(6, 8), 16) / 255) * 100) / 100;
+      }
+    } else {
+      const match = trimmed.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?\)/);
+      if (match) {
+        r = parseInt(match[1]);
+        g = parseInt(match[2]);
+        b = parseInt(match[3]);
+        a = match[4] !== undefined ? parseFloat(match[4]) : 1.0;
+      }
+    }
+    return {
+      r: Math.max(0, Math.min(255, r)),
+      g: Math.max(0, Math.min(255, g)),
+      b: Math.max(0, Math.min(255, b)),
+      a: Math.max(0, Math.min(1, a)),
+    };
+  };
+
+  // Sync prop value with internal HSV state
+  useEffect(() => {
+    const { r: pr, g: pg, b: pb, a: pa } = parseColor(value);
+    const currentRgb = hsvToRgb(hsv.h, hsv.s, hsv.v);
+    if (currentRgb.r !== pr || currentRgb.g !== pg || currentRgb.b !== pb || hsv.a !== pa) {
+      const newHsv = rgbToHsv(pr, pg, pb);
+      setHsv({ h: newHsv.h, s: newHsv.s, v: newHsv.v, a: pa });
+    }
+  }, [value]);
+
+  // Click outside listener
+  useEffect(() => {
+    const handleOutsideClick = (e: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+    if (isOpen) {
+      document.addEventListener("mousedown", handleOutsideClick);
+    }
+    return () => document.removeEventListener("mousedown", handleOutsideClick);
+  }, [isOpen]);
+
+  const sbRef = useRef<HTMLDivElement>(null);
+
+  // Saturation / Brightness Board Mouse Drag
+  const handleSBDrag = (clientX: number, clientY: number) => {
+    if (!sbRef.current) return;
+    const rect = sbRef.current.getBoundingClientRect();
+    const x = Math.max(0, Math.min(rect.width, clientX - rect.left));
+    const y = Math.max(0, Math.min(rect.height, clientY - rect.top));
+    const s = Math.round((x / rect.width) * 100);
+    const v = Math.round((1 - y / rect.height) * 100);
+    
+    setHsv((prev) => {
+      const next = { ...prev, s, v };
+      const rgb = hsvToRgb(next.h, next.s, next.v);
+      const output = next.a === 1.0 
+        ? rgbToHex(rgb.r, rgb.g, rgb.b) 
+        : `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${next.a})`;
+      onChange(output);
+      return next;
+    });
+  };
+
+  const handleSBStart = (e: React.MouseEvent<HTMLDivElement> | React.TouchEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    const isTouch = 'touches' in e;
+    const clientX = isTouch ? e.touches[0].clientX : e.clientX;
+    const clientY = isTouch ? e.touches[0].clientY : e.clientY;
+    handleSBDrag(clientX, clientY);
+
+    const handleMove = (moveEvent: MouseEvent | TouchEvent) => {
+      const mIsTouch = 'touches' in moveEvent;
+      const mClientX = mIsTouch ? (moveEvent as TouchEvent).touches[0].clientX : (moveEvent as MouseEvent).clientX;
+      const mClientY = mIsTouch ? (moveEvent as TouchEvent).touches[0].clientY : (moveEvent as MouseEvent).clientY;
+      handleSBDrag(mClientX, mClientY);
+    };
+
+    const handleEnd = () => {
+      window.removeEventListener('mousemove', handleMove);
+      window.removeEventListener('mouseup', handleEnd);
+      window.removeEventListener('touchmove', handleMove);
+      window.removeEventListener('touchend', handleEnd);
+    };
+
+    window.addEventListener('mousemove', handleMove);
+    window.addEventListener('mouseup', handleEnd);
+    window.addEventListener('touchmove', handleMove);
+    window.addEventListener('touchend', handleEnd);
+  };
+
+  const handleHueChange = (newH: number) => {
+    setHsv((prev) => {
+      const next = { ...prev, h: newH };
+      const rgb = hsvToRgb(next.h, next.s, next.v);
+      const output = next.a === 1.0 
+        ? rgbToHex(rgb.r, rgb.g, rgb.b) 
+        : `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${next.a})`;
+      onChange(output);
+      return next;
+    });
+  };
+
+  const handleAlphaChange = (newA: number) => {
+    setHsv((prev) => {
+      const next = { ...prev, a: newA };
+      const rgb = hsvToRgb(next.h, next.s, next.v);
+      const output = next.a === 1.0 
+        ? rgbToHex(rgb.r, rgb.g, rgb.b) 
+        : `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${next.a})`;
+      onChange(output);
+      return next;
+    });
+  };
+
+  const handlePresetClick = (presetVal: string) => {
+    const parsed = parseColor(presetVal);
+    const newHsv = rgbToHsv(parsed.r, parsed.g, parsed.b);
+    setHsv({ h: newHsv.h, s: newHsv.s, v: newHsv.v, a: parsed.a });
+    onChange(presetVal);
+  };
+
+  const handleHexInput = (val: string) => {
+    if (/^#[0-9a-fA-F]{3,8}$/.test(val)) {
+      const parsed = parseColor(val);
+      const newHsv = rgbToHsv(parsed.r, parsed.g, parsed.b);
+      setHsv({ h: newHsv.h, s: newHsv.s, v: newHsv.v, a: parsed.a });
+      onChange(val);
+    }
+  };
+
+  const handleRgbaInput = (val: string) => {
+    if (/^rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?\)$/.test(val.trim())) {
+      const parsed = parseColor(val);
+      const newHsv = rgbToHsv(parsed.r, parsed.g, parsed.b);
+      setHsv({ h: newHsv.h, s: newHsv.s, v: newHsv.v, a: parsed.a });
+      onChange(val);
+    }
+  };
+
+  const { r: curR, g: curG, b: curB } = hsvToRgb(hsv.h, hsv.s, hsv.v);
+  const hexString = rgbToHex(curR, curG, curB);
+  const rgbaString = `rgba(${curR}, ${curG}, ${curB}, ${hsv.a})`;
+
+  const presets = [
+    { name: "Brand Blue", value: "#3b82f6" },
+    { name: "Brand Purple", value: "#8b5cf6" },
+    { name: "Brand Cyan", value: "#06b6d4" },
+    { name: "Brand Emerald", value: "#10b981" },
+    { name: "Brand Amber", value: "#f59e0b" },
+    { name: "Brand Rose", value: "#f43f5e" },
+    { name: "Solid White", value: "#ffffff" },
+    { name: "White 20%", value: "rgba(255,255,255,0.2)" },
+    { name: "White 10%", value: "rgba(255,255,255,0.1)" },
+    { name: "Blue 20%", value: "rgba(59,130,246,0.2)" },
+    { name: "Blue 10%", value: "rgba(59,130,246,0.1)" },
+    { name: "Transparent Glass", value: "rgba(255,255,255,0.05)" },
+  ];
+
+  const isEyeDropperSupported = typeof window !== 'undefined' && 'EyeDropper' in window;
+
+  const triggerEyeDropper = async () => {
+    if (!isEyeDropperSupported) return;
+    try {
+      // @ts-ignore
+      const eyeDropper = new window.EyeDropper();
+      const result = await eyeDropper.open();
+      const parsed = parseColor(result.sRGBHex);
+      const newHsv = rgbToHsv(parsed.r, parsed.g, parsed.b);
+      setHsv({ h: newHsv.h, s: newHsv.s, v: newHsv.v, a: 1.0 });
+      onChange(result.sRGBHex);
+    } catch (e) {
+      console.log("EyeDropper closed or failed:", e);
+    }
+  };
+
+  return (
+    <div ref={containerRef} className="relative inline-block text-left">
+      <button
+        type="button"
+        onClick={() => setIsOpen(!isOpen)}
+        className="w-12 h-12 rounded-xl bg-slate-950 hover:bg-slate-900 border border-white/5 hover:border-white/10 flex items-center justify-center shrink-0 transition-all relative overflow-hidden group shadow-md"
+        style={{
+          backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='8' viewBox='0 0 8 8'%3E%3Crect width='4' height='4' fill='%23475569'/%3E%3Crect x='4' y='4' width='4' height='4' fill='%23475569'/%3E%3Crect x='4' width='4' height='4' fill='%231e293b'/%3E%3Crect y='4' width='4' height='4' fill='%231e293b'/%3E%3C/svg%3E")`
+        }}
+        title="Open color picker"
+      >
+        <span
+          className="absolute inset-0.5 rounded-lg border border-white/10 transition-all group-hover:scale-95 shadow-sm block"
+          style={{ background: value || "#ffffff" }}
+        />
+      </button>
+
+      {isOpen && (
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95, y: 5 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          exit={{ opacity: 0, scale: 0.95, y: 5 }}
+          transition={{ duration: 0.15, ease: "easeOut" }}
+          className="absolute left-0 mt-3 p-4 rounded-2xl bg-slate-950/95 backdrop-blur-xl border border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.6)] z-[100] w-[280px] space-y-4"
+        >
+          {/* Saturation/Brightness Board */}
+          <div 
+            ref={sbRef}
+            onMouseDown={handleSBStart}
+            onTouchStart={handleSBStart}
+            className="w-full h-32 rounded-xl relative overflow-hidden cursor-crosshair border border-white/5 select-none"
+            style={{ backgroundColor: `hsl(${hsv.h}, 100%, 50%)` }}
+          >
+            <div className="absolute inset-0 bg-gradient-to-r from-white to-transparent" />
+            <div className="absolute inset-0 bg-gradient-to-t from-black to-transparent" />
+            <div 
+              className="w-3.5 h-3.5 rounded-full border-2 border-white shadow-[0_0_4px_rgba(0,0,0,0.6)] bg-transparent absolute -translate-x-1/2 -translate-y-1/2 pointer-events-none"
+              style={{ left: `${hsv.s}%`, top: `${100 - hsv.v}%` }}
+            />
+          </div>
+
+          {/* Sliders Area */}
+          <div className="space-y-3">
+            {/* Hue Slider */}
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between text-[9px] font-bold text-slate-400 font-mono tracking-wider">
+                <span>HUE</span>
+                <span>{hsv.h}°</span>
+              </div>
+              <input
+                type="range"
+                min="0"
+                max="360"
+                value={hsv.h}
+                onChange={(e) => handleHueChange(parseInt(e.target.value))}
+                className="w-full h-3 rounded-lg cursor-pointer appearance-none outline-none border border-white/10 shadow-sm
+                  [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:border [&::-webkit-slider-thumb]:border-slate-900/30 [&::-webkit-slider-thumb]:shadow-[0_2px_4px_rgba(0,0,0,0.3)]
+                  [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-white [&::-moz-range-thumb]:border [&::-moz-range-thumb]:border-slate-900/30 [&::-moz-range-thumb]:shadow-[0_2px_4px_rgba(0,0,0,0.3)] [&::-moz-range-thumb]:border-none"
+                style={{
+                  background: 'linear-gradient(to right, #ff0000 0%, #ffff00 17%, #00ff00 33%, #00ffff 50%, #0000ff 67%, #ff00ff 83%, #ff0000 100%)'
+                }}
+              />
+            </div>
+
+            {/* Alpha Slider */}
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between text-[9px] font-bold text-slate-400 font-mono tracking-wider">
+                <span>OPACITY</span>
+                <span>{Math.round(hsv.a * 100)}%</span>
+              </div>
+              <input
+                type="range"
+                min="0"
+                max="1"
+                step="0.01"
+                value={hsv.a}
+                onChange={(e) => handleAlphaChange(parseFloat(e.target.value))}
+                className="w-full h-3 rounded-lg cursor-pointer appearance-none outline-none border border-white/10 shadow-sm
+                  [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:border [&::-webkit-slider-thumb]:border-slate-900/30 [&::-webkit-slider-thumb]:shadow-[0_2px_4px_rgba(0,0,0,0.3)]
+                  [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-white [&::-moz-range-thumb]:border [&::-moz-range-thumb]:border-slate-900/30 [&::-moz-range-thumb]:shadow-[0_2px_4px_rgba(0,0,0,0.3)] [&::-moz-range-thumb]:border-none"
+                style={{
+                  background: `linear-gradient(to right, rgba(${curR}, ${curG}, ${curB}, 0), rgba(${curR}, ${curG}, ${curB}, 1)), url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='8' viewBox='0 0 8 8'%3E%3Crect width='4' height='4' fill='%23475569'/%3E%3Crect x='4' y='4' width='4' height='4' fill='%23475569'/%3E%3Crect x='4' width='4' height='4' fill='%231e293b'/%3E%3Crect y='4' width='4' height='4' fill='%231e293b'/%3E%3C/svg%3E") repeat`
+                }}
+              />
+            </div>
+          </div>
+
+          {/* Color Preview & Pipette Row */}
+          <div className="flex items-center gap-3 pt-1">
+            <div 
+              className="w-10 h-10 rounded-xl border border-white/10 relative overflow-hidden shrink-0 shadow-inner"
+              style={{
+                backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='8' viewBox='0 0 8 8'%3E%3Crect width='4' height='4' fill='%23475569'/%3E%3Crect x='4' y='4' width='4' height='4' fill='%23475569'/%3E%3Crect x='4' width='4' height='4' fill='%231e293b'/%3E%3Crect y='4' width='4' height='4' fill='%231e293b'/%3E%3C/svg%3E")`
+              }}
+            >
+              <div 
+                className="absolute inset-0 transition-all duration-150"
+                style={{ backgroundColor: value || "#ffffff" }}
+              />
+            </div>
+
+            {isEyeDropperSupported && (
+              <button
+                type="button"
+                onClick={triggerEyeDropper}
+                className="w-10 h-10 rounded-xl bg-slate-950 hover:bg-slate-900 border border-white/5 hover:border-white/10 flex items-center justify-center text-slate-400 hover:text-white transition-all shadow-md active:scale-95"
+                title="Eye Dropper - Pick a color from screen"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-pipette">
+                  <path d="m2 22 1-1c1.4-1.4 2.4-3.2 3-5.2L7.5 12H12L22 2l.01.01L12 12v4.5l-3.8 1.5c-2 1-3.8 2-5.2 3.5l-1 1" />
+                  <path d="m17 7 3-3" />
+                  <path d="m19 9 1-1" />
+                  <path d="m15 5 1-1" />
+                  <path d="m9 15 3-3" />
+                </svg>
+              </button>
+            )}
+
+            {/* Manual Inputs inside popover */}
+            <div className="grid grid-cols-2 gap-2 text-slate-300 flex-1">
+              <div className="space-y-1">
+                <span className="text-[7.5px] font-bold text-slate-500 uppercase tracking-widest block font-mono">HEX</span>
+                <input
+                  type="text"
+                  value={hexString}
+                  onChange={(e) => handleHexInput(e.target.value)}
+                  className="w-full bg-slate-950/60 border border-white/5 rounded-lg py-1 px-1.5 text-[9px] text-slate-300 focus:outline-none focus:border-blue-500/40 text-center font-mono"
+                />
+              </div>
+              <div className="space-y-1">
+                <span className="text-[7.5px] font-bold text-slate-500 uppercase tracking-widest block font-mono">RGBA</span>
+                <input
+                  type="text"
+                  value={rgbaString}
+                  onChange={(e) => handleRgbaInput(e.target.value)}
+                  className="w-full bg-slate-950/60 border border-white/5 rounded-lg py-1 px-1 text-[9px] text-slate-300 focus:outline-none focus:border-blue-500/40 text-center font-mono"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Presets Swatches */}
+          <div className="space-y-1.5 pt-2 border-t border-white/5">
+            <span className="text-[8px] font-black uppercase tracking-widest text-slate-500 block">Preset Colors</span>
+            <div className="grid grid-cols-6 gap-2">
+              {presets.map((preset) => (
+                <button
+                  key={preset.value}
+                  type="button"
+                  onClick={() => handlePresetClick(preset.value)}
+                  className={`w-6 h-6 rounded-lg border transition-all duration-150 hover:scale-115 hover:rotate-2 hover:shadow-[0_0_10px_rgba(255,255,255,0.1)] active:scale-95 relative overflow-hidden ${
+                    value === preset.value ? "border-blue-500 scale-105" : "border-white/10"
+                  }`}
+                  style={{
+                    backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='8' viewBox='0 0 8 8'%3E%3Crect width='4' height='4' fill='%23475569'/%3E%3Crect x='4' y='4' width='4' height='4' fill='%23475569'/%3E%3Crect x='4' width='4' height='4' fill='%231e293b'/%3E%3Crect y='4' width='4' height='4' fill='%231e293b'/%3E%3C/svg%3E")`
+                  }}
+                  title={preset.name}
+                >
+                  <span 
+                    className="absolute inset-0"
+                    style={{ backgroundColor: preset.value }}
+                  />
+                </button>
+              ))}
+            </div>
+          </div>
+        </motion.div>
+      )}
+    </div>
+  );
+}
+
 // Sortable Wrapper Component
 function SortableBlockWrapper({ id, onDelete, onDuplicate, children }: { id: string; onDelete: () => void; onDuplicate: () => void; children: React.ReactNode }) {
   const {
@@ -1203,11 +1638,9 @@ export default function ProjectDetailManager({ projectId, onBack }: ProjectDetai
                           <div>
                             <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block mb-2">Color Picker &amp; Code</label>
                             <div className="flex items-center gap-2">
-                              <input
-                                type="color"
-                                value={getHexColor(block.data.color)}
-                                onChange={(e) => updateBlock(block.id, { color: e.target.value })}
-                                className="w-10 h-10 border-0 bg-transparent cursor-pointer rounded overflow-hidden"
+                              <CustomColorPicker
+                                value={block.data.color}
+                                onChange={(val) => updateBlock(block.id, { color: val })}
                               />
                               <input
                                 type="text"
