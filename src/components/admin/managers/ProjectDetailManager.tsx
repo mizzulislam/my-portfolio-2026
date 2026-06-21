@@ -4,7 +4,8 @@ import { motion } from "motion/react";
 import { 
   ArrowLeft, Check, Trash2, Image as ImageIcon, Plus, GripVertical, 
   FileText, Columns, Table, Film, AlignLeft, Eye, ChevronDown, ChevronUp, Link as LinkIcon, Layers,
-  ChevronLeft, ChevronRight
+  ChevronLeft, ChevronRight, EyeOff, Bold, Italic, Underline, AlignCenter, AlignRight, AlignJustify,
+  List, ListOrdered, FolderPlus, UploadCloud, Folder, Search, Video, Music, Copy
 } from "lucide-react";
 import { toast } from "react-hot-toast";
 import { Project } from "@/src/types/project";
@@ -45,6 +46,13 @@ interface BlockItem {
   id: string;
   type: BlockType;
   data: any;
+  position?: {
+    x: number;
+    y: number;
+    w: number;
+    h: number;
+  };
+  isHidden?: boolean;
 }
 
 // Helper to generate IDs
@@ -671,8 +679,137 @@ async function translateBlocksToIndonesian(blocks: BlockItem[]): Promise<BlockIt
 
 export default function ProjectDetailManager({ projectId, onBack }: ProjectDetailManagerProps) {
   const [project, setProject] = useState<Project | null>(null);
-  const [blocks, setBlocks] = useState<BlockItem[]>([]);
+  const [blocksState, setBlocksState] = useState<BlockItem[]>([]);
   const [specsLayout, setSpecsLayout] = useState<"right" | "left" | "hidden">("right");
+
+  // Media Library State
+  interface MediaFolder {
+    id: string;
+    name: string;
+  }
+  interface MediaFile {
+    id: string;
+    name: string;
+    url: string;
+    type: "image" | "video" | "audio";
+    folderId?: string;
+  }
+
+  const [mediaFolders, setMediaFolders] = useState<MediaFolder[]>([]);
+  const [mediaFiles, setMediaFiles] = useState<MediaFile[]>([]);
+  const [sidebarTab, setSidebarTab] = useState<"blocks" | "uploads">("blocks");
+  const [mediaTab, setMediaTab] = useState<"images" | "video" | "audio" | "folders">("images");
+  const [selectedFolderId, setSelectedFolderId] = useState<string | null>(null);
+  const [activeBlockId, setActiveBlockId] = useState<string | null>(null);
+  const [isFolderModalOpen, setIsFolderModalOpen] = useState(false);
+  const [newFolderName, setNewFolderName] = useState("");
+
+  const ensurePositions = (items: BlockItem[]) => {
+    return items.map((block, idx) => {
+      if (!block.position || block.position.x === undefined) {
+        return {
+          ...block,
+          position: {
+            x: 40,
+            y: idx * 240 + 40,
+            w: 750,
+            h: block.type === "text" ? 150 : 200
+          },
+          isHidden: block.isHidden || false
+        };
+      }
+      return block;
+    });
+  };
+
+  const setBlocks = (newVal: BlockItem[] | ((prev: BlockItem[]) => BlockItem[])) => {
+    if (typeof newVal === "function") {
+      setBlocksState(prev => ensurePositions(newVal(prev)));
+    } else {
+      setBlocksState(ensurePositions(newVal));
+    }
+  };
+
+  const blocks = blocksState;
+  const canvasHeight = Math.max(...blocks.map(b => (b.position?.y || 0) + (b.position?.h || 200)), 800) + 100;
+
+  const startDrag = (e: React.MouseEvent, blockId: string) => {
+    e.preventDefault();
+    setActiveBlockId(blockId);
+    
+    const block = blocks.find(b => b.id === blockId);
+    if (!block || !block.position) return;
+    
+    const startX = e.clientX;
+    const startY = e.clientY;
+    const startPos = { ...block.position };
+    
+    const handleMouseMove = (moveEvent: MouseEvent) => {
+      const deltaX = moveEvent.clientX - startX;
+      const deltaY = moveEvent.clientY - startY;
+      
+      const newX = Math.max(0, startPos.x + deltaX);
+      const newY = Math.max(0, startPos.y + deltaY);
+      
+      setBlocksState(prev => prev.map(b => b.id === blockId ? {
+        ...b,
+        position: {
+          ...b.position!,
+          x: newX,
+          y: newY
+        }
+      } : b));
+    };
+    
+    const handleMouseUp = () => {
+      window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("mouseup", handleMouseUp);
+    };
+    
+    window.addEventListener("mousemove", handleMouseMove);
+    window.addEventListener("mouseup", handleMouseUp);
+  };
+
+  const startResize = (e: React.MouseEvent, blockId: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    const block = blocks.find(b => b.id === blockId);
+    if (!block || !block.position) return;
+    
+    const startX = e.clientX;
+    const startY = e.clientY;
+    const startSize = { 
+      w: block.position.w || 700, 
+      h: block.position.h || 200 
+    };
+    
+    const handleMouseMove = (moveEvent: MouseEvent) => {
+      const deltaX = moveEvent.clientX - startX;
+      const deltaY = moveEvent.clientY - startY;
+      
+      const newW = Math.max(100, startSize.w + deltaX);
+      const newH = Math.max(50, startSize.h + deltaY);
+      
+      setBlocksState(prev => prev.map(b => b.id === blockId ? {
+        ...b,
+        position: {
+          ...b.position!,
+          w: newW,
+          h: newH
+        }
+      } : b));
+    };
+    
+    const handleMouseUp = () => {
+      window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("mouseup", handleMouseUp);
+    };
+    
+    window.addEventListener("mousemove", handleMouseMove);
+    window.addEventListener("mouseup", handleMouseUp);
+  };
+
   const [galleryImages, setGalleryImages] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -851,6 +988,10 @@ export default function ProjectDetailManager({ projectId, onBack }: ProjectDetai
               const parsed = JSON.parse(trimmed);
               setBlocks(parsed.blocks || []);
               setSpecsLayout(parsed.specsLayout || "right");
+              if (parsed.mediaLibrary) {
+                setMediaFolders(parsed.mediaLibrary.folders || []);
+                setMediaFiles(parsed.mediaLibrary.files || []);
+              }
             } catch (err) {
               setBlocks([{ id: "text-init", type: "text", data: { html: rawContent } }]);
               setSpecsLayout("right");
@@ -887,8 +1028,8 @@ export default function ProjectDetailManager({ projectId, onBack }: ProjectDetai
       }
       toast.dismiss(toastId);
 
-      const payloadEn = JSON.stringify({ specsLayout, blocks });
-      const payloadId = JSON.stringify({ specsLayout, blocks: translatedBlocks });
+      const payloadEn = JSON.stringify({ specsLayout, blocks, mediaLibrary: { folders: mediaFolders, files: mediaFiles } });
+      const payloadId = JSON.stringify({ specsLayout, blocks: translatedBlocks, mediaLibrary: { folders: mediaFolders, files: mediaFiles } });
 
       await projectsApi.update(projectId, {
         detailed_content: payloadEn,
@@ -969,10 +1110,18 @@ export default function ProjectDetailManager({ projectId, onBack }: ProjectDetai
         break;
     }
 
+    const maxY = blocks.reduce((max, b) => Math.max(max, (b.position?.y || 0) + (b.position?.h || 200)), 0);
     const newBlock: BlockItem = {
       id: generateId(),
       type,
-      data: defaultData
+      data: defaultData,
+      position: {
+        x: 40,
+        y: maxY + 40,
+        w: 750,
+        h: type === "text" ? 150 : type === "divider" ? 60 : 200
+      },
+      isHidden: false
     };
 
     setBlocks(prev => [...prev, newBlock]);
@@ -993,10 +1142,15 @@ export default function ProjectDetailManager({ projectId, onBack }: ProjectDetai
       const duplicated: BlockItem = {
         id: generateId(),
         type: blockToCopy.type,
-        // Deep copy data object
-        data: JSON.parse(JSON.stringify(blockToCopy.data))
+        data: JSON.parse(JSON.stringify(blockToCopy.data)),
+        position: {
+          x: (blockToCopy.position?.x || 40) + 20,
+          y: (blockToCopy.position?.y || 40) + 20,
+          w: blockToCopy.position?.w || 750,
+          h: blockToCopy.position?.h || 200
+        },
+        isHidden: blockToCopy.isHidden || false
       };
-      // Insert duplicate right below
       const idx = blocks.findIndex(b => b.id === blockId);
       const newBlocks = [...blocks];
       newBlocks.splice(idx + 1, 0, duplicated);
@@ -1013,6 +1167,92 @@ export default function ProjectDetailManager({ projectId, onBack }: ProjectDetai
 
   const handleRemoveImage = (indexToRemove: number) => {
     setGalleryImages((prev) => prev.filter((_, idx) => idx !== indexToRemove));
+  };
+
+  const handleMediaUpload = async (e: React.ChangeEvent<HTMLInputElement>, type: "image" | "video" | "audio") => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (type === "image") {
+      const apiKey = import.meta.env.VITE_IMGBB_API_KEY;
+      if (!apiKey) {
+        toast.error("API Key ImgBB tidak ditemukan di .env!");
+        return;
+      }
+
+      if (file.size > 2 * 1024 * 1024) {
+        toast.error("Ukuran gambar terlalu besar! Maksimal 2MB.");
+        return;
+      }
+
+      const toastId = toast.loading("Mengunggah gambar ke ImgBB...");
+      try {
+        const formData = new FormData();
+        formData.append("image", file);
+        formData.append("key", apiKey);
+
+        const res = await fetch("https://api.imgbb.com/1/upload", {
+          method: "POST",
+          body: formData,
+        });
+        const data = await res.json();
+
+        if (data.success) {
+          const url = data.data.url;
+          const newFile: MediaFile = {
+            id: generateId(),
+            name: file.name,
+            url,
+            type: "image",
+            folderId: selectedFolderId || undefined
+          };
+          setMediaFiles(prev => [...prev, newFile]);
+          toast.success("Gambar berhasil diunggah! 🚀");
+        } else {
+          toast.error("Gagal mengunggah gambar.");
+        }
+      } catch (err) {
+        console.error(err);
+        toast.error("Terjadi kesalahan saat mengunggah.");
+      } finally {
+        toast.dismiss(toastId);
+      }
+    } else {
+      const url = window.prompt(`Masukkan URL/Link eksternal untuk file ${type} "${file.name}":`);
+      if (url) {
+        const newFile: MediaFile = {
+          id: generateId(),
+          name: file.name,
+          url,
+          type,
+          folderId: selectedFolderId || undefined
+        };
+        setMediaFiles(prev => [...prev, newFile]);
+        toast.success(`${type === "video" ? "Video" : "Audio"} ditambahkan!`);
+      }
+    }
+  };
+
+  const insertMediaBlock = (file: MediaFile) => {
+    const maxY = blocks.reduce((max, b) => Math.max(max, (b.position?.y || 0) + (b.position?.h || 200)), 0);
+    const newBlock: BlockItem = {
+      id: generateId(),
+      type: "media",
+      data: {
+        mediaType: file.type === "video" ? "video" : "image",
+        url: file.url,
+        caption: file.name
+      },
+      position: {
+        x: 40,
+        y: maxY + 40,
+        w: 750,
+        h: 400
+      },
+      isHidden: false
+    };
+    setBlocks(prev => [...prev, newBlock]);
+    toast.success(`Elemen media "${file.name}" ditambahkan ke Kanvas!`);
   };
 
   // Stack/Composite Block layout presets
@@ -1582,9 +1822,125 @@ export default function ProjectDetailManager({ projectId, onBack }: ProjectDetai
           </div>
         </div>
 
+        {/* MS Word style formatting ribbon / Toolbar */}
+        <div className="sticky top-[72px] z-30 flex flex-wrap items-center gap-1.5 p-3 bg-slate-50 border border-slate-200 rounded-2xl shadow-sm mb-6 select-none">
+          <div className="flex items-center gap-2">
+            <span className="text-[8px] font-black uppercase text-slate-400 tracking-wider">Aksi Cepat:</span>
+            <button
+              type="button"
+              disabled={!activeBlockId}
+              onClick={() => {
+                if (activeBlockId) {
+                  const activeBlock = blocks.find(b => b.id === activeBlockId);
+                  if (activeBlock) {
+                    updateBlock(activeBlockId, { isHidden: !activeBlock.isHidden });
+                  }
+                }
+              }}
+              className={`p-2 rounded-lg border text-xs flex items-center gap-1 font-bold tracking-wider uppercase transition-all ${
+                activeBlockId
+                  ? "bg-white border-slate-200 text-slate-700 hover:bg-slate-100 cursor-pointer"
+                  : "bg-slate-100 border-slate-100 text-slate-300"
+              }`}
+              title="Sembunyikan / Tampilkan elemen"
+            >
+              {activeBlockId && blocks.find(b => b.id === activeBlockId)?.isHidden ? (
+                <>
+                  <Eye size={12} className="text-amber-500" />
+                  <span>Tampilkan</span>
+                </>
+              ) : (
+                <>
+                  <EyeOff size={12} />
+                  <span>Sembunyikan</span>
+                </>
+              )}
+            </button>
+
+            <button
+              type="button"
+              disabled={!activeBlockId}
+              onClick={() => activeBlockId && duplicateBlock(activeBlockId)}
+              className={`p-2 rounded-lg border text-xs flex items-center gap-1 font-bold tracking-wider uppercase transition-all ${
+                activeBlockId
+                  ? "bg-white border-slate-200 text-slate-700 hover:bg-slate-100 cursor-pointer"
+                  : "bg-slate-100 border-slate-100 text-slate-300"
+              }`}
+              title="Duplikat elemen"
+            >
+              <Copy size={12} />
+              <span>Duplikat</span>
+            </button>
+
+            <button
+              type="button"
+              disabled={!activeBlockId}
+              onClick={() => activeBlockId && deleteBlock(activeBlockId)}
+              className={`p-2 rounded-lg border text-xs flex items-center gap-1 font-bold tracking-wider uppercase transition-all ${
+                activeBlockId
+                  ? "bg-red-50 border-red-100 text-red-600 hover:bg-red-100 cursor-pointer"
+                  : "bg-slate-100 border-slate-100 text-slate-300"
+              }`}
+              title="Hapus elemen"
+            >
+              <Trash2 size={12} />
+              <span>Hapus</span>
+            </button>
+          </div>
+
+          <div className="h-5 w-px bg-slate-200 mx-2" />
+
+          {/* Text Formatting Mock Ribbon details */}
+          <div className="flex items-center gap-1">
+            <span className="text-[8px] font-black uppercase text-slate-400 tracking-wider mr-1">Font:</span>
+            <select className="bg-white border border-slate-200 rounded-lg p-1 text-[10px] font-medium text-slate-700 outline-none" disabled>
+              <option>Inter (Default)</option>
+              <option>Times New Roman</option>
+              <option>Courier New</option>
+            </select>
+            <select className="bg-white border border-slate-200 rounded-lg p-1 text-[10px] font-medium text-slate-700 outline-none" disabled>
+              <option>12 pt</option>
+              <option>14 pt</option>
+              <option>16 pt</option>
+              <option>20 pt</option>
+            </select>
+
+            <div className="h-4 w-px bg-slate-200 mx-1" />
+
+            <button className="w-7 h-7 flex items-center justify-center text-slate-400 hover:bg-slate-100 rounded-md transition-colors" disabled title="Tebal (Bold)">
+              <Bold size={12} />
+            </button>
+            <button className="w-7 h-7 flex items-center justify-center text-slate-400 hover:bg-slate-100 rounded-md transition-colors" disabled title="Miring (Italic)">
+              <Italic size={12} />
+            </button>
+            <button className="w-7 h-7 flex items-center justify-center text-slate-400 hover:bg-slate-100 rounded-md transition-colors" disabled title="Garis Bawah (Underline)">
+              <Underline size={12} />
+            </button>
+
+            <div className="h-4 w-px bg-slate-200 mx-1" />
+
+            <button className="w-7 h-7 flex items-center justify-center text-slate-400 hover:bg-slate-100 rounded-md transition-colors" disabled title="Rata Kiri">
+              <AlignLeft size={12} />
+            </button>
+            <button className="w-7 h-7 flex items-center justify-center text-slate-400 hover:bg-slate-100 rounded-md transition-colors" disabled title="Rata Tengah">
+              <AlignCenter size={12} />
+            </button>
+            <button className="w-7 h-7 flex items-center justify-center text-slate-400 hover:bg-slate-100 rounded-md transition-colors" disabled title="Rata Kanan">
+              <AlignRight size={12} />
+            </button>
+            <button className="w-7 h-7 flex items-center justify-center text-slate-400 hover:bg-slate-100 rounded-md transition-colors" disabled title="Rata Kiri Kanan">
+              <AlignJustify size={12} />
+            </button>
+          </div>
+        </div>
+
         {/* Live Canvas Editor (Blank Document Style) */}
-        <div className="bg-white shadow-[0_20px_50px_rgba(0,0,0,0.35)] rounded-[2.5rem] border border-slate-200 text-slate-900 p-8 md:p-12 max-w-4xl mx-auto min-h-[800px] flex flex-col gap-6 transition-all text-left">
-          <div className="border-b border-slate-100 pb-6 mb-2">
+        <div 
+          onClick={() => setActiveBlockId(null)}
+          className="relative bg-white shadow-[0_20px_50px_rgba(0,0,0,0.35)] rounded-[2.5rem] border border-slate-200 text-slate-900 mx-auto w-full max-w-[850px] transition-all text-left p-6 select-none" 
+          style={{ height: `${canvasHeight}px` }}
+        >
+          <div className="border-b border-slate-100 pb-6 mb-8 select-none">
             <span className="text-[9px] font-black uppercase tracking-[0.2em] bg-blue-50 text-blue-600 px-3.5 py-1.5 rounded-lg border border-blue-200/50">
               Live Canvas Page
             </span>
@@ -1592,313 +1948,312 @@ export default function ProjectDetailManager({ projectId, onBack }: ProjectDetai
               {project?.title}
             </h2>
             <p className="text-slate-500 text-xs mt-2 leading-relaxed">
-              Tulis dokumen studi kasus proyek Anda secara visual di bawah. Anda dapat mengedit, menambah, dan menyusun ulang blok secara real-time.
+              Tulis dokumen studi kasus proyek Anda secara visual di bawah. Seret, pindahkan, dan ubah ukuran elemen visual secara bebas.
             </p>
           </div>
 
-          <DndContext
-            sensors={sensors}
-            collisionDetection={closestCenter}
-            onDragEnd={handleDragEnd}
-          >
-            <SortableContext
-              items={blocks.map(b => b.id)}
-              strategy={verticalListSortingStrategy}
-            >
-              <div className="space-y-6">
-                {blocks.length === 0 ? (
-                  <div className="text-center py-20 border border-dashed border-slate-200 rounded-2xl opacity-50 bg-slate-50 text-slate-400">
-                    <Plus size={40} className="mx-auto mb-4 text-slate-400" />
-                    <p className="text-xs font-bold uppercase tracking-wider">Kanvas Kosong. Silakan tambahkan elemen dari panel kanan.</p>
-                  </div>
-                ) : (
-                  blocks.map((block) => (
-                    <SortableBlockWrapper 
-                      key={block.id} 
-                      id={block.id} 
-                      onDelete={() => deleteBlock(block.id)}
-                      onDuplicate={() => duplicateBlock(block.id)}
-                    >
-                      {/* Type Indicator */}
-                      <div className="flex items-center gap-2 mb-4">
-                        <span className="text-[8px] font-black uppercase tracking-[0.2em] bg-blue-50 text-blue-600 px-3 py-1 rounded-md border border-blue-200/50">
-                          {block.type}
-                        </span>
-                      </div>
+          {blocks.length === 0 ? (
+            <div className="text-center py-20 border border-dashed border-slate-200 rounded-2xl opacity-50 bg-slate-50 text-slate-400 mx-4 select-none">
+              <Plus size={40} className="mx-auto mb-4 text-slate-400" />
+              <p className="text-xs font-bold uppercase tracking-wider">Kanvas Kosong. Silakan tambahkan elemen dari panel kanan.</p>
+            </div>
+          ) : (
+            blocks.map((block) => (
+              <div
+                key={block.id}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setActiveBlockId(block.id);
+                }}
+                className={`absolute group rounded-2xl border transition-all select-none bg-slate-50/90 text-slate-900 ${
+                  activeBlockId === block.id 
+                    ? "border-blue-500 shadow-xl z-20 ring-2 ring-blue-500/20" 
+                    : "border-slate-200 hover:border-slate-300 shadow-sm z-10"
+                } ${block.isHidden ? "opacity-45" : ""}`}
+                style={{
+                  left: `${block.position?.x || 0}px`,
+                  top: `${block.position?.y || 0}px`,
+                  width: `${block.position?.w || 750}px`,
+                  height: `${block.position?.h || 200}px`
+                }}
+              >
+                {/* Drag Handle Bar (only shown on hover or when active) */}
+                <div 
+                  onMouseDown={(e) => startDrag(e, block.id)}
+                  className="absolute -top-3.5 left-4 px-2 py-0.5 rounded bg-blue-600 text-white text-[9px] font-black uppercase tracking-wider cursor-move select-none flex items-center gap-1 opacity-0 group-hover:opacity-100 active:opacity-100 transition-opacity z-30 shadow"
+                >
+                  <GripVertical size={10} />
+                  <span>Seret Elemen</span>
+                </div>
 
-                      {/* Rendering dynamic editors based on block type (Light themed inside white canvas) */}
-                      {block.type === "text" && (
+                {/* Visibility indicator / Hidden badge */}
+                {block.isHidden && (
+                  <div className="absolute -top-3.5 right-10 px-2 py-0.5 rounded bg-amber-500 text-white text-[9px] font-black uppercase tracking-wider flex items-center gap-1 z-30 shadow">
+                    <EyeOff size={10} />
+                    <span>Tersembunyi</span>
+                  </div>
+                )}
+
+                {/* Quick action actions toolbar */}
+                {activeBlockId === block.id && (
+                  <div className="absolute -top-10 right-4 flex items-center gap-1 bg-slate-900 text-white px-2 py-1.5 rounded-lg shadow-lg z-40 border border-white/10 animate-fade-in select-none">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        updateBlock(block.id, { isHidden: !block.isHidden });
+                      }}
+                      className="p-1 hover:bg-white/10 rounded transition-colors text-slate-300 hover:text-white cursor-pointer"
+                      title={block.isHidden ? "Tampilkan di Website" : "Sembunyikan dari Website"}
+                    >
+                      {block.isHidden ? <Eye size={12} /> : <EyeOff size={12} />}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => duplicateBlock(block.id)}
+                      className="p-1 hover:bg-white/10 rounded transition-colors text-slate-300 hover:text-white cursor-pointer"
+                      title="Duplikat Elemen"
+                    >
+                      <Copy size={12} />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => deleteBlock(block.id)}
+                      className="p-1 hover:bg-red-500 hover:text-white rounded transition-colors text-red-400 cursor-pointer"
+                      title="Hapus Elemen"
+                    >
+                      <Trash2 size={12} />
+                    </button>
+                  </div>
+                )}
+
+                {/* Resize Corner Handle */}
+                <div 
+                  onMouseDown={(e) => startResize(e, block.id)}
+                  className="absolute right-0 bottom-0 w-4 h-4 cursor-se-resize flex items-end justify-end p-0.5 text-slate-400 hover:text-blue-500 z-30"
+                  title="Tarik untuk mengubah ukuran"
+                >
+                  <svg width="8" height="8" viewBox="0 0 8 8" className="opacity-70 group-hover:opacity-100">
+                    <path d="M6 0 L8 0 L8 8 L0 8 L0 6 L6 6 Z" fill="currentColor" />
+                  </svg>
+                </div>
+
+                {/* Block Content Container */}
+                <div className="w-full h-full p-4 overflow-y-auto no-scrollbar relative select-text">
+                  
+                  {/* TEXT BLOCK */}
+                  {block.type === "text" && (
+                    <div className="w-full h-full min-h-[100px]" onClick={(e) => e.stopPropagation()}>
+                      {activeBlockId === block.id ? (
                         <div className="space-y-3">
-                          <div className="flex items-center justify-between">
+                          <div className="flex items-center justify-between border-b border-slate-200 pb-2">
                             <label className="text-[9px] font-bold text-slate-500 uppercase tracking-widest block">
                               {block.data.mode === "html" ? "HTML / Raw Code" : "Rich Text (WYSIWYG)"}
                             </label>
                             <button
                               type="button"
                               onClick={() => updateBlock(block.id, { mode: block.data.mode === "html" ? "rich" : "html" })}
-                              className="text-[8px] font-black uppercase tracking-widest px-2.5 py-1 rounded-md border transition-all cursor-pointer"
-                              style={block.data.mode === "html"
-                                ? { borderColor: "rgba(59,130,246,0.3)", color: "#2563eb", background: "rgba(59,130,246,0.05)" }
-                                : { borderColor: "rgba(0,0,0,0.1)", color: "#475569", background: "rgba(0,0,0,0.03)" }
-                              }
+                              className="text-[8px] font-black uppercase tracking-widest px-2.5 py-1 rounded-md border border-slate-200 hover:bg-slate-100 transition-all cursor-pointer bg-white text-slate-700"
                             >
                               {block.data.mode === "html" ? "Aa Ganti ke Rich Text" : "⟨/⟩ Ganti ke HTML"}
                             </button>
                           </div>
-
                           {block.data.mode === "html" ? (
-                            <>
-                              <textarea
-                                value={block.data.html}
-                                onChange={(e) => updateBlock(block.id, { html: e.target.value })}
-                                rows={5}
-                                placeholder="Masukkan teks HTML di sini, contoh: <h2>Judul</h2><p>Isi paragraf</p>"
-                                className="w-full bg-white border border-slate-200 rounded-xl p-4 font-mono text-xs text-slate-900 focus:outline-none focus:border-blue-500/50 transition-all"
-                              />
-                              <p className="text-[9px] text-slate-500 leading-relaxed">
-                                Mendukung tag HTML seperti <code className="text-blue-600/80">&lt;h2&gt;</code>, <code className="text-blue-600/80">&lt;p&gt;</code>, <code className="text-blue-600/80">&lt;ul&gt;</code>, <code className="text-blue-600/80">&lt;blockquote&gt;</code>, dll.
-                              </p>
-                            </>
+                            <textarea
+                              value={block.data.html}
+                              onChange={(e) => updateBlock(block.id, { html: e.target.value })}
+                              rows={4}
+                              placeholder="Masukkan HTML..."
+                              className="w-full bg-white border border-slate-200 rounded-xl p-3 font-mono text-xs text-slate-900 focus:outline-none focus:border-blue-500/50"
+                            />
                           ) : (
                             <RichTextEditor
                               value={block.data.html}
                               onChange={(html) => updateBlock(block.id, { html })}
-                              placeholder="Tulis konten rich text di sini — gunakan toolbar di atas untuk format teks, heading, list, link, dan lainnya..."
+                              placeholder="Ketik konten rich text di sini..."
                               light={true}
                             />
                           )}
                         </div>
+                      ) : (
+                        <div 
+                          className="case-study-content text-slate-700 text-xs" 
+                          dangerouslySetInnerHTML={{ __html: block.data.html || "<p className='text-slate-400 italic'>Konten teks kosong...</p>" }} 
+                        />
                       )}
+                    </div>
+                  )}
 
-                      {block.type === "divider" && (
-                        <div className="grid grid-cols-2 gap-4">
-                          <div>
-                            <label className="text-[9px] font-bold text-slate-500 uppercase tracking-widest block mb-2">Style</label>
-                            <AdminDropdown
-                              value={block.data.style}
-                              onChange={(v) => updateBlock(block.id, { style: v })}
-                              size="compact"
-                              className="h-11"
-                              light={true}
-                              options={[
-                                { value: "line", label: "Solid Line" },
-                                { value: "dashed", label: "Dashed Line" },
-                                { value: "double", label: "Double Line" },
-                                { value: "dots", label: "Dotted Line" },
-                              ]}
-                            />
-                          </div>
-                          <div>
-                            <label className="text-[9px] font-bold text-slate-500 uppercase tracking-widest block mb-2">Color Picker &amp; Code</label>
-                            <div className="flex items-center gap-2">
-                              <CustomColorPicker
-                                value={block.data.color}
-                                onChange={(val) => updateBlock(block.id, { color: val })}
+                  {/* DIVIDER BLOCK */}
+                  {block.type === "divider" && (
+                    <div className="w-full h-full">
+                      {activeBlockId === block.id ? (
+                        <div className="space-y-3 pt-2 text-left" onClick={(e) => e.stopPropagation()}>
+                          <span className="text-[9px] font-black uppercase text-blue-600 tracking-wider">Edit Divider</span>
+                          <div className="grid grid-cols-2 gap-3">
+                            <div>
+                              <label className="text-[8px] font-bold text-slate-500 uppercase tracking-widest block mb-1">Style</label>
+                              <AdminDropdown
+                                value={block.data.style}
+                                onChange={(v) => updateBlock(block.id, { style: v })}
+                                size="compact"
+                                className="h-10 text-[10px]"
+                                light={true}
+                                options={[
+                                  { value: "line", label: "Solid Line" },
+                                  { value: "dashed", label: "Dashed Line" },
+                                  { value: "double", label: "Double Line" },
+                                  { value: "dots", label: "Dots Line" }
+                                ]}
                               />
-                              <input
-                                type="text"
-                                value={block.data.color}
-                                onChange={(e) => updateBlock(block.id, { color: e.target.value })}
-                                placeholder="e.g. rgba(255,255,255,0.1) or #3b82f6"
-                                className="flex-1 h-11 bg-white border border-slate-200 rounded-xl px-3.5 text-xs text-slate-900 focus:outline-none focus:border-blue-500/50 font-mono"
-                              />
+                            </div>
+                            <div>
+                              <label className="text-[8px] font-bold text-slate-500 uppercase tracking-widest block mb-1">Warna</label>
+                              <div className="flex items-center gap-2">
+                                <CustomColorPicker value={block.data.color} onChange={(c) => updateBlock(block.id, { color: c })} />
+                                <input
+                                  type="text"
+                                  value={block.data.color}
+                                  onChange={(e) => updateBlock(block.id, { color: e.target.value })}
+                                  className="flex-1 h-10 bg-white border border-slate-200 rounded-lg px-2 text-xs font-mono"
+                                />
+                              </div>
                             </div>
                           </div>
                         </div>
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center">
+                          <div 
+                            className={`w-full ${block.data.style === 'dashed' ? 'border-dashed' : block.data.style === 'dots' ? 'border-dotted' : 'border-solid'}`}
+                            style={{ borderTopWidth: block.data.style === 'double' ? '3px' : '1px', borderTopStyle: block.data.style === 'double' ? 'double' : undefined, borderColor: block.data.color || '#cbd5e1' }}
+                          />
+                        </div>
                       )}
+                    </div>
+                  )}
 
-                      {block.type === "media" && (
-                        <div className="space-y-4">
-                          <div className="grid grid-cols-2 gap-4">
+                  {/* MEDIA BLOCK */}
+                  {block.type === "media" && (
+                    <div className="w-full h-full">
+                      {activeBlockId === block.id ? (
+                        <div className="space-y-3 text-left" onClick={(e) => e.stopPropagation()}>
+                          <span className="text-[9px] font-black uppercase text-blue-600 tracking-wider">Edit Media</span>
+                          <div className="grid grid-cols-2 gap-2">
                             <div>
-                              <label className="text-[9px] font-bold text-slate-550 uppercase tracking-widest block mb-2">Media Type</label>
+                              <label className="text-[8px] font-bold text-slate-500 uppercase tracking-widest block mb-1">Tipe Media</label>
                               <AdminDropdown
                                 value={block.data.mediaType}
                                 onChange={(v) => updateBlock(block.id, { mediaType: v })}
                                 size="compact"
-                                className="h-11"
+                                className="h-10 text-[10px]"
                                 light={true}
                                 options={[
-                                  { value: "image", label: "Image" },
-                                  { value: "video", label: "YouTube / Video Link" },
+                                  { value: "image", label: "Gambar (Image)" },
+                                  { value: "video", label: "Video YouTube" }
                                 ]}
                               />
                             </div>
                             <div>
-                              <label className="text-[9px] font-bold text-slate-555 uppercase tracking-widest block mb-2">Media URL</label>
+                              <label className="text-[8px] font-bold text-slate-500 uppercase tracking-widest block mb-1">Media URL</label>
                               <input
                                 type="text"
                                 value={block.data.url}
                                 onChange={(e) => updateBlock(block.id, { url: e.target.value })}
-                                placeholder="Masukkan URL foto/video..."
-                                className="w-full h-11 bg-white border border-slate-200 rounded-xl px-3.5 text-xs text-slate-900 focus:outline-none focus:border-blue-500/50"
+                                className="w-full h-10 bg-white border border-slate-200 rounded-lg px-3 text-xs"
+                                placeholder="http://..."
                               />
                             </div>
                           </div>
-                          
                           {block.data.mediaType === "image" && (
-                            <div>
-                              <label className="text-[9px] font-bold text-slate-550 uppercase tracking-widest block mb-2">Upload Foto</label>
-                              <ImageUpload
-                                value=""
-                                light={true}
-                                onChange={(url) => updateBlock(block.id, { url })}
-                                label="Upload Ke ImgBB &amp; Isi URL"
-                              />
+                            <ImageUpload
+                              value={block.data.url}
+                              onChange={(url) => updateBlock(block.id, { url })}
+                              light={true}
+                            />
+                          )}
+                          <input
+                            type="text"
+                            value={block.data.caption}
+                            onChange={(e) => updateBlock(block.id, { caption: e.target.value })}
+                            className="w-full h-10 bg-white border border-slate-200 rounded-lg px-3 text-xs"
+                            placeholder="Caption media..."
+                          />
+                        </div>
+                      ) : (
+                        <div className="w-full h-full flex flex-col justify-center text-center p-1">
+                          {block.data.mediaType === "video" ? (
+                            <div className="w-full h-full bg-slate-900 rounded-xl overflow-hidden flex items-center justify-center text-xs text-slate-400 min-h-[120px]">
+                              {block.data.url ? (
+                                <iframe src={block.data.url.replace("watch?v=", "embed/")} className="w-full h-full pointer-events-none" />
+                              ) : "Video URL Kosong"}
+                            </div>
+                          ) : (
+                            <div className="w-full h-full bg-slate-100 rounded-xl overflow-hidden flex items-center justify-center min-h-[120px]">
+                              {block.data.url ? (
+                                <img src={block.data.url} alt="" className="w-full h-full object-cover" />
+                              ) : "Gambar URL Kosong"}
                             </div>
                           )}
-
-                          <div>
-                            <label className="text-[9px] font-bold text-slate-550 uppercase tracking-widest block mb-2">Caption</label>
-                            <input
-                              type="text"
-                              value={block.data.caption}
-                              onChange={(e) => updateBlock(block.id, { caption: e.target.value })}
-                              placeholder="Tulis caption di sini..."
-                              className="w-full h-11 bg-white border border-slate-200 rounded-xl px-3.5 text-xs text-slate-900 focus:outline-none focus:border-blue-500/50"
-                            />
-                          </div>
+                          {block.data.caption && <p className="text-[10px] text-slate-500 italic mt-1">{block.data.caption}</p>}
                         </div>
                       )}
+                    </div>
+                  )}
 
-                      {block.type === "table" && (
-                        <div className="space-y-4">
-                          <div className="flex items-center justify-between">
-                            <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">Table Controller</span>
-                            <div className="flex gap-2">
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  const colCount = block.data.headers.length;
-                                  const nextRow = Array(colCount).fill("Sel Baru");
-                                  const newHeights = [...(block.data.rowHeights || Array(block.data.rows.length).fill("")), ""];
-                                  updateBlock(block.id, { 
-                                    rows: [...block.data.rows, nextRow],
+                  {/* DATA TABLE BLOCK */}
+                  {block.type === "table" && (
+                    <div className="w-full h-full">
+                      {activeBlockId === block.id ? (
+                        <div className="space-y-4 text-left" onClick={(e) => e.stopPropagation()}>
+                          <div className="flex items-center justify-between border-b border-slate-200 pb-2">
+                            <span className="text-[9px] font-black uppercase text-blue-600 tracking-wider">Edit Tabel</span>
+                            <div className="flex gap-1.5">
+                              <button type="button" onClick={() => {
+                                const newHeights = [...(block.data.rowHeights || Array(block.data.rows.length).fill(""))];
+                                newHeights.push("");
+                                updateBlock(block.id, {
+                                  rows: [...block.data.rows, Array(block.data.headers.length).fill("")],
+                                  rowHeights: newHeights
+                                });
+                              }} className="text-[8px] font-bold bg-slate-200 hover:bg-slate-350 px-2 py-1 rounded cursor-pointer">+ Row</button>
+                              <button type="button" onClick={() => {
+                                const newWidths = [...(block.data.columnWidths || Array(block.data.headers.length).fill(""))];
+                                newWidths.push("");
+                                updateBlock(block.id, {
+                                  headers: [...block.data.headers, `Header ${block.data.headers.length + 1}`],
+                                  rows: block.data.rows.map((row: string[]) => [...row, ""]),
+                                  columnWidths: newWidths
+                                });
+                              }} className="text-[8px] font-bold bg-slate-200 hover:bg-slate-350 px-2 py-1 rounded cursor-pointer">+ Col</button>
+                              <button type="button" onClick={() => {
+                                if (block.data.rows.length > 1) {
+                                  const newHeights = [...(block.data.rowHeights || Array(block.data.rows.length).fill(""))];
+                                  newHeights.pop();
+                                  updateBlock(block.id, {
+                                    rows: block.data.rows.slice(0, -1),
                                     rowHeights: newHeights
                                   });
-                                }}
-                                className="text-[9px] font-bold bg-slate-200/50 hover:bg-slate-200 text-slate-700 py-1 px-2.5 rounded-md cursor-pointer"
-                              >
-                                + Row
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  const newHeaders = [...block.data.headers, `Kolom ${block.data.headers.length + 1}`];
-                                  const newRows = block.data.rows.map((row: string[]) => [...row, "Sel Baru"]);
-                                  const newWidths = [...(block.data.columnWidths || Array(block.data.headers.length).fill("")), ""];
-                                  updateBlock(block.id, { 
-                                    headers: newHeaders,
-                                    rows: newRows,
+                                }
+                              }} className="text-[8px] font-bold bg-red-50 text-red-600 hover:bg-red-100 px-2 py-1 rounded cursor-pointer">- Row</button>
+                              <button type="button" onClick={() => {
+                                if (block.data.headers.length > 1) {
+                                  const newWidths = [...(block.data.columnWidths || Array(block.data.headers.length).fill(""))];
+                                  newWidths.pop();
+                                  updateBlock(block.id, {
+                                    headers: block.data.headers.slice(0, -1),
+                                    rows: block.data.rows.map((row: string[]) => row.slice(0, -1)),
                                     columnWidths: newWidths
                                   });
-                                }}
-                                className="text-[9px] font-bold bg-slate-200/50 hover:bg-slate-200 text-slate-700 py-1 px-2.5 rounded-md cursor-pointer"
-                              >
-                                + Column
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  if (block.data.rows.length > 1) {
-                                    const newRows = block.data.rows.slice(0, -1);
-                                    const newHeights = block.data.rowHeights ? block.data.rowHeights.slice(0, -1) : [];
-                                    updateBlock(block.id, { 
-                                      rows: newRows,
-                                      rowHeights: newHeights
-                                    });
-                                  }
-                                }}
-                                className="text-[9px] font-bold bg-red-50 text-red-600 py-1 px-2.5 rounded-md cursor-pointer"
-                              >
-                                - Row
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  if (block.data.headers.length > 1) {
-                                    const newHeaders = block.data.headers.slice(0, -1);
-                                    const newRows = block.data.rows.map((row: string[]) => row.slice(0, -1));
-                                    const newWidths = block.data.columnWidths ? block.data.columnWidths.slice(0, -1) : [];
-                                    updateBlock(block.id, { 
-                                      headers: newHeaders, 
-                                      rows: newRows,
-                                      columnWidths: newWidths
-                                    });
-                                  } else {
-                                    toast.error("Tabel harus memiliki minimal 1 kolom!");
-                                  }
-                                }}
-                                className="text-[9px] font-bold bg-red-50 text-red-600 py-1 px-2.5 rounded-md cursor-pointer"
-                              >
-                                - Column
-                              </button>
+                                }
+                              }} className="text-[8px] font-bold bg-red-50 text-red-600 hover:bg-red-100 px-2 py-1 rounded cursor-pointer">- Col</button>
                             </div>
                           </div>
 
-                          {/* Row & Column Sizing Controls */}
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 rounded-xl bg-slate-50 border border-slate-100">
-                            <div>
-                              <label className="text-[9px] font-bold text-slate-550 uppercase tracking-widest block mb-2">Cell Padding (Tinggi Baris)</label>
-                              <AdminDropdown
-                                value={block.data.cellPadding || "standard"}
-                                onChange={(v) => updateBlock(block.id, { cellPadding: v })}
-                                size="compact"
-                                className="h-11"
-                                light={true}
-                                options={[
-                                  { value: "compact", label: "Compact (Padat)" },
-                                  { value: "standard", label: "Standard" },
-                                  { value: "spacious", label: "Spacious (Longgar)" },
-                                ]}
-                              />
-                            </div>
-                            <div>
-                              <label className="text-[9px] font-bold text-slate-550 uppercase tracking-widest block mb-2">Custom Row Height</label>
-                              <input
-                                type="text"
-                                value={block.data.rowHeight || ""}
-                                onChange={(e) => updateBlock(block.id, { rowHeight: e.target.value })}
-                                placeholder="e.g. auto, 50px, 80px"
-                                className="w-full h-11 bg-white border border-slate-200 rounded-xl px-3.5 text-xs text-slate-900 focus:outline-none focus:border-blue-500/50"
-                              />
-                            </div>
-
-                            {/* Column Widths Config */}
-                            <div className="col-span-1 md:col-span-2 space-y-2 pt-2 border-t border-slate-100">
-                              <label className="text-[9px] font-bold text-slate-555 uppercase tracking-widest block">Lebar Kolom (Column Widths)</label>
-                              <div className="flex gap-2 flex-wrap">
-                                {block.data.headers.map((_: string, idx: number) => (
-                                  <div key={idx} className="flex-1 min-w-[70px]">
-                                    <label className="text-[8px] font-black text-slate-555 uppercase block mb-1">Kolom {idx + 1}</label>
-                                    <input
-                                      type="text"
-                                      value={block.data.columnWidths?.[idx] || ""}
-                                      onChange={(e) => {
-                                        const newWidths = [...(block.data.columnWidths || Array(block.data.headers.length).fill(""))];
-                                        newWidths[idx] = e.target.value;
-                                        updateBlock(block.id, { columnWidths: newWidths });
-                                      }}
-                                      placeholder="auto, 30%, 150px"
-                                      className="w-full bg-white border border-slate-200 rounded-lg p-2 text-[10px] text-slate-900 focus:outline-none focus:border-blue-500/50"
-                                    />
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-                          </div>
-
-                          {/* Render inputs grid */}
-                          <div className="overflow-x-auto bg-slate-100 rounded-xl border border-slate-200 p-4">
+                          <div className="overflow-x-auto bg-slate-50 border border-slate-200 p-2 rounded-xl">
                             <table className="w-full border-collapse">
                               <thead>
                                 <tr>
                                   {block.data.headers.map((h: string, idx: number) => (
-                                    <th 
-                                      key={idx} 
-                                      className="p-1 relative group/col"
-                                      style={{ width: block.data.columnWidths?.[idx] || 'auto' }}
-                                    >
+                                    <th key={idx} className="p-1">
                                       <input
                                         type="text"
                                         value={h}
@@ -1907,13 +2262,7 @@ export default function ProjectDetailManager({ projectId, onBack }: ProjectDetai
                                           newHeaders[idx] = e.target.value;
                                           updateBlock(block.id, { headers: newHeaders });
                                         }}
-                                        className="w-full bg-white border border-slate-250 rounded-md p-1.5 text-[10px] font-bold text-blue-600 focus:outline-none"
-                                      />
-                                      {/* Vertical Drag Resizer Line */}
-                                      <div
-                                        onMouseDown={(e) => handleColResizeStart(e, block.id, idx)}
-                                        className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize bg-transparent hover:bg-blue-500/50 active:bg-blue-500 transition-colors z-10"
-                                        title="Drag to resize column width"
+                                        className="w-full bg-white border border-slate-200 rounded p-1 text-[9px] font-black text-blue-600"
                                       />
                                     </th>
                                   ))}
@@ -1923,11 +2272,7 @@ export default function ProjectDetailManager({ projectId, onBack }: ProjectDetai
                                 {block.data.rows.map((row: string[], rowIdx: number) => (
                                   <tr key={rowIdx}>
                                     {row.map((cell: string, cellIdx: number) => (
-                                      <td 
-                                        key={cellIdx} 
-                                        className="p-1 relative group/row"
-                                        style={{ height: block.data.rowHeights?.[rowIdx] || 'auto' }}
-                                      >
+                                      <td key={cellIdx} className="p-1">
                                         <input
                                           type="text"
                                           value={cell}
@@ -1936,13 +2281,7 @@ export default function ProjectDetailManager({ projectId, onBack }: ProjectDetai
                                             newRows[rowIdx][cellIdx] = e.target.value;
                                             updateBlock(block.id, { rows: newRows });
                                           }}
-                                          className="w-full bg-white border border-slate-200 rounded-md p-1.5 text-[10px] text-slate-800 focus:outline-none"
-                                        />
-                                        {/* Horizontal Drag Resizer Line */}
-                                        <div
-                                          onMouseDown={(e) => handleRowResizeStart(e, block.id, rowIdx)}
-                                          className="absolute left-0 right-0 bottom-0 h-1 cursor-row-resize bg-transparent hover:bg-blue-500/50 active:bg-blue-500 transition-colors z-10"
-                                          title="Drag to resize row height"
+                                          className="w-full bg-white border border-slate-200 rounded p-1 text-[9px]"
                                         />
                                       </td>
                                     ))}
@@ -1952,49 +2291,54 @@ export default function ProjectDetailManager({ projectId, onBack }: ProjectDetai
                             </table>
                           </div>
                         </div>
+                      ) : (
+                        <div className="w-full h-full overflow-auto p-1">
+                          <table className="w-full border-collapse border border-slate-200 text-[10px]">
+                            <thead>
+                              <tr className="bg-slate-50">
+                                {block.data.headers.map((h: string, i: number) => (
+                                  <th key={i} className="border border-slate-200 p-1.5 font-black text-slate-700 text-left" style={{ width: block.data.columnWidths?.[i] || 'auto' }}>{h || 'Header'}</th>
+                                ))}
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {block.data.rows.map((r: string[], ri: number) => (
+                                <tr key={ri} style={{ height: block.data.rowHeights?.[ri] || 'auto' }}>
+                                  {r.map((c: string, ci: number) => (
+                                    <td key={ci} className="border border-slate-200 p-1.5 text-slate-600 font-medium">{c || '-'}</td>
+                                  ))}
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
                       )}
+                    </div>
+                  )}
 
-                      {block.type === "grid" && (
-                        <div className="space-y-4">
-                          <div className="flex items-center justify-between">
-                            <label className="text-[9px] font-bold text-slate-550 uppercase tracking-widest">Kolom Grid</label>
-                            <div className="flex gap-2">
-                              <button
-                                type="button"
-                                onClick={() => updateBlock(block.id, { columns: 2 })}
-                                className={`text-[9px] font-bold py-1 px-2.5 rounded cursor-pointer ${block.data.columns === 2 ? 'bg-blue-600 text-white' : 'bg-slate-200 text-slate-600'}`}
-                              >
-                                2 Columns
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => updateBlock(block.id, { columns: 3 })}
-                                className={`text-[9px] font-bold py-1 px-2.5 rounded cursor-pointer ${block.data.columns === 3 ? 'bg-blue-600 text-white' : 'bg-slate-200 text-slate-600'}`}
-                              >
-                                3 Columns
-                              </button>
+                  {/* GRID COLUMN BLOCK */}
+                  {block.type === "grid" && (
+                    <div className="w-full h-full">
+                      {activeBlockId === block.id ? (
+                        <div className="space-y-4 text-left" onClick={(e) => e.stopPropagation()}>
+                          <div className="flex items-center justify-between border-b border-slate-200 pb-2">
+                            <span className="text-[9px] font-black uppercase text-blue-600 tracking-wider">Edit Grid</span>
+                            <div className="flex gap-1.5">
+                              <button type="button" onClick={() => updateBlock(block.id, { columns: 2 })} className={`text-[8px] font-bold px-2 py-1 rounded cursor-pointer ${block.data.columns === 2 ? 'bg-blue-600 text-white' : 'bg-slate-200'}`}>2 Columns</button>
+                              <button type="button" onClick={() => updateBlock(block.id, { columns: 3 })} className={`text-[8px] font-bold px-2 py-1 rounded cursor-pointer ${block.data.columns === 3 ? 'bg-blue-600 text-white' : 'bg-slate-200'}`}>3 Columns</button>
                             </div>
                           </div>
 
-                          {/* Grid items editor list */}
-                          <div className="space-y-4 pt-2 border-t border-slate-100">
+                          <div className="space-y-3">
                             {block.data.items.map((item: any, idx: number) => (
-                              <div key={idx} className="p-4 rounded-xl bg-white border border-slate-200 space-y-3 shadow-sm text-left">
+                              <div key={idx} className="border border-slate-200 p-3 rounded-xl bg-white space-y-2">
                                 <div className="flex items-center justify-between">
-                                  <span className="text-[9px] font-black text-slate-400 uppercase">Item #{idx + 1}</span>
-                                  <button
-                                    type="button"
-                                    onClick={() => {
-                                      if (block.data.items.length > 1) {
-                                        updateBlock(block.id, {
-                                          items: block.data.items.filter((_: any, i: number) => i !== idx)
-                                        });
-                                      }
-                                    }}
-                                    className="text-[8px] font-bold text-red-500 hover:underline cursor-pointer"
-                                  >
-                                    Remove Item
-                                  </button>
+                                  <span className="text-[9px] font-black text-slate-400">Item #{idx+1}</span>
+                                  <button type="button" onClick={() => {
+                                    if (block.data.items.length > 1) {
+                                      updateBlock(block.id, { items: block.data.items.filter((_: any, i: number) => i !== idx) });
+                                    }
+                                  }} className="text-[8px] text-red-500 hover:underline">Hapus</button>
                                 </div>
                                 <input
                                   type="text"
@@ -2004,143 +2348,106 @@ export default function ProjectDetailManager({ projectId, onBack }: ProjectDetai
                                     newItems[idx].title = e.target.value;
                                     updateBlock(block.id, { items: newItems });
                                   }}
+                                  className="w-full h-8 bg-slate-50 border border-slate-200 rounded px-2 text-xs font-bold"
                                   placeholder="Judul Poin..."
-                                  className="w-full h-10 bg-slate-50 border border-slate-200 rounded-lg px-3 text-xs font-bold text-slate-900 focus:outline-none"
                                 />
-                                <div>
-                                  <label className="text-[8px] font-bold text-slate-550 uppercase tracking-widest block mb-1">Penjelasan detail (Rich Text)</label>
-                                  <RichTextEditor
-                                    value={item.content || ""}
-                                    onChange={(html) => {
-                                      const newItems = [...block.data.items];
-                                      newItems[idx].content = html;
-                                      updateBlock(block.id, { items: newItems });
-                                    }}
-                                    placeholder="Penjelasan detail..."
-                                    minHeight={80}
-                                    light={true}
-                                  />
-                                </div>
+                                <RichTextEditor
+                                  value={item.content || ""}
+                                  onChange={(html) => {
+                                    const newItems = [...block.data.items];
+                                    newItems[idx].content = html;
+                                    updateBlock(block.id, { items: newItems });
+                                  }}
+                                  minHeight={60}
+                                  light={true}
+                                />
                               </div>
                             ))}
-                            
-                            <button
-                              type="button"
-                              onClick={() => {
-                                updateBlock(block.id, {
-                                  items: [...block.data.items, { title: "Poin Baru", content: "Penjelasan detail..." }]
-                                });
-                              }}
-                              className="w-full py-2 bg-slate-50 hover:bg-slate-100 rounded-xl font-bold text-[9px] uppercase tracking-wider text-slate-600 hover:text-slate-800 transition-all border border-dashed border-slate-250 cursor-pointer"
-                            >
-                              + Add Grid Item
-                            </button>
+                            <button type="button" onClick={() => {
+                              updateBlock(block.id, { items: [...block.data.items, { title: "Poin Baru", content: "Keterangan detail..." }] });
+                            }} className="w-full py-1.5 border border-dashed border-slate-300 rounded-lg text-[9px] text-slate-500 hover:bg-slate-50 font-bold uppercase tracking-wider cursor-pointer">+ Tambah Poin</button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="w-full h-full p-1 text-left">
+                          <div className={`grid gap-4 ${block.data.columns === 3 ? 'grid-cols-3' : 'grid-cols-2'}`}>
+                            {block.data.items.map((it: any, i: number) => (
+                              <div key={i} className="border border-slate-100 bg-white p-2.5 rounded-xl shadow-xs">
+                                <h4 className="font-bold text-slate-800 text-[11px] mb-1 truncate">{it.title || 'Judul Poin'}</h4>
+                                <div className="text-[9px] text-slate-500 leading-relaxed max-h-[80px] overflow-hidden no-scrollbar" dangerouslySetInnerHTML={{ __html: it.content || 'Penjelasan...' }} />
+                              </div>
+                            ))}
                           </div>
                         </div>
                       )}
+                    </div>
+                  )}
 
-                      {block.type === "carousel" && (
-                        <div className="space-y-4">
-                          <div className="flex items-center justify-between">
-                            <label className="text-[9px] font-bold text-slate-550 uppercase tracking-widest block">Images List</label>
-                            <span className="text-[9px] text-slate-500 font-mono">{(block.data.images || []).length} Foto</span>
-                          </div>
+                  {/* CAROUSEL SLIDER BLOCK */}
+                  {block.type === "carousel" && (
+                    <div className="w-full h-full">
+                      {activeBlockId === block.id ? (
+                        <div className="space-y-4 text-left" onClick={(e) => e.stopPropagation()}>
+                          <span className="text-[9px] font-black uppercase text-blue-600 tracking-wider">Edit Galeri Slider</span>
                           
-                          {block.data.images && block.data.images.length > 0 && (
-                            <div className="grid grid-cols-3 gap-3">
-                              {block.data.images.map((url: string, imgIdx: number) => (
-                                <div key={imgIdx} className="relative aspect-video rounded-xl overflow-hidden border border-slate-200 group bg-slate-50">
-                                  <img src={url} alt="" className="w-full h-full object-cover" />
-                                  <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                                    <button
-                                      type="button"
-                                      onClick={() => {
-                                        updateBlock(block.id, {
-                                          images: block.data.images.filter((_: string, i: number) => i !== imgIdx)
-                                        });
-                                      }}
-                                      className="p-1.5 bg-red-600 hover:bg-red-700 rounded text-white cursor-pointer"
-                                    >
-                                      <Trash2 size={12} />
-                                    </button>
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                          )}
+                          <div className="grid grid-cols-4 gap-2">
+                            {block.data.images?.map((img: string, idx: number) => (
+                              <div key={idx} className="relative aspect-video rounded-lg overflow-hidden border border-slate-200 group bg-white">
+                                <img src={img} alt="" className="w-full h-full object-cover" />
+                                <button type="button" onClick={() => {
+                                  updateBlock(block.id, { images: block.data.images.filter((_: string, i: number) => i !== idx) });
+                                }} className="absolute right-1 top-1 p-1 bg-red-600 text-white rounded cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity"><Trash2 size={8} /></button>
+                              </div>
+                            ))}
+                          </div>
 
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2 border-t border-slate-150">
-                            <div className="mb-4">
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  const url = window.prompt("Masukkan URL Gambar:");
-                                  if (url) {
-                                    updateBlock(block.id, {
-                                      images: [...(block.data.images || []), url]
-                                    });
-                                    toast.success("Gambar berhasil ditambahkan dari URL!");
-                                  }
-                                }}
-                                className="w-full h-32 rounded-2xl border-2 border-dashed border-slate-200 hover:border-blue-500/50 hover:bg-blue-500/5 transition-all flex flex-col items-center justify-center gap-2 text-slate-400 hover:text-blue-600 bg-slate-50/50 cursor-pointer"
-                              >
-                                <svg
-                                  width="32"
-                                  height="32"
-                                  viewBox="0 0 24 24"
-                                  fill="none"
-                                  stroke="currentColor"
-                                  strokeWidth="1.5"
-                                >
-                                  <path d="M12 5v14M5 12h14" />
-                                </svg>
-                                <span className="text-xs font-bold uppercase tracking-widest">
-                                  Tambah dari URL
-                                </span>
-                                <span className="text-[10px] text-slate-500">Alamat Web / External URL</span>
-                              </button>
-                            </div>
-
+                          <div className="grid grid-cols-2 gap-2">
+                            <button type="button" onClick={() => {
+                              const url = window.prompt("Masukkan URL Gambar:");
+                              if (url) {
+                                updateBlock(block.id, { images: [...(block.data.images || []), url] });
+                              }
+                            }} className="py-2 bg-slate-100 hover:bg-slate-200 border border-slate-200 rounded-xl text-[9px] font-bold uppercase tracking-wider cursor-pointer">Tambah URL</button>
                             <ImageUpload
                               value=""
                               light={true}
-                              resetKey={block.data.images?.length || 0}
                               onChange={(url) => {
-                                if (url) {
-                                  updateBlock(block.id, {
-                                    images: [...(block.data.images || []), url]
-                                  });
-                                  toast.success("Gambar berhasil diupload!");
-                                }
+                                if (url) updateBlock(block.id, { images: [...(block.data.images || []), url] });
                               }}
-                              label="Upload Foto Baru"
+                              label="Unggah File"
                             />
                           </div>
                         </div>
+                      ) : (
+                        <div className="w-full h-full flex items-center gap-2 overflow-x-auto py-1">
+                          {(block.data.images || []).length === 0 ? (
+                            <div className="w-full h-full flex items-center justify-center text-[10px] text-slate-400 bg-slate-50 rounded-xl min-h-[100px]">Galeri Slider Kosong</div>
+                          ) : (
+                            block.data.images.map((img: string, i: number) => (
+                              <img key={i} src={img} alt="" className="h-full aspect-video object-cover rounded-xl border border-slate-200 shrink-0" />
+                            ))
+                          )}
+                        </div>
                       )}
+                    </div>
+                  )}
 
-                      {block.type === "accordion" && (
-                        <div className="space-y-4">
-                          <label className="text-[9px] font-bold text-slate-550 uppercase tracking-widest block">Accordion Items</label>
-                          
-                          <div className="space-y-4">
+                  {/* ACCORDION (FAQ) BLOCK */}
+                  {block.type === "accordion" && (
+                    <div className="w-full h-full">
+                      {activeBlockId === block.id ? (
+                        <div className="space-y-4 text-left" onClick={(e) => e.stopPropagation()}>
+                          <span className="text-[9px] font-black uppercase text-blue-600 tracking-wider">Edit Accordion (FAQ)</span>
+                          <div className="space-y-3">
                             {block.data.items.map((item: any, idx: number) => (
-                              <div key={idx} className="p-4 rounded-xl bg-white border border-slate-200 space-y-3 shadow-sm text-left">
+                              <div key={idx} className="border border-slate-200 p-3 rounded-xl bg-white space-y-2">
                                 <div className="flex items-center justify-between">
-                                  <span className="text-[9px] font-black text-slate-400 uppercase">Item #{idx + 1}</span>
-                                  <button
-                                    type="button"
-                                    onClick={() => {
-                                      if (block.data.items.length > 1) {
-                                        updateBlock(block.id, {
-                                          items: block.data.items.filter((_: any, i: number) => i !== idx)
-                                        });
-                                      }
-                                    }}
-                                    className="text-[8px] font-bold text-red-500 hover:underline cursor-pointer"
-                                  >
-                                    Remove Item
-                                  </button>
+                                  <span className="text-[9px] font-black text-slate-400">FAQ #{idx+1}</span>
+                                  <button type="button" onClick={() => {
+                                    if (block.data.items.length > 1) {
+                                      updateBlock(block.id, { items: block.data.items.filter((_: any, i: number) => i !== idx) });
+                                    }
+                                  }} className="text-[8px] text-red-500 hover:underline">Hapus</button>
                                 </div>
                                 <input
                                   type="text"
@@ -2150,128 +2457,134 @@ export default function ProjectDetailManager({ projectId, onBack }: ProjectDetai
                                     newItems[idx].title = e.target.value;
                                     updateBlock(block.id, { items: newItems });
                                   }}
-                                  placeholder="Judul Accordion (FAQ)..."
-                                  className="w-full h-10 bg-slate-50 border border-slate-200 rounded-lg px-3 text-xs font-bold text-slate-900 focus:outline-none"
+                                  className="w-full h-8 bg-slate-50 border border-slate-200 rounded px-2 text-xs font-bold"
+                                  placeholder="Pertanyaan FAQ..."
                                 />
-                                <div>
-                                  <label className="text-[8px] font-bold text-slate-550 uppercase tracking-widest block mb-1">Penjelasan accordion (Rich Text)</label>
-                                  <RichTextEditor
-                                    value={item.content || ""}
-                                    onChange={(html) => {
-                                      const newItems = [...block.data.items];
-                                      newItems[idx].content = html;
-                                      updateBlock(block.id, { items: newItems });
-                                    }}
-                                    placeholder="Penjelasan accordion..."
-                                    minHeight={80}
-                                    light={true}
-                                  />
-                                </div>
+                                <RichTextEditor
+                                  value={item.content || ""}
+                                  onChange={(html) => {
+                                    const newItems = [...block.data.items];
+                                    newItems[idx].content = html;
+                                    updateBlock(block.id, { items: newItems });
+                                  }}
+                                  minHeight={60}
+                                  light={true}
+                                />
                               </div>
                             ))}
-                            
-                            <button
-                              type="button"
-                              onClick={() => {
-                                updateBlock(block.id, {
-                                  items: [...block.data.items, { title: "Poin Baru FAQ", content: "Jawaban/detail FAQ..." }]
-                                });
-                              }}
-                              className="w-full py-2 bg-slate-50 hover:bg-slate-100 rounded-xl font-bold text-[9px] uppercase tracking-wider text-slate-600 hover:text-slate-800 transition-all border border-dashed border-slate-250 cursor-pointer"
-                            >
-                              + Add Accordion Item
-                            </button>
+                            <button type="button" onClick={() => {
+                              updateBlock(block.id, { items: [...block.data.items, { title: "Poin Baru FAQ", content: "Jawaban/detail FAQ..." }] });
+                            }} className="w-full py-1.5 border border-dashed border-slate-300 rounded-lg text-[9px] text-slate-500 hover:bg-slate-50 font-bold uppercase tracking-wider cursor-pointer">+ Tambah FAQ</button>
                           </div>
                         </div>
+                      ) : (
+                        <div className="w-full h-full p-1 space-y-2 text-left">
+                          {block.data.items.map((it: any, i: number) => (
+                            <div key={i} className="border border-slate-150 rounded-xl p-2 bg-white">
+                              <div className="flex items-center justify-between font-bold text-[11px] text-slate-800">
+                                <span>{it.title || 'Judul FAQ'}</span>
+                                <ChevronDown size={12} className="text-slate-400" />
+                              </div>
+                              <div className="text-[9px] text-slate-500 mt-1 leading-relaxed max-h-[60px] overflow-hidden no-scrollbar" dangerouslySetInnerHTML={{ __html: it.content || 'Penjelasan...' }} />
+                            </div>
+                          ))}
+                        </div>
                       )}
+                    </div>
+                  )}
 
-                      {block.type === "split-banner" && (
-                        <div className="space-y-4">
-                          <div className="grid grid-cols-2 gap-4 text-left">
+                  {/* SPLIT BANNER BLOCK */}
+                  {block.type === "split-banner" && (
+                    <div className="w-full h-full">
+                      {activeBlockId === block.id ? (
+                        <div className="space-y-4 text-left" onClick={(e) => e.stopPropagation()}>
+                          <span className="text-[9px] font-black uppercase text-blue-600 tracking-wider">Edit Split Banner</span>
+                          <div className="grid grid-cols-2 gap-2">
                             <div>
-                              <label className="text-[9px] font-bold text-slate-550 uppercase tracking-widest block mb-2">Media Layout</label>
+                              <label className="text-[8px] font-bold text-slate-500 uppercase tracking-widest block mb-1">Tata Letak</label>
                               <AdminDropdown
                                 value={block.data.layout}
                                 onChange={(v) => updateBlock(block.id, { layout: v })}
                                 size="compact"
-                                className="h-11"
+                                className="h-10 text-[10px]"
                                 light={true}
                                 options={[
-                                  { value: "left", label: "Media Left / Text Right" },
-                                  { value: "right", label: "Media Right / Text Left" },
+                                  { value: "left", label: "Media Kiri / Teks Kanan" },
+                                  { value: "right", label: "Media Kanan / Teks Kiri" }
                                 ]}
                               />
                             </div>
                             <div>
-                              <label className="text-[9px] font-bold text-slate-550 uppercase tracking-widest block mb-2">Media Type</label>
+                              <label className="text-[8px] font-bold text-slate-500 uppercase tracking-widest block mb-1">Tipe Media</label>
                               <AdminDropdown
                                 value={block.data.mediaType}
                                 onChange={(v) => updateBlock(block.id, { mediaType: v })}
                                 size="compact"
-                                className="h-11"
+                                className="h-10 text-[10px]"
                                 light={true}
                                 options={[
-                                  { value: "image", label: "Image" },
-                                  { value: "video", label: "Video URL (YouTube)" },
+                                  { value: "image", label: "Gambar (Image)" },
+                                  { value: "video", label: "Video YouTube" }
                                 ]}
                               />
                             </div>
                           </div>
-
-                          <div className="grid grid-cols-2 gap-4 text-left">
-                            <div className="col-span-2">
-                              <label className="text-[9px] font-bold text-slate-555 uppercase tracking-widest block mb-2">Media URL</label>
-                              <input
-                                type="text"
-                                value={block.data.mediaUrl}
-                                onChange={(e) => updateBlock(block.id, { mediaUrl: e.target.value })}
-                                placeholder="Masukkan URL foto/video..."
-                                className="w-full h-11 bg-white border border-slate-200 rounded-xl px-3.5 text-xs text-slate-900 focus:outline-none focus:border-blue-500/50"
-                              />
-                            </div>
-                          </div>
-                          
+                          <input
+                            type="text"
+                            value={block.data.mediaUrl}
+                            onChange={(e) => updateBlock(block.id, { mediaUrl: e.target.value })}
+                            className="w-full h-10 bg-white border border-slate-200 rounded-lg px-3 text-xs"
+                            placeholder="Media URL..."
+                          />
                           {block.data.mediaType === "image" && (
-                            <div className="text-left">
-                              <label className="text-[9px] font-bold text-slate-550 uppercase tracking-widest block mb-2">Upload Banner Image</label>
-                              <ImageUpload
-                                value=""
-                                light={true}
-                                onChange={(mediaUrl) => updateBlock(block.id, { mediaUrl })}
-                                label="Upload Foto Banner"
-                              />
-                            </div>
-                          )}
-
-                          <div className="space-y-3 text-left">
-                            <label className="text-[9px] font-bold text-slate-500 uppercase tracking-widest block">Judul Banner</label>
-                            <input
-                              type="text"
-                              value={block.data.title}
-                              onChange={(e) => updateBlock(block.id, { title: e.target.value })}
-                              placeholder="Judul Banner..."
-                              className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs font-bold text-slate-900 focus:outline-none focus:border-blue-500/50"
-                            />
-                          </div>
-
-                          <div className="space-y-3 text-left">
-                            <label className="text-[9px] font-bold text-slate-500 uppercase tracking-widest block">Konten Banner (Rich Text)</label>
-                            <RichTextEditor
-                              value={block.data.content || ""}
-                              onChange={(html) => updateBlock(block.id, { content: html })}
-                              placeholder="Tulis deskripsi penjelasan di sini..."
-                              minHeight={100}
+                            <ImageUpload
+                              value={block.data.mediaUrl}
+                              onChange={(mediaUrl) => updateBlock(block.id, { mediaUrl })}
                               light={true}
                             />
+                          )}
+                          <input
+                            type="text"
+                            value={block.data.title}
+                            onChange={(e) => updateBlock(block.id, { title: e.target.value })}
+                            className="w-full h-10 bg-white border border-slate-200 rounded-lg px-3 text-xs font-bold"
+                            placeholder="Judul Banner..."
+                          />
+                          <RichTextEditor
+                            value={block.data.content || ""}
+                            onChange={(html) => updateBlock(block.id, { content: html })}
+                            minHeight={80}
+                            light={true}
+                          />
+                        </div>
+                      ) : (
+                        <div className="w-full h-full p-1 flex gap-4 items-center text-left">
+                          <div className={`flex w-full gap-4 items-center ${block.data.layout === 'right' ? 'flex-row-reverse' : 'flex-row'}`}>
+                            <div className="w-1/3 aspect-video bg-slate-100 rounded-xl overflow-hidden border border-slate-200 shrink-0 flex items-center justify-center">
+                              {block.data.mediaUrl ? (
+                                block.data.mediaType === "video" ? (
+                                  <div className="w-full h-full flex items-center justify-center text-[10px] text-slate-400 bg-slate-950">Video</div>
+                                ) : (
+                                  <img src={block.data.mediaUrl} alt="" className="w-full h-full object-cover" />
+                                )
+                              ) : (
+                                <div className="w-full h-full flex items-center justify-center text-[10px] text-slate-400">Media</div>
+                              )}
+                            </div>
+                            <div className="flex-1 space-y-1 overflow-hidden">
+                              <h4 className="font-bold text-[11px] text-slate-800 truncate">{block.data.title || 'Judul Banner'}</h4>
+                              <div className="text-[9px] text-slate-500 leading-relaxed max-h-[60px] overflow-hidden no-scrollbar" dangerouslySetInnerHTML={{ __html: block.data.content || 'Konten banner...' }} />
+                            </div>
                           </div>
                         </div>
                       )}
-                    </SortableBlockWrapper>
-                  ))
-                )}
+                    </div>
+                  )}
+
+                </div>
               </div>
-            </SortableContext>
-          </DndContext>
+            ))
+          )}
         </div>
       </div>
 
@@ -2287,164 +2600,422 @@ export default function ProjectDetailManager({ projectId, onBack }: ProjectDetai
         {rightSidebarOpen ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
       </button>
 
-      {/* Right Sidebar - Insert Block Elements */}
+      {/* Right Sidebar - Insert Block Elements & uploads manager (Symmetrical to Left Sidebar) */}
       <aside 
-        className={`fixed right-0 top-0 h-screen z-40 bg-[#050a18]/95 backdrop-blur-2xl border-l border-white/5 flex flex-col transition-all duration-300 overflow-y-auto no-scrollbar pt-24 ${
+        className={`fixed right-0 top-0 h-screen z-40 bg-[#050a18]/95 backdrop-blur-2xl border-l border-white/5 flex flex-col transition-all duration-300 overflow-y-auto no-scrollbar pt-6 ${
           rightSidebarOpen ? "w-80 px-6" : "w-0 p-0 overflow-hidden"
         }`}
       >
-        <div className="flex items-center justify-between mb-6 pb-3 border-b border-white/5 shrink-0 animate-fade-in">
-          <div>
-            <h4 className="text-white font-extrabold text-xs uppercase tracking-wider">
+        <div className="flex items-center gap-3.5 mb-6 px-1 pt-2 shrink-0 border-b border-white/5 pb-5 select-none">
+          <div className="w-11 h-11 rounded-xl bg-blue-600 flex items-center justify-center shadow-lg shadow-blue-500/30 shrink-0">
+            <Layers size={20} className="text-white" />
+          </div>
+          <div className="flex flex-col justify-center text-left pl-0.5">
+            <h2 className="font-extrabold text-lg tracking-wider text-white uppercase leading-tight">
               Insert Elements
-            </h4>
-            <span className="text-[9px] font-black text-blue-500/90 tracking-[0.2em] uppercase">
+            </h2>
+            <span className="text-[9px] font-black text-blue-500/90 tracking-[0.25em] uppercase whitespace-nowrap leading-none mt-0.5">
               No-Code Blocks
             </span>
           </div>
         </div>
 
-        <div className="flex-1 space-y-3 pb-8 text-left animate-fade-in">
-          <label className="text-[9px] font-bold text-slate-500 uppercase tracking-widest block mb-2">
-            Pilih Elemen untuk Ditambahkan:
-          </label>
-
+        {/* Tab selection ribbon */}
+        <div className="grid grid-cols-2 gap-2 mb-6 p-1 bg-white/5 rounded-xl shrink-0 select-none">
           <button
             type="button"
-            onClick={() => addBlock("text")}
-            className="w-full flex items-center justify-between p-3.5 rounded-2xl bg-white/5 border border-white/5 text-left text-slate-300 hover:text-white hover:bg-blue-600 hover:border-blue-500/50 hover:shadow-lg hover:shadow-blue-500/10 transition-all duration-300 group cursor-pointer"
+            onClick={() => setSidebarTab("blocks")}
+            className={`py-2 text-[10px] font-bold uppercase tracking-wider rounded-lg transition-all cursor-pointer ${
+              sidebarTab === "blocks"
+                ? "bg-blue-600 text-white shadow"
+                : "text-slate-400 hover:text-slate-200"
+            }`}
           >
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-xl bg-blue-500/10 group-hover:bg-white/20 flex items-center justify-center transition-all shrink-0">
-                <FileText size={16} className="text-blue-400 group-hover:text-white" />
-              </div>
-              <div>
-                <p className="text-xs font-black uppercase tracking-wider leading-none mb-1">Teks / Rich Text</p>
-                <span className="text-[9px] text-slate-500 group-hover:text-slate-200">Editor Paragraf WYSIWYG</span>
-              </div>
-            </div>
-            <Plus size={14} className="text-slate-500 group-hover:text-white" />
+            Elemen
           </button>
-
           <button
             type="button"
-            onClick={() => addBlock("media")}
-            className="w-full flex items-center justify-between p-3.5 rounded-2xl bg-white/5 border border-white/5 text-left text-slate-300 hover:text-white hover:bg-blue-600 hover:border-blue-500/50 hover:shadow-lg hover:shadow-blue-500/10 transition-all duration-300 group cursor-pointer"
+            onClick={() => setSidebarTab("uploads")}
+            className={`py-2 text-[10px] font-bold uppercase tracking-wider rounded-lg transition-all cursor-pointer ${
+              sidebarTab === "uploads"
+                ? "bg-blue-600 text-white shadow"
+                : "text-slate-400 hover:text-slate-200"
+            }`}
           >
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-xl bg-blue-500/10 group-hover:bg-white/20 flex items-center justify-center transition-all shrink-0">
-                <ImageIcon size={16} className="text-blue-400 group-hover:text-white" />
-              </div>
-              <div>
-                <p className="text-xs font-black uppercase tracking-wider leading-none mb-1">Foto / Video</p>
-                <span className="text-[9px] text-slate-500 group-hover:text-slate-200">Kamera Media & Embed Link</span>
-              </div>
-            </div>
-            <Plus size={14} className="text-slate-500 group-hover:text-white" />
-          </button>
-
-          <button
-            type="button"
-            onClick={() => addBlock("grid")}
-            className="w-full flex items-center justify-between p-3.5 rounded-2xl bg-white/5 border border-white/5 text-left text-slate-300 hover:text-white hover:bg-blue-600 hover:border-blue-500/50 hover:shadow-lg hover:shadow-blue-500/10 transition-all duration-300 group cursor-pointer"
-          >
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-xl bg-blue-500/10 group-hover:bg-white/20 flex items-center justify-center transition-all shrink-0">
-                <Columns size={16} className="text-blue-400 group-hover:text-white" />
-              </div>
-              <div>
-                <p className="text-xs font-black uppercase tracking-wider leading-none mb-1">Grid Kolom</p>
-                <span className="text-[9px] text-slate-500 group-hover:text-slate-200">Susunan Multi-kolom</span>
-              </div>
-            </div>
-            <Plus size={14} className="text-slate-500 group-hover:text-white" />
-          </button>
-
-          <button
-            type="button"
-            onClick={() => addBlock("split-banner")}
-            className="w-full flex items-center justify-between p-3.5 rounded-2xl bg-white/5 border border-white/5 text-left text-slate-300 hover:text-white hover:bg-blue-600 hover:border-blue-500/50 hover:shadow-lg hover:shadow-blue-500/10 transition-all duration-300 group cursor-pointer"
-          >
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-xl bg-blue-500/10 group-hover:bg-white/20 flex items-center justify-center transition-all shrink-0">
-                <AlignLeft size={16} className="text-blue-400 group-hover:text-white" />
-              </div>
-              <div>
-                <p className="text-xs font-black uppercase tracking-wider leading-none mb-1">Split Banner</p>
-                <span className="text-[9px] text-slate-500 group-hover:text-slate-200">Banner Teks & Media</span>
-              </div>
-            </div>
-            <Plus size={14} className="text-slate-500 group-hover:text-white" />
-          </button>
-
-          <button
-            type="button"
-            onClick={() => addBlock("table")}
-            className="w-full flex items-center justify-between p-3.5 rounded-2xl bg-white/5 border border-white/5 text-left text-slate-300 hover:text-white hover:bg-blue-600 hover:border-blue-500/50 hover:shadow-lg hover:shadow-blue-500/10 transition-all duration-300 group cursor-pointer"
-          >
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-xl bg-blue-500/10 group-hover:bg-white/20 flex items-center justify-center transition-all shrink-0">
-                <Table size={16} className="text-blue-400 group-hover:text-white" />
-              </div>
-              <div>
-                <p className="text-xs font-black uppercase tracking-wider leading-none mb-1">Tabel Data</p>
-                <span className="text-[9px] text-slate-500 group-hover:text-slate-200">Tabel Informasi Interaktif</span>
-              </div>
-            </div>
-            <Plus size={14} className="text-slate-500 group-hover:text-white" />
-          </button>
-
-          <button
-            type="button"
-            onClick={() => addBlock("accordion")}
-            className="w-full flex items-center justify-between p-3.5 rounded-2xl bg-white/5 border border-white/5 text-left text-slate-300 hover:text-white hover:bg-blue-600 hover:border-blue-500/50 hover:shadow-lg hover:shadow-blue-500/10 transition-all duration-300 group cursor-pointer"
-          >
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-xl bg-blue-500/10 group-hover:bg-white/20 flex items-center justify-center transition-all shrink-0">
-                <ChevronDown size={16} className="text-blue-400 group-hover:text-white" />
-              </div>
-              <div>
-                <p className="text-xs font-black uppercase tracking-wider leading-none mb-1">Accordion (FAQ)</p>
-                <span className="text-[9px] text-slate-500 group-hover:text-slate-200">Daftar Lipat FAQ</span>
-              </div>
-            </div>
-            <Plus size={14} className="text-slate-500 group-hover:text-white" />
-          </button>
-
-          <button
-            type="button"
-            onClick={() => addBlock("carousel")}
-            className="w-full flex items-center justify-between p-3.5 rounded-2xl bg-white/5 border border-white/5 text-left text-slate-300 hover:text-white hover:bg-blue-600 hover:border-blue-500/50 hover:shadow-lg hover:shadow-blue-500/10 transition-all duration-300 group cursor-pointer"
-          >
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-xl bg-blue-500/10 group-hover:bg-white/20 flex items-center justify-center transition-all shrink-0">
-                <Film size={16} className="text-blue-400 group-hover:text-white" />
-              </div>
-              <div>
-                <p className="text-xs font-black uppercase tracking-wider leading-none mb-1">Galeri Slider</p>
-                <span className="text-[9px] text-slate-500 group-hover:text-slate-200">Slider Carousel Gambar</span>
-              </div>
-            </div>
-            <Plus size={14} className="text-slate-500 group-hover:text-white" />
-          </button>
-
-          <button
-            type="button"
-            onClick={() => addBlock("divider")}
-            className="w-full flex items-center justify-between p-3.5 rounded-2xl bg-white/5 border border-white/5 text-left text-slate-300 hover:text-white hover:bg-blue-600 hover:border-blue-500/50 hover:shadow-lg hover:shadow-blue-500/10 transition-all duration-300 group cursor-pointer"
-          >
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-xl bg-blue-500/10 group-hover:bg-white/20 flex items-center justify-center transition-all shrink-0">
-                <LinkIcon size={16} className="text-blue-400 group-hover:text-white" />
-              </div>
-              <div>
-                <p className="text-xs font-black uppercase tracking-wider leading-none mb-1">Divider Kustom</p>
-                <span className="text-[9px] text-slate-500 group-hover:text-slate-200">Garis Pembatas Layout</span>
-              </div>
-            </div>
-            <Plus size={14} className="text-slate-500 group-hover:text-white" />
+            Unggahan
           </button>
         </div>
+
+        {sidebarTab === "blocks" ? (
+          <div className="flex-1 space-y-3 pb-8 text-left animate-fade-in">
+            <label className="text-[9px] font-bold text-slate-500 uppercase tracking-widest block mb-2">
+              Pilih Elemen untuk Ditambahkan:
+            </label>
+
+            <button
+              type="button"
+              onClick={() => addBlock("text")}
+              className="w-full flex items-center justify-between p-3.5 rounded-2xl bg-white/5 border border-white/5 text-left text-slate-300 hover:text-white hover:bg-blue-600 hover:border-blue-500/50 hover:shadow-lg hover:shadow-blue-500/10 transition-all duration-300 group cursor-pointer"
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-xl bg-blue-500/10 group-hover:bg-white/20 flex items-center justify-center transition-all shrink-0">
+                  <FileText size={16} className="text-blue-400 group-hover:text-white" />
+                </div>
+                <div>
+                  <p className="text-xs font-black uppercase tracking-wider leading-none mb-1">Teks / Rich Text</p>
+                  <span className="text-[9px] text-slate-500 group-hover:text-slate-200">Editor Paragraf WYSIWYG</span>
+                </div>
+              </div>
+              <Plus size={14} className="text-slate-500 group-hover:text-white" />
+            </button>
+
+            <button
+              type="button"
+              onClick={() => addBlock("media")}
+              className="w-full flex items-center justify-between p-3.5 rounded-2xl bg-white/5 border border-white/5 text-left text-slate-300 hover:text-white hover:bg-blue-600 hover:border-blue-500/50 hover:shadow-lg hover:shadow-blue-500/10 transition-all duration-300 group cursor-pointer"
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-xl bg-blue-500/10 group-hover:bg-white/20 flex items-center justify-center transition-all shrink-0">
+                  <ImageIcon size={16} className="text-blue-400 group-hover:text-white" />
+                </div>
+                <div>
+                  <p className="text-xs font-black uppercase tracking-wider leading-none mb-1">Foto / Video</p>
+                  <span className="text-[9px] text-slate-500 group-hover:text-slate-200">Kamera Media & Embed Link</span>
+                </div>
+              </div>
+              <Plus size={14} className="text-slate-500 group-hover:text-white" />
+            </button>
+
+            <button
+              type="button"
+              onClick={() => addBlock("grid")}
+              className="w-full flex items-center justify-between p-3.5 rounded-2xl bg-white/5 border border-white/5 text-left text-slate-300 hover:text-white hover:bg-blue-600 hover:border-blue-500/50 hover:shadow-lg hover:shadow-blue-500/10 transition-all duration-300 group cursor-pointer"
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-xl bg-blue-500/10 group-hover:bg-white/20 flex items-center justify-center transition-all shrink-0">
+                  <Columns size={16} className="text-blue-400 group-hover:text-white" />
+                </div>
+                <div>
+                  <p className="text-xs font-black uppercase tracking-wider leading-none mb-1">Grid Kolom</p>
+                  <span className="text-[9px] text-slate-500 group-hover:text-slate-200">Susunan Multi-kolom</span>
+                </div>
+              </div>
+              <Plus size={14} className="text-slate-500 group-hover:text-white" />
+            </button>
+
+            <button
+              type="button"
+              onClick={() => addBlock("split-banner")}
+              className="w-full flex items-center justify-between p-3.5 rounded-2xl bg-white/5 border border-white/5 text-left text-slate-300 hover:text-white hover:bg-blue-600 hover:border-blue-500/50 hover:shadow-lg hover:shadow-blue-500/10 transition-all duration-300 group cursor-pointer"
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-xl bg-blue-500/10 group-hover:bg-white/20 flex items-center justify-center transition-all shrink-0">
+                  <AlignLeft size={16} className="text-blue-400 group-hover:text-white" />
+                </div>
+                <div>
+                  <p className="text-xs font-black uppercase tracking-wider leading-none mb-1">Split Banner</p>
+                  <span className="text-[9px] text-slate-500 group-hover:text-slate-200">Banner Teks & Media</span>
+                </div>
+              </div>
+              <Plus size={14} className="text-slate-500 group-hover:text-white" />
+            </button>
+
+            <button
+              type="button"
+              onClick={() => addBlock("table")}
+              className="w-full flex items-center justify-between p-3.5 rounded-2xl bg-white/5 border border-white/5 text-left text-slate-300 hover:text-white hover:bg-blue-600 hover:border-blue-500/50 hover:shadow-lg hover:shadow-blue-500/10 transition-all duration-300 group cursor-pointer"
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-xl bg-blue-500/10 group-hover:bg-white/20 flex items-center justify-center transition-all shrink-0">
+                  <Table size={16} className="text-blue-400 group-hover:text-white" />
+                </div>
+                <div>
+                  <p className="text-xs font-black uppercase tracking-wider leading-none mb-1">Tabel Data</p>
+                  <span className="text-[9px] text-slate-500 group-hover:text-slate-200">Tabel Informasi Interaktif</span>
+                </div>
+              </div>
+              <Plus size={14} className="text-slate-500 group-hover:text-white" />
+            </button>
+
+            <button
+              type="button"
+              onClick={() => addBlock("accordion")}
+              className="w-full flex items-center justify-between p-3.5 rounded-2xl bg-white/5 border border-white/5 text-left text-slate-300 hover:text-white hover:bg-blue-600 hover:border-blue-500/50 hover:shadow-lg hover:shadow-blue-500/10 transition-all duration-300 group cursor-pointer"
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-xl bg-blue-500/10 group-hover:bg-white/20 flex items-center justify-center transition-all shrink-0">
+                  <ChevronDown size={16} className="text-blue-400 group-hover:text-white" />
+                </div>
+                <div>
+                  <p className="text-xs font-black uppercase tracking-wider leading-none mb-1">Accordion (FAQ)</p>
+                  <span className="text-[9px] text-slate-500 group-hover:text-slate-200">Daftar Lipat FAQ</span>
+                </div>
+              </div>
+              <Plus size={14} className="text-slate-500 group-hover:text-white" />
+            </button>
+
+            <button
+              type="button"
+              onClick={() => addBlock("carousel")}
+              className="w-full flex items-center justify-between p-3.5 rounded-2xl bg-white/5 border border-white/5 text-left text-slate-300 hover:text-white hover:bg-blue-600 hover:border-blue-500/50 hover:shadow-lg hover:shadow-blue-500/10 transition-all duration-300 group cursor-pointer"
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-xl bg-blue-500/10 group-hover:bg-white/20 flex items-center justify-center transition-all shrink-0">
+                  <Film size={16} className="text-blue-400 group-hover:text-white" />
+                </div>
+                <div>
+                  <p className="text-xs font-black uppercase tracking-wider leading-none mb-1">Galeri Slider</p>
+                  <span className="text-[9px] text-slate-500 group-hover:text-slate-200">Slider Carousel Gambar</span>
+                </div>
+              </div>
+              <Plus size={14} className="text-slate-500 group-hover:text-white" />
+            </button>
+
+            <button
+              type="button"
+              onClick={() => addBlock("divider")}
+              className="w-full flex items-center justify-between p-3.5 rounded-2xl bg-white/5 border border-white/5 text-left text-slate-300 hover:text-white hover:bg-blue-600 hover:border-blue-500/50 hover:shadow-lg hover:shadow-blue-500/10 transition-all duration-300 group cursor-pointer"
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-xl bg-blue-500/10 group-hover:bg-white/20 flex items-center justify-center transition-all shrink-0">
+                  <LinkIcon size={16} className="text-blue-400 group-hover:text-white" />
+                </div>
+                <div>
+                  <p className="text-xs font-black uppercase tracking-wider leading-none mb-1">Divider Kustom</p>
+                  <span className="text-[9px] text-slate-500 group-hover:text-slate-200">Garis Pembatas Layout</span>
+                </div>
+              </div>
+              <Plus size={14} className="text-slate-500 group-hover:text-white" />
+            </button>
+          </div>
+        ) : (
+          /* Canva Uploads Tab Content */
+          <div className="flex-1 flex flex-col min-h-0 text-left animate-fade-in pb-8">
+            <input
+              type="file"
+              id="canva-file-uploader"
+              className="hidden"
+              onChange={(e) => {
+                const fileType = mediaTab === "video" ? "video" : mediaTab === "audio" ? "audio" : "image";
+                handleMediaUpload(e, fileType);
+              }}
+              accept={mediaTab === "video" ? "video/*" : mediaTab === "audio" ? "audio/*" : "image/*"}
+            />
+            
+            <div className="flex items-center gap-2 mb-4">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" size={13} />
+                <input
+                  type="text"
+                  placeholder="Cari file unggahan..."
+                  className="w-full bg-white/5 border border-white/5 hover:border-white/10 focus:border-blue-500/50 rounded-xl pl-9 pr-4 py-2 text-xs text-slate-200 placeholder-slate-500 outline-none"
+                />
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  const inputEl = document.getElementById("canva-file-uploader");
+                  inputEl?.click();
+                }}
+                className="w-9 h-9 rounded-xl bg-blue-600 hover:bg-blue-700 text-white flex items-center justify-center shrink-0 transition-colors shadow-lg cursor-pointer"
+                title="Unggah Aset Baru"
+              >
+                <UploadCloud size={16} />
+              </button>
+            </div>
+
+            {/* Canva internal tabs */}
+            <div className="flex items-center gap-3 border-b border-white/5 pb-2 mb-4 text-xs font-bold text-slate-400">
+              {(["images", "video", "audio", "folders"] as const).map((tab) => (
+                <button
+                  key={tab}
+                  type="button"
+                  onClick={() => {
+                    setMediaTab(tab);
+                    if (tab !== "folders") {
+                      setSelectedFolderId(null);
+                    }
+                  }}
+                  className={`pb-1.5 border-b-2 transition-all capitalize cursor-pointer ${
+                    mediaTab === tab
+                      ? "border-blue-500 text-white font-extrabold"
+                      : "border-transparent hover:text-slate-200"
+                  }`}
+                >
+                  {tab === "images" ? "Gambar" : tab === "folders" ? "Folder" : tab}
+                </button>
+              ))}
+            </div>
+
+            {/* Tab contents list scroll area */}
+            <div className="flex-1 overflow-y-auto no-scrollbar space-y-4 pr-1">
+              {mediaTab === "folders" ? (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-black text-slate-500 uppercase tracking-wider">Folder List</span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const name = window.prompt("Nama Folder Baru:");
+                        if (name) {
+                          setMediaFolders(prev => [...prev, { id: generateId(), name }]);
+                          toast.success("Folder berhasil dibuat!");
+                        }
+                      }}
+                      className="text-[9px] font-extrabold bg-blue-500/10 text-blue-400 hover:bg-blue-500 hover:text-white px-2.5 py-1.5 rounded-lg border border-blue-500/20 transition-all cursor-pointer flex items-center gap-1"
+                    >
+                      <FolderPlus size={10} />
+                      <span>Buat Folder</span>
+                    </button>
+                  </div>
+
+                  {selectedFolderId ? (
+                    <div>
+                      <button
+                        type="button"
+                        onClick={() => setSelectedFolderId(null)}
+                        className="text-[9px] font-extrabold text-blue-400 hover:underline mb-3 flex items-center gap-1 cursor-pointer"
+                      >
+                        ← Kembali ke Semua Folder
+                      </button>
+                      <div className="p-3 bg-slate-900/40 rounded-2xl border border-white/5 text-center text-xs text-slate-500 mb-2">
+                        Folder: <strong className="text-white">{mediaFolders.find(f => f.id === selectedFolderId)?.name}</strong>
+                      </div>
+                      
+                      {mediaFiles.filter(f => f.folderId === selectedFolderId).length === 0 ? (
+                        <p className="text-[10px] text-center text-slate-600 py-6">Folder ini kosong.</p>
+                      ) : (
+                        <div className="grid grid-cols-2 gap-2">
+                          {mediaFiles.filter(f => f.folderId === selectedFolderId).map(file => (
+                            <div 
+                              key={file.id} 
+                              onClick={() => insertMediaBlock(file)}
+                              className="group/file relative aspect-video bg-slate-900 border border-white/5 hover:border-blue-500 rounded-xl overflow-hidden cursor-pointer transition-all"
+                            >
+                              {file.type === "image" ? (
+                                <img src={file.url} alt="" className="w-full h-full object-cover" />
+                              ) : (
+                                <div className="w-full h-full flex flex-col items-center justify-center p-2 text-center">
+                                  {file.type === "video" ? <Video size={16} className="text-blue-400" /> : <Music size={16} className="text-emerald-400" />}
+                                  <span className="text-[8px] text-slate-400 truncate w-full mt-1">{file.name}</span>
+                                </div>
+                              )}
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setMediaFiles(prev => prev.filter(f => f.id !== file.id));
+                                  toast.success("Aset dihapus!");
+                                }}
+                                className="absolute right-1 top-1 p-1 bg-red-600 text-white rounded opacity-0 group-hover/file:opacity-100 transition-opacity cursor-pointer animate-fade-in"
+                              >
+                                <Trash2 size={8} />
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 gap-2">
+                      {mediaFolders.length === 0 ? (
+                        <div className="text-center py-8 text-xs text-slate-600">Belum ada folder yang dibuat.</div>
+                      ) : (
+                        mediaFolders.map(folder => (
+                          <div
+                            key={folder.id}
+                            onClick={() => setSelectedFolderId(folder.id)}
+                            className="flex items-center justify-between p-3.5 bg-slate-900/40 hover:bg-slate-900 border border-white/5 hover:border-blue-500 rounded-2xl cursor-pointer transition-all group/folder"
+                          >
+                            <div className="flex items-center gap-3">
+                              <Folder className="text-blue-400" size={18} />
+                              <span className="text-xs font-bold text-slate-200">{folder.name}</span>
+                              <span className="text-[9px] text-slate-500">({mediaFiles.filter(f => f.folderId === folder.id).length} file)</span>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setMediaFolders(prev => prev.filter(f => f.id !== folder.id));
+                                setMediaFiles(prev => prev.map(f => f.folderId === folder.id ? { ...f, folderId: undefined } : f));
+                                toast.success("Folder dihapus!");
+                              }}
+                              className="p-1 hover:bg-red-500/20 text-slate-500 hover:text-red-400 rounded opacity-0 group-hover/folder:opacity-100 transition-opacity cursor-pointer"
+                            >
+                              <Trash2 size={12} />
+                            </button>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-black text-slate-500 uppercase tracking-wider">
+                      {mediaTab === "images" ? "Daftar Gambar" : mediaTab === "video" ? "Daftar Video" : "Daftar Audio"}
+                    </span>
+                  </div>
+
+                  {mediaFiles.filter(f => f.type === (mediaTab === "images" ? "image" : mediaTab === "video" ? "video" : "audio")).length === 0 ? (
+                    <div className="text-center py-12 border border-dashed border-white/5 rounded-2xl text-xs text-slate-600">
+                      Belum ada file {mediaTab === "images" ? "gambar" : mediaTab === "video" ? "video" : "audio"}.
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-2 gap-2">
+                      {mediaFiles.filter(f => f.type === (mediaTab === "images" ? "image" : mediaTab === "video" ? "video" : "audio")).map(file => (
+                        <div
+                          key={file.id}
+                          onClick={() => insertMediaBlock(file)}
+                          className="group/file relative aspect-video bg-slate-900 border border-white/5 hover:border-blue-500 rounded-xl overflow-hidden cursor-pointer transition-all"
+                          title="Klik untuk memasukkan ke Kanvas"
+                        >
+                          {file.type === "image" ? (
+                            <img src={file.url} alt="" className="w-full h-full object-cover" />
+                          ) : (
+                            <div className="w-full h-full flex flex-col items-center justify-center p-2 text-center">
+                              {file.type === "video" ? <Video size={16} className="text-blue-400" /> : <Music size={16} className="text-emerald-400" />}
+                              <span className="text-[8px] text-slate-400 truncate w-full mt-1">{file.name}</span>
+                            </div>
+                          )}
+                          <div className="absolute left-1 top-1 opacity-0 group-hover/file:opacity-100 transition-opacity">
+                            <select
+                              value={file.folderId || ""}
+                              onChange={(e) => {
+                                const fid = e.target.value || undefined;
+                                setMediaFiles(prev => prev.map(f => f.id === file.id ? { ...f, folderId: fid } : f));
+                                toast.success("Folder file diperbarui!");
+                              }}
+                              className="bg-slate-950 text-white border border-white/10 rounded text-[8px] p-0.5 outline-none cursor-pointer"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <option value="">No Folder</option>
+                              {mediaFolders.map(fo => (
+                                <option key={fo.id} value={fo.id}>{fo.name}</option>
+                              ))}
+                            </select>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setMediaFiles(prev => prev.filter(f => f.id !== file.id));
+                              toast.success("Aset dihapus!");
+                            }}
+                            className="absolute right-1 top-1 p-1 bg-red-600 text-white rounded opacity-0 group-hover/file:opacity-100 transition-opacity cursor-pointer animate-fade-in"
+                          >
+                            <Trash2 size={8} />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </aside>
 
       {/* Custom Confirmation Modal */}

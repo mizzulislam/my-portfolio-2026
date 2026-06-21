@@ -159,7 +159,7 @@ export function AdminSelect({
   // Parse options from children for backward compat
   const opts: DropdownOption[] = React.Children.toArray(children)
     .filter((c): c is React.ReactElement => React.isValidElement(c))
-    .map((c) => ({ value: String(c.props.value ?? ""), label: String(c.props.children ?? "") }));
+    .map((c: any) => ({ value: String(c.props.value ?? ""), label: String(c.props.children ?? "") }));
   return (
     <AdminDropdown
       value={String(value ?? "")}

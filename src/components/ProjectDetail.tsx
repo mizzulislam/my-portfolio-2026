@@ -299,6 +299,58 @@ function BlockRenderer({ block, isDark }: { block: any; isDark: boolean }) {
   }
 }
 
+function AbsoluteCanvasRenderer({ blocks, isDark }: { blocks: any[]; isDark: boolean }) {
+  const containerRef = React.useRef<HTMLDivElement>(null);
+  const [scale, setScale] = useState(1);
+  const canvasHeight = Math.max(...blocks.map((b: any) => (b.position?.y || 0) + (b.position?.h || 200)), 500) + 50;
+
+  useEffect(() => {
+    const handleResize = () => {
+      if (containerRef.current) {
+        const parentWidth = containerRef.current.parentElement?.getBoundingClientRect().width || 850;
+        setScale(Math.min(1, parentWidth / 850));
+      }
+    };
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, [canvasHeight]);
+
+  return (
+    <div 
+      ref={containerRef} 
+      className="w-full relative overflow-hidden select-text" 
+      style={{ 
+        height: `${canvasHeight * scale}px` 
+      }}
+    >
+      <div 
+        className="absolute origin-top-left"
+        style={{
+          width: "850px",
+          height: `${canvasHeight}px`,
+          transform: `scale(${scale})`
+        }}
+      >
+        {blocks.map((block: any) => (
+          <div
+            key={block.id}
+            className="absolute"
+            style={{
+              left: `${block.position?.x || 0}px`,
+              top: `${block.position?.y || 0}px`,
+              width: `${block.position?.w || 750}px`,
+              height: `${block.position?.h || 200}px`
+            }}
+          >
+            <BlockRenderer block={block} isDark={isDark} />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export default function ProjectDetail({ isDark, setIsDark, lang, setLang }: ProjectDetailProps) {
   const { id } = useParams<{ id: string }>();
   const [project, setProject] = useState<Project | null>(null);
@@ -381,9 +433,14 @@ export default function ProjectDetail({ isDark, setIsDark, lang, setLang }: Proj
       try {
         const parsedBlocks = JSON.parse(trimmed);
         if (Array.isArray(parsedBlocks)) {
+          const visibleBlocks = parsedBlocks.filter((block: any) => !block.isHidden);
+          const hasAbsolutePositions = visibleBlocks.some((block: any) => block.position !== undefined);
+          if (hasAbsolutePositions) {
+            return <AbsoluteCanvasRenderer blocks={visibleBlocks} isDark={isDark} />;
+          }
           return (
             <div className="space-y-12">
-              {parsedBlocks.map((block: any) => (
+              {visibleBlocks.map((block: any) => (
                 <BlockRenderer key={block.id} block={block} isDark={isDark} />
               ))}
             </div>
@@ -397,9 +454,14 @@ export default function ProjectDetail({ isDark, setIsDark, lang, setLang }: Proj
         const parsed = JSON.parse(trimmed);
         const parsedBlocks = parsed.blocks || [];
         if (Array.isArray(parsedBlocks)) {
+          const visibleBlocks = parsedBlocks.filter((block: any) => !block.isHidden);
+          const hasAbsolutePositions = visibleBlocks.some((block: any) => block.position !== undefined);
+          if (hasAbsolutePositions) {
+            return <AbsoluteCanvasRenderer blocks={visibleBlocks} isDark={isDark} />;
+          }
           return (
             <div className="space-y-12">
-              {parsedBlocks.map((block: any) => (
+              {visibleBlocks.map((block: any) => (
                 <BlockRenderer key={block.id} block={block} isDark={isDark} />
               ))}
             </div>
