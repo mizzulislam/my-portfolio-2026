@@ -216,6 +216,7 @@ async function translateBlocksToIndonesian(blocks: BlockItem[]): Promise<BlockIt
 export default function ProjectDetailManager({ projectId, onBack }: ProjectDetailManagerProps) {
   const [project, setProject] = useState<Project | null>(null);
   const [blocks, setBlocks] = useState<BlockItem[]>([]);
+  const [specsLayout, setSpecsLayout] = useState<"right" | "left" | "hidden">("right");
   const [galleryImages, setGalleryImages] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -264,18 +265,28 @@ export default function ProjectDetailManager({ projectId, onBack }: ProjectDetai
           setGalleryImages(found.gallery_images || []);
           
           const rawContent = found.detailed_content || "";
-          // Parse if it looks like a JSON array
-          if (rawContent.trim().startsWith("[")) {
+          const trimmed = rawContent.trim();
+          if (trimmed.startsWith("[")) {
             try {
-              const parsed = JSON.parse(rawContent);
+              const parsed = JSON.parse(trimmed);
               setBlocks(parsed);
+              setSpecsLayout("right");
             } catch (err) {
-              // fallback
               setBlocks([{ id: "text-init", type: "text", data: { html: rawContent } }]);
+              setSpecsLayout("right");
+            }
+          } else if (trimmed.startsWith("{")) {
+            try {
+              const parsed = JSON.parse(trimmed);
+              setBlocks(parsed.blocks || []);
+              setSpecsLayout(parsed.specsLayout || "right");
+            } catch (err) {
+              setBlocks([{ id: "text-init", type: "text", data: { html: rawContent } }]);
+              setSpecsLayout("right");
             }
           } else {
-            // legacy markdown / html content
             setBlocks([{ id: "text-init", type: "text", data: { html: rawContent } }]);
+            setSpecsLayout("right");
           }
         } else {
           toast.error("Proyek tidak ditemukan");
