@@ -84,7 +84,7 @@ function SortableCard({
     <div
       ref={setNodeRef}
       style={style}
-      className={`p-6 rounded-3xl border bg-slate-900/40 backdrop-blur-xl group transition-all duration-200 relative ${
+      className={`p-6 rounded-3xl border bg-slate-900/40 backdrop-blur-xl group transition-all duration-200 relative flex flex-col h-full ${
         isDragging
           ? "border-blue-500 shadow-[0_0_30px_rgba(59,130,246,0.4)] cursor-grabbing"
           : "border-white/5 hover:border-blue-500/30 cursor-default"
@@ -99,7 +99,7 @@ function SortableCard({
       <div
         {...attributes}
         {...listeners}
-        className="absolute top-4 right-4 p-2 rounded-xl bg-white/5 cursor-grab active:cursor-grabbing text-slate-500 hover:text-blue-400 hover:bg-blue-500/10 transition-all"
+        className="absolute top-4 right-4 p-2 rounded-xl bg-white/5 cursor-grab active:cursor-grabbing text-slate-500 hover:text-blue-400 hover:bg-blue-500/10 transition-all z-20"
         title="Drag to change order"
       >
         <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
@@ -112,7 +112,7 @@ function SortableCard({
         </svg>
       </div>
 
-      <div className="aspect-video w-full rounded-2xl bg-slate-800 mb-6 overflow-hidden border border-white/5">
+      <div className="aspect-video w-full rounded-2xl bg-slate-800 mb-6 overflow-hidden border border-white/5 shrink-0">
         {item.image_url ? (
           <img
             src={item.image_url}
@@ -127,24 +127,27 @@ function SortableCard({
         )}
       </div>
 
-      <div className="space-y-4">
-        <h3 className="text-xl font-black text-white tracking-tighter uppercase pr-8">
-          {item.title}
-        </h3>
-        <p className="text-xs font-medium text-slate-400 leading-relaxed line-clamp-2">
-          {item.description}
-        </p>
-        <div className="flex flex-wrap gap-2">
-          {item.tags.map((tag) => (
-            <span
-              key={tag}
-              className="px-2.5 py-1 rounded-lg bg-blue-500/10 border border-blue-500/20 text-blue-400 text-[10px] font-bold uppercase tracking-widest"
-            >
-              {tag}
-            </span>
-          ))}
+      <div className="flex-1 flex flex-col justify-between space-y-4">
+        <div className="space-y-4">
+          <h3 className="text-xl font-black text-white tracking-tighter uppercase pr-8">
+            {item.title}
+          </h3>
+          <p className="text-xs font-medium text-slate-400 leading-relaxed line-clamp-2">
+            {item.description}
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {item.tags.map((tag) => (
+              <span
+                key={tag}
+                className="px-2.5 py-1 rounded-lg bg-blue-500/10 border border-blue-500/20 text-blue-400 text-[10px] font-bold uppercase tracking-widest"
+              >
+                {tag}
+              </span>
+            ))}
+          </div>
         </div>
-        <div className="pt-4 flex flex-wrap gap-2 border-t border-white/5 mt-4">
+
+        <div className="pt-4 flex flex-wrap gap-2 border-t border-white/10 mt-auto">
           <AdminBtn variant="secondary" onClick={() => onEdit(item)}>
             <Edit2 size={14} /> Edit
           </AdminBtn>
