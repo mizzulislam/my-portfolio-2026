@@ -118,7 +118,7 @@ export function Experience({
 
   return (
     <section id="experience" className={`pt-20 pb-4 px-6 overflow-hidden transition-colors ${isDark ? "bg-transparent" : "bg-white"}`}>
-      <div className="max-w-7xl mx-auto text-center">
+      <div className="max-w-5xl mx-auto text-center">
         <SectionHeader
           title={t.expHeader}
           subTitle={t.expSub}
