@@ -130,6 +130,8 @@
 .case-study-content a {
   color: #3b82f6;
   text-decoration: underline;
+  word-break: break-all;
+  overflow-wrap: break-word;
 }
 .case-study-content a:hover {
   color: #2563eb;

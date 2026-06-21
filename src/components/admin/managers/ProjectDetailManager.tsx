@@ -3,7 +3,7 @@ import React from "react";
 import { motion } from "motion/react";
 import { 
   ArrowLeft, Check, Trash2, Image as ImageIcon, Plus, GripVertical, 
-  FileText, Columns, Table, Film, AlignLeft, Eye, ChevronDown, ChevronUp, Link as LinkIcon
+  FileText, Columns, Table, Film, AlignLeft, Eye, ChevronDown, ChevronUp, Link as LinkIcon, Layers
 } from "lucide-react";
 import { toast } from "react-hot-toast";
 import { Project } from "@/src/types/project";
@@ -11,6 +11,7 @@ import { projectsApi } from "@/src/lib/api/projects";
 import { AdminCard, AdminBtn, ImageUpload, AdminConfirmModal, AdminDropdown } from "../AdminSharedUI";
 import RichTextEditor from "../RichTextEditor";
 import { supabase } from "@/src/lib/supabase";
+import { translateToIndonesian, translateArrayToIndonesian } from "@/src/lib/translate";
 
 // Dnd Kit Imports
 import {
@@ -101,6 +102,117 @@ function SortableBlockWrapper({ id, onDelete, onDuplicate, children }: { id: str
   );
 }
 
+// Helper to translate all blocks to Indonesian in batch
+async function translateBlocksToIndonesian(blocks: BlockItem[]): Promise<BlockItem[]> {
+  const cloned = JSON.parse(JSON.stringify(blocks));
+  const textsToTranslate: { text: string; apply: (translated: string) => void }[] = [];
+
+  for (const block of cloned) {
+    if (block.type === "text") {
+      if (block.data.html && block.data.html.trim() !== "") {
+        textsToTranslate.push({
+          text: block.data.html,
+          apply: (translated) => { block.data.html = translated; }
+        });
+      }
+    } else if (block.type === "media") {
+      if (block.data.caption && block.data.caption.trim() !== "") {
+        textsToTranslate.push({
+          text: block.data.caption,
+          apply: (translated) => { block.data.caption = translated; }
+        });
+      }
+    } else if (block.type === "table") {
+      if (block.data.headers) {
+        block.data.headers.forEach((h: string, idx: number) => {
+          if (h && h.trim() !== "") {
+            textsToTranslate.push({
+              text: h,
+              apply: (translated) => { block.data.headers[idx] = translated; }
+            });
+          }
+        });
+      }
+      if (block.data.rows) {
+        block.data.rows.forEach((row: string[], rowIdx: number) => {
+          row.forEach((cell: string, cellIdx: number) => {
+            if (cell && cell.trim() !== "") {
+              textsToTranslate.push({
+                text: cell,
+                apply: (translated) => { block.data.rows[rowIdx][cellIdx] = translated; }
+              });
+            }
+          });
+        });
+      }
+    } else if (block.type === "grid") {
+      if (block.data.items) {
+        block.data.items.forEach((item: any, idx: number) => {
+          if (item.title && item.title.trim() !== "") {
+            textsToTranslate.push({
+              text: item.title,
+              apply: (translated) => { block.data.items[idx].title = translated; }
+            });
+          }
+          if (item.content && item.content.trim() !== "") {
+            textsToTranslate.push({
+              text: item.content,
+              apply: (translated) => { block.data.items[idx].content = translated; }
+            });
+          }
+        });
+      }
+    } else if (block.type === "accordion") {
+      if (block.data.items) {
+        block.data.items.forEach((item: any, idx: number) => {
+          if (item.title && item.title.trim() !== "") {
+            textsToTranslate.push({
+              text: item.title,
+              apply: (translated) => { block.data.items[idx].title = translated; }
+            });
+          }
+          if (item.content && item.content.trim() !== "") {
+            textsToTranslate.push({
+              text: item.content,
+              apply: (translated) => { block.data.items[idx].content = translated; }
+            });
+          }
+        });
+      }
+    } else if (block.type === "split-banner") {
+      if (block.data.title && block.data.title.trim() !== "") {
+        textsToTranslate.push({
+          text: block.data.title,
+          apply: (translated) => { block.data.title = translated; }
+        });
+      }
+      if (block.data.content && block.data.content.trim() !== "") {
+        textsToTranslate.push({
+          text: block.data.content,
+          apply: (translated) => { block.data.content = translated; }
+        });
+      }
+    }
+  }
+
+  if (textsToTranslate.length === 0) return cloned;
+
+  // Batch translate
+  const rawTexts = textsToTranslate.map(t => t.text);
+  try {
+    const translatedTexts = await translateArrayToIndonesian(rawTexts);
+    textsToTranslate.forEach((t, idx) => {
+      if (translatedTexts[idx]) {
+        t.apply(translatedTexts[idx]);
+      }
+    });
+  } catch (err) {
+    console.error("Failed to translate block contents", err);
+  }
+
+  return cloned;
+}
+
 export default function ProjectDetailManager({ projectId, onBack }: ProjectDetailManagerProps) {
   const [project, setProject] = useState<Project | null>(null);
   const [blocks, setBlocks] = useState<BlockItem[]>([]);
@@ -184,10 +296,21 @@ export default function ProjectDetailManager({ projectId, onBack }: ProjectDetai
   const handleSave = async () => {
     setIsSaving(true);
     try {
-      const jsonString = JSON.stringify(blocks);
+      const toastId = toast.loading("Menerjemahkan konten studi kasus secara otomatis...");
+      let translatedBlocks = blocks;
+      try {
+        translatedBlocks = await translateBlocksToIndonesian(blocks);
+      } catch (err) {
+        console.error("Auto translation error:", err);
+      }
+      toast.dismiss(toastId);
+
+      const payloadEn = JSON.stringify({ specsLayout, blocks });
+      const payloadId = JSON.stringify({ specsLayout, blocks: translatedBlocks });
+
       await projectsApi.update(projectId, {
-        detailed_content: jsonString,
-        detailed_content_id: jsonString, // Set both same to secure block layout HTML parsing
+        detailed_content: payloadEn,
+        detailed_content_id: payloadId,
         gallery_images: galleryImages,
       });
       toast.success("Tata letak blok & studi kasus berhasil disimpan! 🚀");
@@ -423,31 +546,66 @@ export default function ProjectDetailManager({ projectId, onBack }: ProjectDetai
 
   // WIZARD PREVIEW MODE
   if (step === "preview") {
-    return (
-      <div className="space-y-8 animate-fade-in">
-        {/* Preview Floating Bar */}
-        <div className="sticky top-0 z-30 flex items-center justify-between p-4 bg-slate-950/85 backdrop-blur-md border border-white/5 rounded-[2rem] shadow-2xl mb-8">
-          <div className="flex items-center gap-4">
-            <AdminBtn variant="secondary" onClick={() => setStep("edit")}>
-              <ArrowLeft size={14} /> Kembali ke Edit Konten
-            </AdminBtn>
-            <div className="h-4 w-[1px] bg-white/10" />
-            <span className="text-[10px] font-black uppercase tracking-widest text-slate-500 font-mono">Step 2: Preview Mode</span>
+    const previewSpecsCard = () => {
+      const displayTags = project?.tags || [];
+      return (
+        <div className="p-8 rounded-3xl border border-white/5 bg-slate-900/40 space-y-6">
+          <div className="flex items-center gap-3">
+            <Layers className="text-blue-500" size={20} />
+            <h3 className="text-sm font-black uppercase tracking-widest text-white">
+              Spesifikasi Proyek
+            </h3>
           </div>
-          <div className="flex items-center gap-4">
-            <AdminBtn variant="primary" onClick={handleSave} disabled={isSaving}>
-              {isSaving ? (
-                <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin" />
-              ) : (
-                <Check size={14} />
+
+          <div className="space-y-6">
+            {displayTags.length > 0 && (
+              <div>
+                <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 mb-3">
+                  Output Kritis
+                </h4>
+                <ul className="space-y-2">
+                  {displayTags.map((item, idx) => (
+                    <li key={idx} className="flex items-start gap-2.5">
+                      <span className="text-blue-500 shrink-0 mt-0.5">✓</span>
+                      <span className="text-xs font-bold leading-tight text-slate-300">
+                        {item}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            <div className="pt-6 border-t border-white/5 space-y-3">
+              {project?.live_url && (
+                <a
+                  href={project.live_url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="flex items-center justify-center gap-3 w-full bg-blue-600 hover:bg-blue-700 text-white py-3.5 rounded-2xl font-black text-xs uppercase tracking-widest transition-all text-center shadow-lg"
+                >
+                  Demo Aplikasi
+                </a>
               )}
-              Simpan &amp; Publikasikan
-            </AdminBtn>
+              {project?.github_url && (
+                <a
+                  href={project.github_url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="flex items-center justify-center gap-3 w-full py-3.5 rounded-2xl font-black text-xs uppercase tracking-widest border border-white/5 bg-slate-950 text-slate-300 hover:text-white transition-all text-center"
+                >
+                  Kode GitHub
+                </a>
+              )}
+            </div>
           </div>
         </div>
+      );
+    };
 
-        {/* Client-Side Mock Page Rendering */}
-        <div className="max-w-4xl mx-auto p-8 md:p-12 rounded-3xl border border-white/5 bg-[#020617] shadow-2xl space-y-12">
+    const renderPreviewContent = () => {
+      return (
+        <div className="space-y-12">
           {/* Header Specs Preview */}
           <div className="border-b border-white/5 pb-8">
             <span className="inline-block bg-blue-600 text-white text-[9px] font-black uppercase tracking-[0.2em] px-4 py-2 rounded-lg mb-6">
@@ -547,7 +705,7 @@ export default function ProjectDetailManager({ projectId, onBack }: ProjectDetai
                       {block.data.items.map((item: any, idx: number) => (
                         <div key={idx} className="p-6 rounded-2xl border border-white/5 bg-white/[0.02]">
                           <h4 className="text-white font-bold text-sm mb-2">{item.title}</h4>
-                          <p className="text-slate-400 text-xs leading-relaxed">{item.content}</p>
+                          <p className="text-slate-400 text-xs leading-relaxed" dangerouslySetInnerHTML={{ __html: item.content }} />
                         </div>
                       ))}
                     </div>
@@ -591,9 +749,7 @@ export default function ProjectDetailManager({ projectId, onBack }: ProjectDetai
                               {isOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
                             </button>
                             {isOpen && (
-                              <div className="p-4 border-t border-white/5 text-slate-400 text-xs leading-relaxed bg-black/10">
-                                {item.content}
-                              </div>
+                              <div className="p-4 border-t border-white/5 text-slate-400 text-xs leading-relaxed bg-black/10" dangerouslySetInnerHTML={{ __html: item.content }} />
                             )}
                           </div>
                         );
@@ -626,7 +782,7 @@ export default function ProjectDetailManager({ projectId, onBack }: ProjectDetai
                       {/* Text block */}
                       <div className="w-full md:w-1/2 text-left space-y-4">
                         <h3 className="text-xl font-black text-white">{block.data.title}</h3>
-                        <p className="text-slate-400 text-xs leading-relaxed">{block.data.content}</p>
+                        <p className="text-slate-400 text-xs leading-relaxed" dangerouslySetInnerHTML={{ __html: block.data.content }} />
                       </div>
                     </div>
                   );
@@ -636,28 +792,68 @@ export default function ProjectDetailManager({ projectId, onBack }: ProjectDetai
               }
             })}
           </div>
-
-          {/* Gallery mock render */}
-          {galleryImages.length > 0 && (
-            <div className="border-t border-white/5 pt-8">
-              <h3 className="text-white font-bold text-sm mb-4">Galeri Foto Proyek</h3>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                {galleryImages.map((url, idx) => (
-                  <div key={idx} className="aspect-video rounded-xl overflow-hidden border border-white/5 bg-slate-950">
-                    <img src={url} alt="" className="w-full h-full object-cover" />
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
         </div>
+      );
+    };
+
+    return (
+      <div className="space-y-8 animate-fade-in max-w-7xl mx-auto">
+        {/* Preview Floating Bar */}
+        <div className="sticky top-0 z-30 flex items-center justify-between p-4 bg-slate-950/85 backdrop-blur-md border border-white/5 rounded-[2rem] shadow-2xl mb-8">
+          <div className="flex items-center gap-4">
+            <AdminBtn variant="secondary" onClick={() => setStep("edit")}>
+              <ArrowLeft size={14} /> Kembali ke Edit Konten
+            </AdminBtn>
+            <div className="h-4 w-[1px] bg-white/10" />
+            <span className="text-[10px] font-black uppercase tracking-widest text-slate-500 font-mono">Step 2: Preview Mode</span>
+          </div>
+          <div className="flex items-center gap-4">
+            <AdminBtn variant="primary" onClick={handleSave} disabled={isSaving}>
+              {isSaving ? (
+                <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+              ) : (
+                <Check size={14} />
+              )}
+              Simpan &amp; Publikasikan
+            </AdminBtn>
+          </div>
+        </div>
+
+        {/* Dynamic 1:1 Page Rendering Layout matching Frontend */}
+        {specsLayout === "hidden" ? (
+          <div className="max-w-4xl mx-auto p-8 md:p-12 rounded-3xl border border-white/5 bg-[#020617] shadow-2xl">
+            {renderPreviewContent()}
+          </div>
+        ) : specsLayout === "left" ? (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+            {/* Left Specs Sidebar Mock */}
+            <aside className="space-y-8 lg:col-span-1 order-2 lg:order-1">
+              {previewSpecsCard()}
+            </aside>
+            {/* Main Content Area */}
+            <div className="lg:col-span-2 p-8 md:p-12 rounded-3xl border border-white/5 bg-[#020617] shadow-2xl order-1 lg:order-2">
+              {renderPreviewContent()}
+            </div>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+            {/* Main Content Area */}
+            <div className="lg:col-span-2 p-8 md:p-12 rounded-3xl border border-white/5 bg-[#020617] shadow-2xl">
+              {renderPreviewContent()}
+            </div>
+            {/* Right Specs Sidebar Mock */}
+            <aside className="space-y-8 lg:col-span-1">
+              {previewSpecsCard()}
+            </aside>
+          </div>
+        )}
       </div>
     );
   }
 
   // WIZARD EDIT MODE
   return (
-    <div className="space-y-10">
+    <div className="space-y-10 animate-fade-in">
       <div className="flex items-center justify-between gap-4 border-b border-white/5 pb-5">
         {/* Left: title block */}
         <div className="min-w-0 flex-1">
@@ -677,14 +873,13 @@ export default function ProjectDetailManager({ projectId, onBack }: ProjectDetai
         </div>
       </div>
 
-      {/* Editor Main Content Builder */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
-        {/* Left Side: Drag & Drop Blocks Manager */}
-        <div className="lg:col-span-2 space-y-6">
-          <AdminCard title="No-Code Page Blocks Builder" icon={ImageIcon}>
-            
+      {/* Editor Main Content Builder - Full Width card layout */}
+      <div className="w-full space-y-6">
+        <AdminCard title="No-Code Page Blocks Builder" icon={ImageIcon}>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
             {/* Template Presets Composite Selector */}
-            <div className="mb-6 p-4 rounded-xl bg-slate-950/60 border border-white/5">
+            <div className="p-4 rounded-xl bg-slate-950/60 border border-white/5">
               <label className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-400 mb-3 block">
                 Terapkan Preset Gabungan Blok UX (UX Layout Presets)
               </label>
@@ -694,643 +889,674 @@ export default function ProjectDetailManager({ projectId, onBack }: ProjectDetai
                   onClick={() => applyUXLayoutStack("standard")}
                   className="flex items-center justify-center gap-2 py-2 px-3 rounded-xl font-bold text-[9px] uppercase tracking-wider border border-white/5 text-slate-400 hover:text-white hover:bg-white/5 transition-all"
                 >
-                  Standard Stack
+                  Standard
                 </button>
                 <button
                   type="button"
                   onClick={() => applyUXLayoutStack("showcase")}
                   className="flex items-center justify-center gap-2 py-2 px-3 rounded-xl font-bold text-[9px] uppercase tracking-wider border border-white/5 text-slate-400 hover:text-white hover:bg-white/5 transition-all"
                 >
-                  Showcase Stack
+                  Showcase
                 </button>
                 <button
                   type="button"
                   onClick={() => applyUXLayoutStack("tech")}
                   className="flex items-center justify-center gap-2 py-2 px-3 rounded-xl font-bold text-[9px] uppercase tracking-wider border border-white/5 text-slate-400 hover:text-white hover:bg-white/5 transition-all"
                 >
-                  Tech Stack
+                  Tech
                 </button>
               </div>
             </div>
 
-            {/* Blocks Drag Drop Sortable Wrapper */}
-            <DndContext
-              sensors={sensors}
-              collisionDetection={closestCenter}
-              onDragEnd={handleDragEnd}
+            {/* Project Specs Layout Control Selector */}
+            <div className="p-4 rounded-xl bg-slate-950/60 border border-white/5">
+              <label className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-400 mb-3 block">
+                Tata Letak Card "Project Specs" (Specs Layout)
+              </label>
+              <div className="grid grid-cols-3 gap-2">
+                <button
+                  type="button"
+                  onClick={() => setSpecsLayout("right")}
+                  className={`flex items-center justify-center gap-2 py-2 px-3 rounded-xl font-bold text-[9px] uppercase tracking-wider border transition-all ${
+                    specsLayout === "right"
+                      ? "border-blue-500/30 text-blue-400 bg-blue-500/10 font-black"
+                      : "border-white/5 text-slate-400 hover:text-white hover:bg-white/5"
+                  }`}
+                >
+                  Kanan
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSpecsLayout("left")}
+                  className={`flex items-center justify-center gap-2 py-2 px-3 rounded-xl font-bold text-[9px] uppercase tracking-wider border transition-all ${
+                    specsLayout === "left"
+                      ? "border-blue-500/30 text-blue-400 bg-blue-500/10 font-black"
+                      : "border-white/5 text-slate-400 hover:text-white hover:bg-white/5"
+                  }`}
+                >
+                  Kiri
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSpecsLayout("hidden")}
+                  className={`flex items-center justify-center gap-2 py-2 px-3 rounded-xl font-bold text-[9px] uppercase tracking-wider border transition-all ${
+                    specsLayout === "hidden"
+                      ? "border-blue-500/30 text-blue-400 bg-blue-500/10 font-black"
+                      : "border-white/5 text-slate-400 hover:text-white hover:bg-white/5"
+                  }`}
+                >
+                  Sembunyi
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Blocks Drag Drop Sortable Wrapper */}
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragEnd={handleDragEnd}
+          >
+            <SortableContext
+              items={blocks.map(b => b.id)}
+              strategy={verticalListSortingStrategy}
             >
-              <SortableContext
-                items={blocks.map(b => b.id)}
-                strategy={verticalListSortingStrategy}
-              >
-                <div className="space-y-6">
-                  {blocks.length === 0 ? (
-                    <div className="text-center py-20 border border-dashed border-white/10 rounded-2xl opacity-40">
-                      <Plus size={40} className="mx-auto mb-4 text-slate-500" />
-                      <p className="text-xs font-bold uppercase tracking-wider">Mulai tambahkan blok layout di bawah</p>
-                    </div>
-                  ) : (
-                    blocks.map((block) => (
-                      <SortableBlockWrapper 
-                        key={block.id} 
-                        id={block.id} 
-                        onDelete={() => deleteBlock(block.id)}
-                        onDuplicate={() => duplicateBlock(block.id)}
-                      >
-                        {/* Type Indicator */}
-                        <div className="flex items-center gap-2 mb-4">
-                          <span className="text-[8px] font-black uppercase tracking-[0.2em] bg-blue-600/20 text-blue-400 px-3 py-1 rounded-md border border-blue-500/10">
-                            {block.type}
-                          </span>
-                        </div>
+              <div className="space-y-6">
+                {blocks.length === 0 ? (
+                  <div className="text-center py-20 border border-dashed border-white/10 rounded-2xl opacity-40">
+                    <Plus size={40} className="mx-auto mb-4 text-slate-500" />
+                    <p className="text-xs font-bold uppercase tracking-wider">Mulai tambahkan blok layout di bawah</p>
+                  </div>
+                ) : (
+                  blocks.map((block) => (
+                    <SortableBlockWrapper 
+                      key={block.id} 
+                      id={block.id} 
+                      onDelete={() => deleteBlock(block.id)}
+                      onDuplicate={() => duplicateBlock(block.id)}
+                    >
+                      {/* Type Indicator */}
+                      <div className="flex items-center gap-2 mb-4">
+                        <span className="text-[8px] font-black uppercase tracking-[0.2em] bg-blue-600/20 text-blue-400 px-3 py-1 rounded-md border border-blue-500/10">
+                          {block.type}
+                        </span>
+                      </div>
 
-                        {/* Rendering dynamic editors based on block type */}
-                        {block.type === "text" && (
-                          <div className="space-y-3">
-                            <div className="flex items-center justify-between">
-                              <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block">
-                                {block.data.mode === "html" ? "HTML / Raw Code" : "Rich Text (WYSIWYG)"}
-                              </label>
-                              <button
-                                type="button"
-                                onClick={() => updateBlock(block.id, { mode: block.data.mode === "html" ? "rich" : "html" })}
-                                className="text-[8px] font-black uppercase tracking-widest px-2.5 py-1 rounded-md border transition-all"
-                                style={block.data.mode === "html"
-                                  ? { borderColor: "rgba(59,130,246,0.3)", color: "#60a5fa", background: "rgba(59,130,246,0.08)" }
-                                  : { borderColor: "rgba(255,255,255,0.1)", color: "#94a3b8", background: "rgba(255,255,255,0.04)" }
-                                }
-                              >
-                                {block.data.mode === "html" ? "Aa Ganti ke Rich Text" : "⟨/⟩ Ganti ke HTML"}
-                              </button>
-                            </div>
-
-                            {block.data.mode === "html" ? (
-                              <>
-                                <textarea
-                                  value={block.data.html}
-                                  onChange={(e) => updateBlock(block.id, { html: e.target.value })}
-                                  rows={5}
-                                  placeholder="Masukkan teks HTML di sini, contoh: <h2>Judul</h2><p>Isi paragraf</p>"
-                                  className="w-full bg-slate-950 border border-white/5 rounded-xl p-4 font-mono text-xs text-slate-300 focus:outline-none focus:border-blue-500/40 transition-all"
-                                />
-                                <p className="text-[9px] text-slate-600 leading-relaxed">
-                                  Mendukung tag HTML seperti <code className="text-blue-400/70">&lt;h2&gt;</code>, <code className="text-blue-400/70">&lt;p&gt;</code>, <code className="text-blue-400/70">&lt;ul&gt;</code>, <code className="text-blue-400/70">&lt;blockquote&gt;</code>, dll.
-                                </p>
-                              </>
-                            ) : (
-                              <RichTextEditor
-                                value={block.data.html}
-                                onChange={(html) => updateBlock(block.id, { html })}
-                                placeholder="Tulis konten rich text di sini — gunakan toolbar di atas untuk format teks, heading, list, link, dan lainnya..."
-                              />
-                            )}
+                      {/* Rendering dynamic editors based on block type */}
+                      {block.type === "text" && (
+                        <div className="space-y-3">
+                          <div className="flex items-center justify-between">
+                            <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block">
+                              {block.data.mode === "html" ? "HTML / Raw Code" : "Rich Text (WYSIWYG)"}
+                            </label>
+                            <button
+                              type="button"
+                              onClick={() => updateBlock(block.id, { mode: block.data.mode === "html" ? "rich" : "html" })}
+                              className="text-[8px] font-black uppercase tracking-widest px-2.5 py-1 rounded-md border transition-all"
+                              style={block.data.mode === "html"
+                                ? { borderColor: "rgba(59,130,246,0.3)", color: "#60a5fa", background: "rgba(59,130,246,0.08)" }
+                                : { borderColor: "rgba(255,255,255,0.1)", color: "#94a3b8", background: "rgba(255,255,255,0.04)" }
+                              }
+                            >
+                              {block.data.mode === "html" ? "Aa Ganti ke Rich Text" : "⟨/⟩ Ganti ke HTML"}
+                            </button>
                           </div>
-                        )}
 
-                        {block.type === "divider" && (
+                          {block.data.mode === "html" ? (
+                            <>
+                              <textarea
+                                value={block.data.html}
+                                onChange={(e) => updateBlock(block.id, { html: e.target.value })}
+                                rows={5}
+                                placeholder="Masukkan teks HTML di sini, contoh: <h2>Judul</h2><p>Isi paragraf</p>"
+                                className="w-full bg-slate-950 border border-white/5 rounded-xl p-4 font-mono text-xs text-slate-300 focus:outline-none focus:border-blue-500/40 transition-all"
+                              />
+                              <p className="text-[9px] text-slate-600 leading-relaxed">
+                                Mendukung tag HTML seperti <code className="text-blue-400/70">&lt;h2&gt;</code>, <code className="text-blue-400/70">&lt;p&gt;</code>, <code className="text-blue-400/70">&lt;ul&gt;</code>, <code className="text-blue-400/70">&lt;blockquote&gt;</code>, dll.
+                              </p>
+                            </>
+                          ) : (
+                            <RichTextEditor
+                              value={block.data.html}
+                              onChange={(html) => updateBlock(block.id, { html })}
+                              placeholder="Tulis konten rich text di sini — gunakan toolbar di atas untuk format teks, heading, list, link, dan lainnya..."
+                            />
+                          )}
+                        </div>
+                      )}
+
+                      {block.type === "divider" && (
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block mb-2">Style</label>
+                            <AdminDropdown
+                              value={block.data.style}
+                              onChange={(v) => updateBlock(block.id, { style: v })}
+                              size="compact"
+                              options={[
+                                { value: "line", label: "Solid Line" },
+                                { value: "dashed", label: "Dashed Line" },
+                                { value: "double", label: "Double Line" },
+                                { value: "dots", label: "Dotted Line" },
+                              ]}
+                            />
+                          </div>
+                          <div>
+                            <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block mb-2">Color</label>
+                            <input
+                              type="text"
+                              value={block.data.color}
+                              onChange={(e) => updateBlock(block.id, { color: e.target.value })}
+                              placeholder="Color code e.g. rgba(255,255,255,0.1) or #3b82f6"
+                              className="w-full bg-slate-950 border border-white/5 rounded-xl p-3 text-xs text-slate-300 focus:outline-none focus:border-blue-500/40"
+                            />
+                          </div>
+                        </div>
+                      )}
+
+                      {block.type === "media" && (
+                        <div className="space-y-4">
                           <div className="grid grid-cols-2 gap-4">
                             <div>
-                              <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block mb-2">Style</label>
+                              <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block mb-2">Media Type</label>
                               <AdminDropdown
-                                value={block.data.style}
-                                onChange={(v) => updateBlock(block.id, { style: v })}
+                                value={block.data.mediaType}
+                                onChange={(v) => updateBlock(block.id, { mediaType: v })}
                                 size="compact"
                                 options={[
-                                  { value: "line", label: "Solid Line" },
-                                  { value: "dashed", label: "Dashed Line" },
-                                  { value: "double", label: "Double Line" },
-                                  { value: "dots", label: "Dotted Line" },
+                                  { value: "image", label: "Image" },
+                                  { value: "video", label: "YouTube / Video Link" },
                                 ]}
                               />
                             </div>
                             <div>
-                              <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block mb-2">Color</label>
+                              <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block mb-2">Media URL</label>
                               <input
                                 type="text"
-                                value={block.data.color}
-                                onChange={(e) => updateBlock(block.id, { color: e.target.value })}
-                                placeholder="Color code e.g. rgba(255,255,255,0.1) or #3b82f6"
+                                value={block.data.url}
+                                onChange={(e) => updateBlock(block.id, { url: e.target.value })}
+                                placeholder="Masukkan URL foto/video..."
                                 className="w-full bg-slate-950 border border-white/5 rounded-xl p-3 text-xs text-slate-300 focus:outline-none focus:border-blue-500/40"
                               />
                             </div>
                           </div>
-                        )}
-
-                        {block.type === "media" && (
-                          <div className="space-y-4">
-                            <div className="grid grid-cols-2 gap-4">
-                              <div>
-                                <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block mb-2">Media Type</label>
-                                <AdminDropdown
-                                  value={block.data.mediaType}
-                                  onChange={(v) => updateBlock(block.id, { mediaType: v })}
-                                  size="compact"
-                                  options={[
-                                    { value: "image", label: "Image" },
-                                    { value: "video", label: "YouTube / Video Link" },
-                                  ]}
-                                />
-                              </div>
-                              <div>
-                                <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block mb-2">Media URL</label>
-                                <input
-                                  type="text"
-                                  value={block.data.url}
-                                  onChange={(e) => updateBlock(block.id, { url: e.target.value })}
-                                  placeholder="Masukkan URL foto/video..."
-                                  className="w-full bg-slate-950 border border-white/5 rounded-xl p-3 text-xs text-slate-300 focus:outline-none focus:border-blue-500/40"
-                                />
-                              </div>
-                            </div>
-                            
-                            {block.data.mediaType === "image" && (
-                              <div>
-                                <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block mb-2">Upload Foto</label>
-                                <ImageUpload
-                                  value=""
-                                  onChange={(url) => updateBlock(block.id, { url })}
-                                  label="Upload Ke ImgBB &amp; Isi URL"
-                                />
-                              </div>
-                            )}
-
+                          
+                          {block.data.mediaType === "image" && (
                             <div>
-                              <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block mb-2">Caption</label>
-                              <input
-                                type="text"
-                                value={block.data.caption}
-                                onChange={(e) => updateBlock(block.id, { caption: e.target.value })}
-                                placeholder="Tulis caption di sini..."
-                                className="w-full bg-slate-950 border border-white/5 rounded-xl p-3 text-xs text-slate-300 focus:outline-none focus:border-blue-500/40"
+                              <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block mb-2">Upload Foto</label>
+                              <ImageUpload
+                                value=""
+                                onChange={(url) => updateBlock(block.id, { url })}
+                                label="Upload Ke ImgBB &amp; Isi URL"
                               />
                             </div>
+                          )}
+
+                          <div>
+                            <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block mb-2">Caption</label>
+                            <input
+                              type="text"
+                              value={block.data.caption}
+                              onChange={(e) => updateBlock(block.id, { caption: e.target.value })}
+                              placeholder="Tulis caption di sini..."
+                              className="w-full bg-slate-950 border border-white/5 rounded-xl p-3 text-xs text-slate-300 focus:outline-none focus:border-blue-500/40"
+                            />
                           </div>
-                        )}
+                        </div>
+                      )}
 
-                        {block.type === "table" && (
-                          <div className="space-y-4">
-                            <div className="flex items-center justify-between">
-                              <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Table Controller</span>
-                              <div className="flex gap-2">
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    const colCount = block.data.headers.length;
-                                    const nextRow = Array(colCount).fill("Sel Baru");
-                                    updateBlock(block.id, { rows: [...block.data.rows, nextRow] });
-                                  }}
-                                  className="text-[9px] font-bold bg-white/5 hover:bg-white/10 text-slate-300 py-1 px-2.5 rounded-md"
-                                >
-                                  + Row
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    updateBlock(block.id, { 
-                                      headers: [...block.data.headers, `Kolom ${block.data.headers.length + 1}`],
-                                      rows: block.data.rows.map((row: string[]) => [...row, "Sel Baru"])
-                                    });
-                                  }}
-                                  className="text-[9px] font-bold bg-white/5 hover:bg-white/10 text-slate-300 py-1 px-2.5 rounded-md"
-                                >
-                                  + Column
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    if (block.data.rows.length > 1) {
-                                      updateBlock(block.id, { rows: block.data.rows.slice(0, -1) });
-                                    }
-                                  }}
-                                  className="text-[9px] font-bold bg-red-950/20 text-red-400 py-1 px-2.5 rounded-md"
-                                >
-                                  - Row
-                                </button>
-                              </div>
+                      {block.type === "table" && (
+                        <div className="space-y-4">
+                          <div className="flex items-center justify-between">
+                            <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Table Controller</span>
+                            <div className="flex gap-2">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const colCount = block.data.headers.length;
+                                  const nextRow = Array(colCount).fill("Sel Baru");
+                                  updateBlock(block.id, { rows: [...block.data.rows, nextRow] });
+                                }}
+                                className="text-[9px] font-bold bg-white/5 hover:bg-white/10 text-slate-300 py-1 px-2.5 rounded-md"
+                              >
+                                + Row
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  updateBlock(block.id, { 
+                                    headers: [...block.data.headers, `Kolom ${block.data.headers.length + 1}`],
+                                    rows: block.data.rows.map((row: string[]) => [...row, "Sel Baru"])
+                                  });
+                                }}
+                                className="text-[9px] font-bold bg-white/5 hover:bg-white/10 text-slate-300 py-1 px-2.5 rounded-md"
+                              >
+                                + Column
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  if (block.data.rows.length > 1) {
+                                    updateBlock(block.id, { rows: block.data.rows.slice(0, -1) });
+                                  }
+                                }}
+                                className="text-[9px] font-bold bg-red-950/20 text-red-400 py-1 px-2.5 rounded-md"
+                              >
+                                - Row
+                              </button>
                             </div>
+                          </div>
 
-                            {/* Render inputs grid */}
-                            <div className="overflow-x-auto bg-slate-950/80 rounded-xl border border-white/5 p-4">
-                              <table className="w-full border-collapse">
-                                <thead>
-                                  <tr>
-                                    {block.data.headers.map((h: string, idx: number) => (
-                                      <th key={idx} className="p-1">
+                          {/* Render inputs grid */}
+                          <div className="overflow-x-auto bg-slate-950/80 rounded-xl border border-white/5 p-4">
+                            <table className="w-full border-collapse">
+                              <thead>
+                                <tr>
+                                  {block.data.headers.map((h: string, idx: number) => (
+                                    <th key={idx} className="p-1">
+                                      <input
+                                        type="text"
+                                        value={h}
+                                        onChange={(e) => {
+                                          const newHeaders = [...block.data.headers];
+                                          newHeaders[idx] = e.target.value;
+                                          updateBlock(block.id, { headers: newHeaders });
+                                        }}
+                                        className="w-full bg-slate-900 border border-white/5 rounded-md p-1.5 text-[10px] font-bold text-blue-400 focus:outline-none"
+                                      />
+                                    </th>
+                                  ))}
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {block.data.rows.map((row: string[], rowIdx: number) => (
+                                  <tr key={rowIdx}>
+                                    {row.map((cell: string, cellIdx: number) => (
+                                      <td key={cellIdx} className="p-1">
                                         <input
                                           type="text"
-                                          value={h}
+                                          value={cell}
                                           onChange={(e) => {
-                                            const newHeaders = [...block.data.headers];
-                                            newHeaders[idx] = e.target.value;
-                                            updateBlock(block.id, { headers: newHeaders });
+                                            const newRows = [...block.data.rows];
+                                            newRows[rowIdx][cellIdx] = e.target.value;
+                                            updateBlock(block.id, { rows: newRows });
                                           }}
-                                          className="w-full bg-slate-900 border border-white/5 rounded-md p-1.5 text-[10px] font-bold text-blue-400 focus:outline-none"
+                                          className="w-full bg-slate-900 border border-white/5 rounded-md p-1.5 text-[10px] text-slate-300 focus:outline-none"
                                         />
-                                      </th>
+                                      </td>
                                     ))}
                                   </tr>
-                                </thead>
-                                <tbody>
-                                  {block.data.rows.map((row: string[], rowIdx: number) => (
-                                    <tr key={rowIdx}>
-                                      {row.map((cell: string, cellIdx: number) => (
-                                        <td key={cellIdx} className="p-1">
-                                          <input
-                                            type="text"
-                                            value={cell}
-                                            onChange={(e) => {
-                                              const newRows = [...block.data.rows];
-                                              newRows[rowIdx][cellIdx] = e.target.value;
-                                              updateBlock(block.id, { rows: newRows });
-                                            }}
-                                            className="w-full bg-slate-900 border border-white/5 rounded-md p-1.5 text-[10px] text-slate-300 focus:outline-none"
-                                          />
-                                        </td>
-                                      ))}
-                                    </tr>
-                                  ))}
-                                </tbody>
-                              </table>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        </div>
+                      )}
+
+                      {block.type === "grid" && (
+                        <div className="space-y-4">
+                          <div className="flex items-center justify-between">
+                            <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Kolom Grid</label>
+                            <div className="flex gap-2">
+                              <button
+                                type="button"
+                                onClick={() => updateBlock(block.id, { columns: 2 })}
+                                className={`text-[9px] font-bold py-1 px-2.5 rounded ${block.data.columns === 2 ? 'bg-blue-600 text-white' : 'bg-white/5 text-slate-400'}`}
+                              >
+                                2 Columns
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => updateBlock(block.id, { columns: 3 })}
+                                className={`text-[9px] font-bold py-1 px-2.5 rounded ${block.data.columns === 3 ? 'bg-blue-600 text-white' : 'bg-white/5 text-slate-400'}`}
+                              >
+                                3 Columns
+                              </button>
                             </div>
                           </div>
-                        )}
 
-                        {block.type === "grid" && (
-                          <div className="space-y-4">
-                            <div className="flex items-center justify-between">
-                              <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Kolom Grid</label>
-                              <div className="flex gap-2">
-                                <button
-                                  type="button"
-                                  onClick={() => updateBlock(block.id, { columns: 2 })}
-                                  className={`text-[9px] font-bold py-1 px-2.5 rounded ${block.data.columns === 2 ? 'bg-blue-600 text-white' : 'bg-white/5 text-slate-400'}`}
-                                >
-                                  2 Columns
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => updateBlock(block.id, { columns: 3 })}
-                                  className={`text-[9px] font-bold py-1 px-2.5 rounded ${block.data.columns === 3 ? 'bg-blue-600 text-white' : 'bg-white/5 text-slate-400'}`}
-                                >
-                                  3 Columns
-                                </button>
-                              </div>
-                            </div>
-
-                            {/* Grid items editor list */}
-                            <div className="space-y-4 pt-2 border-t border-white/5">
-                              {block.data.items.map((item: any, idx: number) => (
-                                <div key={idx} className="p-4 rounded-xl bg-slate-950/60 border border-white/5 space-y-3">
-                                  <div className="flex items-center justify-between">
-                                    <span className="text-[9px] font-black text-slate-500 uppercase">Item #{idx + 1}</span>
-                                    <button
-                                      type="button"
-                                      onClick={() => {
-                                        if (block.data.items.length > 1) {
-                                          updateBlock(block.id, {
-                                            items: block.data.items.filter((_: any, i: number) => i !== idx)
-                                          });
-                                        }
-                                      }}
-                                      className="text-[8px] font-bold text-red-400 hover:underline"
-                                    >
-                                      Remove Item
-                                    </button>
-                                  </div>
-                                  <input
-                                    type="text"
-                                    value={item.title}
-                                    onChange={(e) => {
-                                      const newItems = [...block.data.items];
-                                      newItems[idx].title = e.target.value;
-                                      updateBlock(block.id, { items: newItems });
+                          {/* Grid items editor list */}
+                          <div className="space-y-4 pt-2 border-t border-white/5">
+                            {block.data.items.map((item: any, idx: number) => (
+                              <div key={idx} className="p-4 rounded-xl bg-slate-950/60 border border-white/5 space-y-3">
+                                <div className="flex items-center justify-between">
+                                  <span className="text-[9px] font-black text-slate-500 uppercase">Item #{idx + 1}</span>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      if (block.data.items.length > 1) {
+                                        updateBlock(block.id, {
+                                          items: block.data.items.filter((_: any, i: number) => i !== idx)
+                                        });
+                                      }
                                     }}
-                                    placeholder="Judul Poin..."
-                                    className="w-full bg-slate-900 border border-white/5 rounded-lg p-2 text-xs font-bold text-white focus:outline-none"
-                                  />
-                                  <textarea
-                                    value={item.content}
-                                    onChange={(e) => {
+                                    className="text-[8px] font-bold text-red-400 hover:underline"
+                                  >
+                                    Remove Item
+                                  </button>
+                                </div>
+                                <input
+                                  type="text"
+                                  value={item.title}
+                                  onChange={(e) => {
+                                    const newItems = [...block.data.items];
+                                    newItems[idx].title = e.target.value;
+                                    updateBlock(block.id, { items: newItems });
+                                  }}
+                                  placeholder="Judul Poin..."
+                                  className="w-full bg-slate-900 border border-white/5 rounded-lg p-2 text-xs font-bold text-white focus:outline-none"
+                                />
+                                <div>
+                                  <label className="text-[8px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Penjelasan detail (Rich Text)</label>
+                                  <RichTextEditor
+                                    value={item.content || ""}
+                                    onChange={(html) => {
                                       const newItems = [...block.data.items];
-                                      newItems[idx].content = e.target.value;
+                                      newItems[idx].content = html;
                                       updateBlock(block.id, { items: newItems });
                                     }}
                                     placeholder="Penjelasan detail..."
-                                    rows={2}
-                                    className="w-full bg-slate-900 border border-white/5 rounded-lg p-2 text-xs text-slate-300 focus:outline-none"
+                                    minHeight={80}
                                   />
                                 </div>
-                              ))}
-                              
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  updateBlock(block.id, {
-                                    items: [...block.data.items, { title: "Poin Baru", content: "Penjelasan detail..." }]
-                                  });
-                                }}
-                                className="w-full py-2 bg-white/5 hover:bg-white/10 rounded-xl font-bold text-[9px] uppercase tracking-wider text-slate-300 hover:text-white transition-all border border-dashed border-white/10"
-                              >
-                                + Add Grid Item
-                              </button>
-                            </div>
-                          </div>
-                        )}
-
-                        {block.type === "carousel" && (
-                          <div className="space-y-4">
-                            <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block">Images List</label>
-                            
-                            {block.data.images && block.data.images.length > 0 && (
-                              <div className="grid grid-cols-3 gap-3">
-                                {block.data.images.map((url: string, imgIdx: number) => (
-                                  <div key={imgIdx} className="relative aspect-video rounded-xl overflow-hidden border border-white/10 group bg-slate-950">
-                                    <img src={url} alt="" className="w-full h-full object-cover" />
-                                    <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                                      <button
-                                        type="button"
-                                        onClick={() => {
-                                          updateBlock(block.id, {
-                                            images: block.data.images.filter((_: string, i: number) => i !== imgIdx)
-                                          });
-                                        }}
-                                        className="p-1.5 bg-red-600 hover:bg-red-700 rounded text-white"
-                                      >
-                                        <Trash2 size={12} />
-                                      </button>
-                                    </div>
-                                  </div>
-                                ))}
                               </div>
-                            )}
-
-                            <div>
-                              <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block mb-2">Upload foto ke carousel</label>
-                              <ImageUpload
-                                value=""
-                                onChange={(url) => {
-                                  updateBlock(block.id, {
-                                    images: [...(block.data.images || []), url]
-                                  });
-                                }}
-                                label="Upload Foto Baru"
-                              />
-                            </div>
-                          </div>
-                        )}
-
-                        {block.type === "accordion" && (
-                          <div className="space-y-4">
-                            <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block">Accordion Items</label>
+                            ))}
                             
-                            <div className="space-y-4">
-                              {block.data.items.map((item: any, idx: number) => (
-                                <div key={idx} className="p-4 rounded-xl bg-slate-950/60 border border-white/5 space-y-3">
-                                  <div className="flex items-center justify-between">
-                                    <span className="text-[9px] font-black text-slate-500 uppercase">Item #{idx + 1}</span>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                updateBlock(block.id, {
+                                  items: [...block.data.items, { title: "Poin Baru", content: "Penjelasan detail..." }]
+                                });
+                              }}
+                              className="w-full py-2 bg-white/5 hover:bg-white/10 rounded-xl font-bold text-[9px] uppercase tracking-wider text-slate-300 hover:text-white transition-all border border-dashed border-white/10"
+                            >
+                              + Add Grid Item
+                            </button>
+                          </div>
+                        </div>
+                      )}
+
+                      {block.type === "carousel" && (
+                        <div className="space-y-4">
+                          <div className="flex items-center justify-between">
+                            <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block">Images List</label>
+                            <span className="text-[9px] text-slate-500 font-mono">{(block.data.images || []).length} Foto</span>
+                          </div>
+                          
+                          {block.data.images && block.data.images.length > 0 && (
+                            <div className="grid grid-cols-3 gap-3">
+                              {block.data.images.map((url: string, imgIdx: number) => (
+                                <div key={imgIdx} className="relative aspect-video rounded-xl overflow-hidden border border-white/10 group bg-slate-950">
+                                  <img src={url} alt="" className="w-full h-full object-cover" />
+                                  <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                                     <button
                                       type="button"
                                       onClick={() => {
-                                        if (block.data.items.length > 1) {
-                                          updateBlock(block.id, {
-                                            items: block.data.items.filter((_: any, i: number) => i !== idx)
-                                          });
-                                        }
+                                        updateBlock(block.id, {
+                                          images: block.data.images.filter((_: string, i: number) => i !== imgIdx)
+                                        });
                                       }}
-                                      className="text-[8px] font-bold text-red-400 hover:underline"
+                                      className="p-1.5 bg-red-600 hover:bg-red-700 rounded text-white"
                                     >
-                                      Remove Item
+                                      <Trash2 size={12} />
                                     </button>
                                   </div>
-                                  <input
-                                    type="text"
-                                    value={item.title}
-                                    onChange={(e) => {
-                                      const newItems = [...block.data.items];
-                                      newItems[idx].title = e.target.value;
-                                      updateBlock(block.id, { items: newItems });
+                                </div>
+                              ))}
+                            </div>
+                          )}
+
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2 border-t border-white/5">
+                            {/* Add Image from URL */}
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const url = window.prompt("Masukkan URL Gambar:");
+                                if (url) {
+                                  updateBlock(block.id, {
+                                    images: [...(block.data.images || []), url]
+                                  });
+                                  toast.success("Gambar berhasil ditambahkan dari URL!");
+                                }
+                              }}
+                              className="flex items-center justify-center gap-2 py-3 bg-white/5 hover:bg-white/10 border border-white/10 text-slate-300 hover:text-white rounded-xl text-[10px] font-bold uppercase tracking-wider transition-all"
+                            >
+                              <Plus size={12} /> Tambah dari URL
+                            </button>
+
+                            {/* Upload Image with resetKey */}
+                            <ImageUpload
+                              value=""
+                              resetKey={block.data.images?.length || 0}
+                              onChange={(url) => {
+                                if (url) {
+                                  updateBlock(block.id, {
+                                    images: [...(block.data.images || []), url]
+                                  });
+                                  toast.success("Gambar berhasil diupload!");
+                                }
+                              }}
+                              label="Upload Foto Baru"
+                            />
+                          </div>
+                        </div>
+                      )}
+
+                      {block.type === "accordion" && (
+                        <div className="space-y-4">
+                          <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block">Accordion Items</label>
+                          
+                          <div className="space-y-4">
+                            {block.data.items.map((item: any, idx: number) => (
+                              <div key={idx} className="p-4 rounded-xl bg-slate-950/60 border border-white/5 space-y-3">
+                                <div className="flex items-center justify-between">
+                                  <span className="text-[9px] font-black text-slate-500 uppercase">Item #{idx + 1}</span>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      if (block.data.items.length > 1) {
+                                        updateBlock(block.id, {
+                                          items: block.data.items.filter((_: any, i: number) => i !== idx)
+                                        });
+                                      }
                                     }}
-                                    placeholder="Judul Accordion (FAQ)..."
-                                    className="w-full bg-slate-900 border border-white/5 rounded-lg p-2 text-xs font-bold text-white focus:outline-none"
-                                  />
-                                  <textarea
-                                    value={item.content}
-                                    onChange={(e) => {
+                                    className="text-[8px] font-bold text-red-400 hover:underline"
+                                  >
+                                    Remove Item
+                                  </button>
+                                </div>
+                                <input
+                                  type="text"
+                                  value={item.title}
+                                  onChange={(e) => {
+                                    const newItems = [...block.data.items];
+                                    newItems[idx].title = e.target.value;
+                                    updateBlock(block.id, { items: newItems });
+                                  }}
+                                  placeholder="Judul Accordion (FAQ)..."
+                                  className="w-full bg-slate-900 border border-white/5 rounded-lg p-2 text-xs font-bold text-white focus:outline-none"
+                                />
+                                <div>
+                                  <label className="text-[8px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Penjelasan accordion (Rich Text)</label>
+                                  <RichTextEditor
+                                    value={item.content || ""}
+                                    onChange={(html) => {
                                       const newItems = [...block.data.items];
-                                      newItems[idx].content = e.target.value;
+                                      newItems[idx].content = html;
                                       updateBlock(block.id, { items: newItems });
                                     }}
                                     placeholder="Penjelasan accordion..."
-                                    rows={2}
-                                    className="w-full bg-slate-900 border border-white/5 rounded-lg p-2 text-xs text-slate-300 focus:outline-none"
+                                    minHeight={80}
                                   />
                                 </div>
-                              ))}
-                              
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  updateBlock(block.id, {
-                                    items: [...block.data.items, { title: "Poin Baru FAQ", content: "Jawaban/detail FAQ..." }]
-                                  });
-                                }}
-                                className="w-full py-2 bg-white/5 hover:bg-white/10 rounded-xl font-bold text-[9px] uppercase tracking-wider text-slate-300 hover:text-white transition-all border border-dashed border-white/10"
-                              >
-                                + Add Accordion Item
-                              </button>
-                            </div>
-                          </div>
-                        )}
-
-                        {block.type === "split-banner" && (
-                          <div className="space-y-4">
-                            <div className="grid grid-cols-2 gap-4">
-                              <div>
-                                <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block mb-2">Media Layout</label>
-                                <AdminDropdown
-                                  value={block.data.layout}
-                                  onChange={(v) => updateBlock(block.id, { layout: v })}
-                                  size="compact"
-                                  options={[
-                                    { value: "left", label: "Media Left / Text Right" },
-                                    { value: "right", label: "Media Right / Text Left" },
-                                  ]}
-                                />
                               </div>
-                              <div>
-                                <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block mb-2">Media Type</label>
-                                <AdminDropdown
-                                  value={block.data.mediaType}
-                                  onChange={(v) => updateBlock(block.id, { mediaType: v })}
-                                  size="compact"
-                                  options={[
-                                    { value: "image", label: "Image" },
-                                    { value: "video", label: "Video URL (YouTube)" },
-                                  ]}
-                                />
-                              </div>
-                            </div>
-
-                            <div className="grid grid-cols-2 gap-4">
-                              <div className="col-span-2">
-                                <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block mb-2">Media URL</label>
-                                <input
-                                  type="text"
-                                  value={block.data.mediaUrl}
-                                  onChange={(e) => updateBlock(block.id, { mediaUrl: e.target.value })}
-                                  placeholder="Masukkan URL foto/video..."
-                                  className="w-full bg-slate-950 border border-white/5 rounded-xl p-3 text-xs text-slate-300 focus:outline-none focus:border-blue-500/40"
-                                />
-                              </div>
-                            </div>
+                            ))}
                             
-                            {block.data.mediaType === "image" && (
-                              <div>
-                                <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block mb-2">Upload Banner Image</label>
-                                <ImageUpload
-                                  value=""
-                                  onChange={(mediaUrl) => updateBlock(block.id, { mediaUrl })}
-                                  label="Upload Foto Banner"
-                                />
-                              </div>
-                            )}
+                            <button
+                              type="button"
+                              onClick={() => {
+                                updateBlock(block.id, {
+                                  items: [...block.data.items, { title: "Poin Baru FAQ", content: "Jawaban/detail FAQ..." }]
+                                });
+                              }}
+                              className="w-full py-2 bg-white/5 hover:bg-white/10 rounded-xl font-bold text-[9px] uppercase tracking-wider text-slate-300 hover:text-white transition-all border border-dashed border-white/10"
+                            >
+                              + Add Accordion Item
+                            </button>
+                          </div>
+                        </div>
+                      )}
 
-                            <div className="space-y-3">
-                              <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block">Judul Banner</label>
-                              <input
-                                type="text"
-                                value={block.data.title}
-                                onChange={(e) => updateBlock(block.id, { title: e.target.value })}
-                                placeholder="Judul Banner..."
-                                className="w-full bg-slate-950 border border-white/5 rounded-xl p-3 text-xs font-bold text-white focus:outline-none focus:border-blue-500/40"
+                      {block.type === "split-banner" && (
+                        <div className="space-y-4">
+                          <div className="grid grid-cols-2 gap-4">
+                            <div>
+                              <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block mb-2">Media Layout</label>
+                              <AdminDropdown
+                                value={block.data.layout}
+                                onChange={(v) => updateBlock(block.id, { layout: v })}
+                                size="compact"
+                                options={[
+                                  { value: "left", label: "Media Left / Text Right" },
+                                  { value: "right", label: "Media Right / Text Left" },
+                                ]}
                               />
                             </div>
+                            <div>
+                              <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block mb-2">Media Type</label>
+                              <AdminDropdown
+                                value={block.data.mediaType}
+                                onChange={(v) => updateBlock(block.id, { mediaType: v })}
+                                size="compact"
+                                options={[
+                                  { value: "image", label: "Image" },
+                                  { value: "video", label: "Video URL (YouTube)" },
+                                ]}
+                              />
+                            </div>
+                          </div>
 
-                            <div className="space-y-3">
-                              <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block">Konten Banner</label>
-                              <textarea
-                                value={block.data.content}
-                                onChange={(e) => updateBlock(block.id, { content: e.target.value })}
-                                placeholder="Tulis deskripsi penjelasan di sini..."
-                                rows={3}
+                          <div className="grid grid-cols-2 gap-4">
+                            <div className="col-span-2">
+                              <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block mb-2">Media URL</label>
+                              <input
+                                type="text"
+                                value={block.data.mediaUrl}
+                                onChange={(e) => updateBlock(block.id, { mediaUrl: e.target.value })}
+                                placeholder="Masukkan URL foto/video..."
                                 className="w-full bg-slate-950 border border-white/5 rounded-xl p-3 text-xs text-slate-300 focus:outline-none focus:border-blue-500/40"
                               />
                             </div>
                           </div>
-                        )}
-                      </SortableBlockWrapper>
-                    ))
-                  )}
-                </div>
-              </SortableContext>
-            </DndContext>
+                          
+                          {block.data.mediaType === "image" && (
+                            <div>
+                              <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block mb-2">Upload Banner Image</label>
+                              <ImageUpload
+                                value=""
+                                onChange={(mediaUrl) => updateBlock(block.id, { mediaUrl })}
+                                label="Upload Foto Banner"
+                              />
+                            </div>
+                          )}
 
-            {/* Quick Add Block Bar */}
-            <div className="mt-8 pt-6 border-t border-white/5">
-              <label className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-400 mb-4 block px-1">
-                + Tambah Blok Konten Baru (Insert Block Elements)
-              </label>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                <button
-                  type="button"
-                  onClick={() => addBlock("text")}
-                  className="flex items-center gap-2 bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white p-3 rounded-xl border border-white/5 text-[10px] font-bold transition-all"
-                >
-                  <FileText size={14} className="text-blue-500 shrink-0" /> Teks / Rich Text
-                </button>
-                <button
-                  type="button"
-                  onClick={() => addBlock("media")}
-                  className="flex items-center gap-2 bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white p-3 rounded-xl border border-white/5 text-[10px] font-bold transition-all"
-                >
-                  <ImageIcon size={14} className="text-blue-500 shrink-0" /> Foto / Video
-                </button>
-                <button
-                  type="button"
-                  onClick={() => addBlock("grid")}
-                  className="flex items-center gap-2 bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white p-3 rounded-xl border border-white/5 text-[10px] font-bold transition-all"
-                >
-                  <Columns size={14} className="text-blue-500 shrink-0" /> Grid Kolom
-                </button>
-                <button
-                  type="button"
-                  onClick={() => addBlock("split-banner")}
-                  className="flex items-center gap-2 bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white p-3 rounded-xl border border-white/5 text-[10px] font-bold transition-all"
-                >
-                  <AlignLeft size={14} className="text-blue-500 shrink-0" /> Split Banner
-                </button>
-                <button
-                  type="button"
-                  onClick={() => addBlock("table")}
-                  className="flex items-center gap-2 bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white p-3 rounded-xl border border-white/5 text-[10px] font-bold transition-all"
-                >
-                  <Table size={14} className="text-blue-500 shrink-0" /> Tabel Data
-                </button>
-                <button
-                  type="button"
-                  onClick={() => addBlock("accordion")}
-                  className="flex items-center gap-2 bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white p-3 rounded-xl border border-white/5 text-[10px] font-bold transition-all"
-                >
-                  <ChevronDown size={14} className="text-blue-500 shrink-0" /> Accordion (FAQ)
-                </button>
-                <button
-                  type="button"
-                  onClick={() => addBlock("carousel")}
-                  className="flex items-center gap-2 bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white p-3 rounded-xl border border-white/5 text-[10px] font-bold transition-all"
-                >
-                  <Film size={14} className="text-blue-500 shrink-0" /> Galeri Slider
-                </button>
-                <button
-                  type="button"
-                  onClick={() => addBlock("divider")}
-                  className="flex items-center gap-2 bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white p-3 rounded-xl border border-white/5 text-[10px] font-bold transition-all"
-                >
-                  <LinkIcon size={14} className="text-blue-500 shrink-0" /> Divider Kustom
-                </button>
+                          <div className="space-y-3">
+                            <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block">Judul Banner</label>
+                            <input
+                              type="text"
+                              value={block.data.title}
+                              onChange={(e) => updateBlock(block.id, { title: e.target.value })}
+                              placeholder="Judul Banner..."
+                              className="w-full bg-slate-950 border border-white/5 rounded-xl p-3 text-xs font-bold text-white focus:outline-none focus:border-blue-500/40"
+                            />
+                          </div>
+
+                          <div className="space-y-3">
+                            <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block">Konten Banner (Rich Text)</label>
+                            <RichTextEditor
+                              value={block.data.content || ""}
+                              onChange={(html) => updateBlock(block.id, { content: html })}
+                              placeholder="Tulis deskripsi penjelasan di sini..."
+                              minHeight={100}
+                            />
+                          </div>
+                        </div>
+                      )}
+                    </SortableBlockWrapper>
+                  ))
+                )}
               </div>
+            </SortableContext>
+          </DndContext>
+
+          {/* Quick Add Block Bar */}
+          <div className="mt-8 pt-6 border-t border-white/5">
+            <label className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-400 mb-4 block px-1">
+              + Tambah Blok Konten Baru (Insert Block Elements)
+            </label>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+              <button
+                type="button"
+                onClick={() => addBlock("text")}
+                className="flex items-center gap-2 bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white p-3 rounded-xl border border-white/5 text-[10px] font-bold transition-all"
+              >
+                <FileText size={14} className="text-blue-500 shrink-0" /> Teks / Rich Text
+              </button>
+              <button
+                type="button"
+                onClick={() => addBlock("media")}
+                className="flex items-center gap-2 bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white p-3 rounded-xl border border-white/5 text-[10px] font-bold transition-all"
+              >
+                <ImageIcon size={14} className="text-blue-500 shrink-0" /> Foto / Video
+              </button>
+              <button
+                type="button"
+                onClick={() => addBlock("grid")}
+                className="flex items-center gap-2 bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white p-3 rounded-xl border border-white/5 text-[10px] font-bold transition-all"
+              >
+                <Columns size={14} className="text-blue-500 shrink-0" /> Grid Kolom
+              </button>
+              <button
+                type="button"
+                onClick={() => addBlock("split-banner")}
+                className="flex items-center gap-2 bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white p-3 rounded-xl border border-white/5 text-[10px] font-bold transition-all"
+              >
+                <AlignLeft size={14} className="text-blue-500 shrink-0" /> Split Banner
+              </button>
+              <button
+                type="button"
+                onClick={() => addBlock("table")}
+                className="flex items-center gap-2 bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white p-3 rounded-xl border border-white/5 text-[10px] font-bold transition-all"
+              >
+                <Table size={14} className="text-blue-500 shrink-0" /> Tabel Data
+              </button>
+              <button
+                type="button"
+                onClick={() => addBlock("accordion")}
+                className="flex items-center gap-2 bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white p-3 rounded-xl border border-white/5 text-[10px] font-bold transition-all"
+              >
+                <ChevronDown size={14} className="text-blue-500 shrink-0" /> Accordion (FAQ)
+              </button>
+              <button
+                type="button"
+                onClick={() => addBlock("carousel")}
+                className="flex items-center gap-2 bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white p-3 rounded-xl border border-white/5 text-[10px] font-bold transition-all"
+              >
+                <Film size={14} className="text-blue-500 shrink-0" /> Galeri Slider
+              </button>
+              <button
+                type="button"
+                onClick={() => addBlock("divider")}
+                className="flex items-center gap-2 bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white p-3 rounded-xl border border-white/5 text-[10px] font-bold transition-all"
+              >
+                <LinkIcon size={14} className="text-blue-500 shrink-0" /> Divider Kustom
+              </button>
             </div>
+          </div>
 
-          </AdminCard>
+        </AdminCard>
 
-        </div>
-
-        {/* Right Side: Media Gallery Manager Card */}
-        <aside className="space-y-6">
-          <AdminCard title="Galeri Foto Proyek" icon={ImageIcon}>
-            <div className="space-y-4">
-              <p className="text-[10px] text-slate-500 leading-relaxed">
-                Foto-foto ini tersimpan pada database gallery proyek dan dapat digunakan di dalam carousel maupun media blocks.
-              </p>
-
-              {galleryImages.length > 0 && (
-                <div className="grid grid-cols-2 gap-2.5">
-                  {galleryImages.map((url, idx) => (
-                    <div key={idx} className="relative aspect-video rounded-xl overflow-hidden border border-white/5 group bg-slate-950">
-                      <img src={url} alt="" className="w-full h-full object-cover" />
-                      <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                        <button
-                          type="button"
-                          onClick={() => handleRemoveImage(idx)}
-                          className="p-1.5 bg-red-600 hover:bg-red-700 rounded text-white"
-                        >
-                          <Trash2 size={12} />
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              <div className="pt-2 border-t border-white/5">
-                <ImageUpload
-                  value=""
-                  onChange={handleAddImage}
-                  label="Tambah foto galeri utama"
-                />
-              </div>
-            </div>
-          </AdminCard>
-        </aside>
       </div>
 
       {/* Custom Confirmation Modal */}
