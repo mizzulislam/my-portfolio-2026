@@ -5,6 +5,55 @@ import Underline from "@tiptap/extension-underline";
 import TextAlign from "@tiptap/extension-text-align";
 import Link from "@tiptap/extension-link";
 import Placeholder from "@tiptap/extension-placeholder";
+import { Mark, mergeAttributes } from "@tiptap/core";
+
+const CustomStyleMark = Mark.create({
+  name: "customStyle",
+
+  addAttributes() {
+    return {
+      fontFamily: {
+        default: null,
+        parseHTML: element => element.style.fontFamily?.replace(/['"]/g, "") || null,
+      },
+      fontSize: {
+        default: null,
+        parseHTML: element => element.style.fontSize || null,
+      },
+    };
+  },
+
+  parseHTML() {
+    return [
+      {
+        tag: "span",
+        getAttrs: (element) => {
+          if (!(element instanceof HTMLElement)) return false;
+          const hasStyle = element.style.fontFamily || element.style.fontSize;
+          return hasStyle ? {} : false;
+        },
+      },
+    ];
+  },
+
+  renderHTML({ HTMLAttributes }) {
+    const styles: string[] = [];
+    if (HTMLAttributes.fontFamily) {
+      styles.push(`font-family: ${HTMLAttributes.fontFamily}`);
+    }
+    if (HTMLAttributes.fontSize) {
+      styles.push(`font-size: ${HTMLAttributes.fontSize}`);
+    }
+
+    const { fontFamily, fontSize, ...rest } = HTMLAttributes;
+
+    if (styles.length > 0) {
+      return ["span", mergeAttributes(rest, { style: styles.join("; ") }), 0];
+    }
+
+    return ["span", rest, 0];
+  },
+});
 
 // ── Toolbar button helper ────────────────────────────────────────────────────
 function ToolBtn({
@@ -91,6 +140,7 @@ export default function RichTextEditor({
         },
       }),
       Placeholder.configure({ placeholder }),
+      CustomStyleMark,
     ],
     content: value || "",
     onUpdate({ editor }) {
@@ -139,11 +189,64 @@ export default function RichTextEditor({
     }`}>
 
       {/* ── Toolbar ── */}
-      <div className={`flex flex-wrap items-center gap-0.5 px-3 py-2 border-b transition-colors ${
+      <div className={`flex flex-wrap items-center gap-1.5 px-3 py-2 border-b transition-colors ${
         light 
           ? "border-slate-100 bg-slate-50" 
           : "border-white/8 bg-slate-900/60"
       }`}>
+
+        {/* Font & Size Selector */}
+        <select
+          value={(editor.getAttributes("customStyle") as any).fontFamily || ""}
+          onChange={(e) => {
+            const font = e.target.value;
+            const current = editor.getAttributes("customStyle") as any;
+            const nextAttrs = { ...current, fontFamily: font || null };
+            if (!nextAttrs.fontFamily && !nextAttrs.fontSize) {
+              editor.chain().focus().unsetMark("customStyle").run();
+            } else {
+              editor.chain().focus().setMark("customStyle", nextAttrs).run();
+            }
+          }}
+          className={`bg-white dark:bg-slate-950 border border-slate-200 dark:border-white/10 rounded-lg p-1 text-[10px] font-semibold ${
+            light ? "text-slate-700" : "text-slate-200"
+          } outline-none max-w-[120px] h-7 cursor-pointer`}
+        >
+          <option value="">Font (Default)</option>
+          <option value="Inter, sans-serif">Inter</option>
+          <option value="'Times New Roman', Times, serif">Times New Roman</option>
+          <option value="'Courier New', Courier, monospace">Courier New</option>
+          <option value="'Playfair Display', serif">Playfair</option>
+          <option value="system-ui, sans-serif">System UI</option>
+        </select>
+
+        <select
+          value={(editor.getAttributes("customStyle") as any).fontSize || ""}
+          onChange={(e) => {
+            const size = e.target.value;
+            const current = editor.getAttributes("customStyle") as any;
+            const nextAttrs = { ...current, fontSize: size || null };
+            if (!nextAttrs.fontFamily && !nextAttrs.fontSize) {
+              editor.chain().focus().unsetMark("customStyle").run();
+            } else {
+              editor.chain().focus().setMark("customStyle", nextAttrs).run();
+            }
+          }}
+          className={`bg-white dark:bg-slate-950 border border-slate-200 dark:border-white/10 rounded-lg p-1 text-[10px] font-semibold ${
+            light ? "text-slate-700" : "text-slate-200"
+          } outline-none max-w-[85px] h-7 cursor-pointer`}
+        >
+          <option value="">Size (Default)</option>
+          <option value="10pt">10 pt</option>
+          <option value="12pt">12 pt</option>
+          <option value="14pt">14 pt</option>
+          <option value="16pt">16 pt</option>
+          <option value="20pt">20 pt</option>
+          <option value="24pt">24 pt</option>
+          <option value="32pt">32 pt</option>
+        </select>
+
+        <Sep light={light} />
 
         {/* Text format */}
         <ToolBtn

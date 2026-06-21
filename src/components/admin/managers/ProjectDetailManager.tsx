@@ -1887,51 +1887,6 @@ export default function ProjectDetailManager({ projectId, onBack }: ProjectDetai
               <span>Hapus</span>
             </button>
           </div>
-
-          <div className="h-5 w-px bg-slate-200 mx-2" />
-
-          {/* Text Formatting Mock Ribbon details */}
-          <div className="flex items-center gap-1">
-            <span className="text-[8px] font-black uppercase text-slate-400 tracking-wider mr-1">Font:</span>
-            <select className="bg-white border border-slate-200 rounded-lg p-1 text-[10px] font-medium text-slate-700 outline-none" disabled>
-              <option>Inter (Default)</option>
-              <option>Times New Roman</option>
-              <option>Courier New</option>
-            </select>
-            <select className="bg-white border border-slate-200 rounded-lg p-1 text-[10px] font-medium text-slate-700 outline-none" disabled>
-              <option>12 pt</option>
-              <option>14 pt</option>
-              <option>16 pt</option>
-              <option>20 pt</option>
-            </select>
-
-            <div className="h-4 w-px bg-slate-200 mx-1" />
-
-            <button className="w-7 h-7 flex items-center justify-center text-slate-400 hover:bg-slate-100 rounded-md transition-colors" disabled title="Tebal (Bold)">
-              <Bold size={12} />
-            </button>
-            <button className="w-7 h-7 flex items-center justify-center text-slate-400 hover:bg-slate-100 rounded-md transition-colors" disabled title="Miring (Italic)">
-              <Italic size={12} />
-            </button>
-            <button className="w-7 h-7 flex items-center justify-center text-slate-400 hover:bg-slate-100 rounded-md transition-colors" disabled title="Garis Bawah (Underline)">
-              <Underline size={12} />
-            </button>
-
-            <div className="h-4 w-px bg-slate-200 mx-1" />
-
-            <button className="w-7 h-7 flex items-center justify-center text-slate-400 hover:bg-slate-100 rounded-md transition-colors" disabled title="Rata Kiri">
-              <AlignLeft size={12} />
-            </button>
-            <button className="w-7 h-7 flex items-center justify-center text-slate-400 hover:bg-slate-100 rounded-md transition-colors" disabled title="Rata Tengah">
-              <AlignCenter size={12} />
-            </button>
-            <button className="w-7 h-7 flex items-center justify-center text-slate-400 hover:bg-slate-100 rounded-md transition-colors" disabled title="Rata Kanan">
-              <AlignRight size={12} />
-            </button>
-            <button className="w-7 h-7 flex items-center justify-center text-slate-400 hover:bg-slate-100 rounded-md transition-colors" disabled title="Rata Kiri Kanan">
-              <AlignJustify size={12} />
-            </button>
-          </div>
         </div>
 
         {/* Live Canvas Editor (Blank Document Style) */}
