@@ -274,6 +274,120 @@ export default function ProjectDetailManager({ projectId, onBack }: ProjectDetai
     })
   );
 
+  // Drag to Resize Columns Ref & Handler
+  const colResizeRef = useRef<{
+    blockId: string;
+    colIdx: number;
+    startWidth: number;
+    startX: number;
+  } | null>(null);
+
+  const handleColResizeStart = (e: React.MouseEvent, blockId: string, colIdx: number) => {
+    e.preventDefault();
+    const thElement = (e.target as HTMLElement).parentElement;
+    if (!thElement) return;
+
+    const startWidth = thElement.getBoundingClientRect().width;
+    const startX = e.clientX;
+
+    colResizeRef.current = {
+      blockId,
+      colIdx,
+      startWidth,
+      startX,
+    };
+
+    const handleMouseMove = (moveEvent: MouseEvent) => {
+      if (!colResizeRef.current) return;
+      const { blockId: activeId, colIdx: activeIdx, startWidth: w, startX: x } = colResizeRef.current;
+      const deltaX = moveEvent.clientX - x;
+      const newWidth = Math.max(50, w + deltaX); // Min width 50px
+
+      setBlocks((prevBlocks) =>
+        prevBlocks.map((b) => {
+          if (b.id === activeId) {
+            const currentWidths = [...(b.data.columnWidths || Array(b.data.headers.length).fill(""))];
+            currentWidths[activeIdx] = `${newWidth}px`;
+            return {
+              ...b,
+              data: {
+                ...b.data,
+                columnWidths: currentWidths,
+              },
+            };
+          }
+          return b;
+        })
+      );
+    };
+
+    const handleMouseUp = () => {
+      colResizeRef.current = null;
+      window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("mouseup", handleMouseUp);
+    };
+
+    window.addEventListener("mousemove", handleMouseMove);
+    window.addEventListener("mouseup", handleMouseUp);
+  };
+
+  // Drag to Resize Rows Ref & Handler
+  const rowResizeRef = useRef<{
+    blockId: string;
+    rowIdx: number;
+    startHeight: number;
+    startY: number;
+  } | null>(null);
+
+  const handleRowResizeStart = (e: React.MouseEvent, blockId: string, rowIdx: number) => {
+    e.preventDefault();
+    const trElement = (e.target as HTMLElement).closest("tr");
+    if (!trElement) return;
+
+    const startHeight = trElement.getBoundingClientRect().height;
+    const startY = e.clientY;
+
+    rowResizeRef.current = {
+      blockId,
+      rowIdx,
+      startHeight,
+      startY,
+    };
+
+    const handleMouseMove = (moveEvent: MouseEvent) => {
+      if (!rowResizeRef.current) return;
+      const { blockId: activeId, rowIdx: activeIdx, startHeight: h, startY: y } = rowResizeRef.current;
+      const deltaY = moveEvent.clientY - y;
+      const newHeight = Math.max(25, h + deltaY); // Min height 25px
+
+      setBlocks((prevBlocks) =>
+        prevBlocks.map((b) => {
+          if (b.id === activeId) {
+            const currentHeights = [...(b.data.rowHeights || Array(b.data.rows.length).fill(""))];
+            currentHeights[activeIdx] = `${newHeight}px`;
+            return {
+              ...b,
+              data: {
+                ...b.data,
+                rowHeights: currentHeights,
+              },
+            };
+          }
+          return b;
+        })
+      );
+    };
+
+    const handleMouseUp = () => {
+      rowResizeRef.current = null;
+      window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("mouseup", handleMouseUp);
+    };
+
+    window.addEventListener("mousemove", handleMouseMove);
+    window.addEventListener("mouseup", handleMouseUp);
+  };
+
   useEffect(() => {
     const loadProject = async () => {
       try {
@@ -731,7 +845,7 @@ export default function ProjectDetailManager({ projectId, onBack }: ProjectDetai
                             <tr 
                               key={rowIdx} 
                               className="hover:bg-white/[0.01]"
-                              style={{ height: block.data.rowHeight || 'auto' }}
+                              style={{ height: block.data.rowHeights?.[rowIdx] || block.data.rowHeight || 'auto' }}
                             >
                               {row.map((cell: string, cellIdx: number) => (
                                 <td key={cellIdx} className={`${previewPadClass} text-slate-300 font-medium`}>{cell}</td>
@@ -1168,7 +1282,11 @@ export default function ProjectDetailManager({ projectId, onBack }: ProjectDetai
                                 onClick={() => {
                                   const colCount = block.data.headers.length;
                                   const nextRow = Array(colCount).fill("Sel Baru");
-                                  updateBlock(block.id, { rows: [...block.data.rows, nextRow] });
+                                  const newHeights = [...(block.data.rowHeights || Array(block.data.rows.length).fill("")), ""];
+                                  updateBlock(block.id, { 
+                                    rows: [...block.data.rows, nextRow],
+                                    rowHeights: newHeights
+                                  });
                                 }}
                                 className="text-[9px] font-bold bg-white/5 hover:bg-white/10 text-slate-300 py-1 px-2.5 rounded-md"
                               >
@@ -1194,7 +1312,12 @@ export default function ProjectDetailManager({ projectId, onBack }: ProjectDetai
                                 type="button"
                                 onClick={() => {
                                   if (block.data.rows.length > 1) {
-                                    updateBlock(block.id, { rows: block.data.rows.slice(0, -1) });
+                                    const newRows = block.data.rows.slice(0, -1);
+                                    const newHeights = block.data.rowHeights ? block.data.rowHeights.slice(0, -1) : [];
+                                    updateBlock(block.id, { 
+                                      rows: newRows,
+                                      rowHeights: newHeights
+                                    });
                                   }
                                 }}
                                 className="text-[9px] font-bold bg-red-950/20 text-red-400 py-1 px-2.5 rounded-md"
@@ -1280,7 +1403,11 @@ export default function ProjectDetailManager({ projectId, onBack }: ProjectDetai
                               <thead>
                                 <tr>
                                   {block.data.headers.map((h: string, idx: number) => (
-                                    <th key={idx} className="p-1">
+                                    <th 
+                                      key={idx} 
+                                      className="p-1 relative group/col"
+                                      style={{ width: block.data.columnWidths?.[idx] || 'auto' }}
+                                    >
                                       <input
                                         type="text"
                                         value={h}
@@ -1291,6 +1418,12 @@ export default function ProjectDetailManager({ projectId, onBack }: ProjectDetai
                                         }}
                                         className="w-full bg-slate-900 border border-white/5 rounded-md p-1.5 text-[10px] font-bold text-blue-400 focus:outline-none"
                                       />
+                                      {/* Vertical Drag Resizer Line */}
+                                      <div
+                                        onMouseDown={(e) => handleColResizeStart(e, block.id, idx)}
+                                        className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize bg-transparent hover:bg-blue-500/50 active:bg-blue-500 transition-colors z-10"
+                                        title="Drag to resize column width"
+                                      />
                                     </th>
                                   ))}
                                 </tr>
@@ -1299,7 +1432,11 @@ export default function ProjectDetailManager({ projectId, onBack }: ProjectDetai
                                 {block.data.rows.map((row: string[], rowIdx: number) => (
                                   <tr key={rowIdx}>
                                     {row.map((cell: string, cellIdx: number) => (
-                                      <td key={cellIdx} className="p-1">
+                                      <td 
+                                        key={cellIdx} 
+                                        className="p-1 relative group/row"
+                                        style={{ height: block.data.rowHeights?.[rowIdx] || 'auto' }}
+                                      >
                                         <input
                                           type="text"
                                           value={cell}
@@ -1309,6 +1446,12 @@ export default function ProjectDetailManager({ projectId, onBack }: ProjectDetai
                                             updateBlock(block.id, { rows: newRows });
                                           }}
                                           className="w-full bg-slate-900 border border-white/5 rounded-md p-1.5 text-[10px] text-slate-300 focus:outline-none"
+                                        />
+                                        {/* Horizontal Drag Resizer Line */}
+                                        <div
+                                          onMouseDown={(e) => handleRowResizeStart(e, block.id, rowIdx)}
+                                          className="absolute left-0 right-0 bottom-0 h-1 cursor-row-resize bg-transparent hover:bg-blue-500/50 active:bg-blue-500 transition-colors z-10"
+                                          title="Drag to resize row height"
                                         />
                                       </td>
                                     ))}

@@ -122,7 +122,7 @@ function TableBlock({ block, isDark }: { block: any; isDark: boolean }) {
             <tr 
               key={rowIdx} 
               className={isDark ? "hover:bg-white/[0.01]" : "hover:bg-slate-50/50"}
-              style={{ height: block.data.rowHeight || 'auto' }}
+              style={{ height: block.data.rowHeights?.[rowIdx] || block.data.rowHeight || 'auto' }}
             >
               {row.map((cell: string, cellIdx: number) => (
                 <td key={cellIdx} className={`${padClass} font-bold ${
