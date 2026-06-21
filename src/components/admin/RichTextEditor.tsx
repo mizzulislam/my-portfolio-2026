@@ -13,12 +13,14 @@ function ToolBtn({
   title,
   children,
   disabled = false,
+  light = false,
 }: {
   onClick: () => void;
   active?: boolean;
   title?: string;
   children: React.ReactNode;
   disabled?: boolean;
+  light?: boolean;
 }) {
   return (
     <button
@@ -31,8 +33,12 @@ function ToolBtn({
       title={title}
       className={`flex items-center justify-center w-7 h-7 rounded-lg text-xs font-bold transition-all duration-150 select-none ${
         active
-          ? "bg-blue-600/30 text-blue-300 border border-blue-500/40"
-          : "text-slate-400 hover:text-white hover:bg-white/8 border border-transparent"
+          ? light
+            ? "bg-blue-50 text-blue-600 border border-blue-200/60"
+            : "bg-blue-600/30 text-blue-300 border border-blue-500/40"
+          : light
+            ? "text-slate-500 hover:text-slate-950 hover:bg-slate-100 border border-transparent"
+            : "text-slate-400 hover:text-white hover:bg-white/8 border border-transparent"
       } disabled:opacity-30 disabled:cursor-not-allowed`}
     >
       {children}
@@ -41,8 +47,8 @@ function ToolBtn({
 }
 
 // ── Separator ────────────────────────────────────────────────────────────────
-function Sep() {
-  return <div className="w-px h-5 bg-white/10 mx-0.5 shrink-0" />;
+function Sep({ light = false }: { light?: boolean }) {
+  return <div className={`w-px h-5 mx-0.5 shrink-0 ${light ? "bg-slate-200" : "bg-white/10"}`} />;
 }
 
 // ── Main component ───────────────────────────────────────────────────────────
@@ -51,6 +57,7 @@ interface RichTextEditorProps {
   onChange: (html: string) => void;
   placeholder?: string;
   minHeight?: number;
+  light?: boolean;        // Added support for light theme inside Canvas
 }
 
 export default function RichTextEditor({
@@ -58,6 +65,7 @@ export default function RichTextEditor({
   onChange,
   placeholder = "Mulai menulis konten di sini...",
   minHeight = 180,
+  light = false,
 }: RichTextEditorProps) {
   const editor = useEditor({
     extensions: [
@@ -77,7 +85,7 @@ export default function RichTextEditor({
       Link.configure({
         openOnClick: false,
         HTMLAttributes: {
-          class: "text-blue-400 underline underline-offset-2 cursor-pointer",
+          class: "text-blue-500 underline underline-offset-2 cursor-pointer",
           rel: "noopener noreferrer",
           target: "_blank",
         },
@@ -124,16 +132,25 @@ export default function RichTextEditor({
     editor.isActive("heading", { level });
 
   return (
-    <div className="rounded-2xl border border-white/10 overflow-hidden bg-slate-950 focus-within:border-blue-500/40 focus-within:ring-4 focus-within:ring-blue-500/8 transition-all duration-200">
+    <div className={`rounded-2xl border overflow-hidden transition-all duration-200 ${
+      light 
+        ? "border-slate-200 bg-white focus-within:border-blue-500/50 focus-within:ring-4 focus-within:ring-blue-500/10" 
+        : "border-white/10 bg-slate-950 focus-within:border-blue-500/40 focus-within:ring-4 focus-within:ring-blue-500/8"
+    }`}>
 
       {/* ── Toolbar ── */}
-      <div className="flex flex-wrap items-center gap-0.5 px-3 py-2 border-b border-white/8 bg-slate-900/60">
+      <div className={`flex flex-wrap items-center gap-0.5 px-3 py-2 border-b transition-colors ${
+        light 
+          ? "border-slate-100 bg-slate-50" 
+          : "border-white/8 bg-slate-900/60"
+      }`}>
 
         {/* Text format */}
         <ToolBtn
           onClick={() => editor.chain().focus().toggleBold().run()}
           active={editor.isActive("bold")}
           title="Bold (Ctrl+B)"
+          light={light}
         >
           <span className="font-black text-[11px]">B</span>
         </ToolBtn>
@@ -141,6 +158,7 @@ export default function RichTextEditor({
           onClick={() => editor.chain().focus().toggleItalic().run()}
           active={editor.isActive("italic")}
           title="Italic (Ctrl+I)"
+          light={light}
         >
           <span className="italic font-semibold text-[11px]">I</span>
         </ToolBtn>
@@ -148,6 +166,7 @@ export default function RichTextEditor({
           onClick={() => editor.chain().focus().toggleUnderline().run()}
           active={editor.isActive("underline")}
           title="Underline (Ctrl+U)"
+          light={light}
         >
           <span className="underline font-semibold text-[11px]">U</span>
         </ToolBtn>
@@ -155,11 +174,12 @@ export default function RichTextEditor({
           onClick={() => editor.chain().focus().toggleStrike().run()}
           active={editor.isActive("strike")}
           title="Strikethrough"
+          light={light}
         >
           <span className="line-through font-semibold text-[11px]">S</span>
         </ToolBtn>
 
-        <Sep />
+        <Sep light={light} />
 
         {/* Headings */}
         {([1, 2, 3] as const).map((lvl) => (
@@ -168,18 +188,20 @@ export default function RichTextEditor({
             onClick={() => editor.chain().focus().toggleHeading({ level: lvl }).run()}
             active={isHeading(lvl)}
             title={`Heading ${lvl}`}
+            light={light}
           >
             <span className="text-[10px] font-black">H{lvl}</span>
           </ToolBtn>
         ))}
 
-        <Sep />
+        <Sep light={light} />
 
         {/* Alignment */}
         <ToolBtn
           onClick={() => editor.chain().focus().setTextAlign("left").run()}
           active={editor.isActive({ textAlign: "left" })}
           title="Align Left"
+          light={light}
         >
           <AlignLeftIcon />
         </ToolBtn>
@@ -187,6 +209,7 @@ export default function RichTextEditor({
           onClick={() => editor.chain().focus().setTextAlign("center").run()}
           active={editor.isActive({ textAlign: "center" })}
           title="Align Center"
+          light={light}
         >
           <AlignCenterIcon />
         </ToolBtn>
@@ -194,6 +217,7 @@ export default function RichTextEditor({
           onClick={() => editor.chain().focus().setTextAlign("right").run()}
           active={editor.isActive({ textAlign: "right" })}
           title="Align Right"
+          light={light}
         >
           <AlignRightIcon />
         </ToolBtn>
@@ -201,17 +225,19 @@ export default function RichTextEditor({
           onClick={() => editor.chain().focus().setTextAlign("justify").run()}
           active={editor.isActive({ textAlign: "justify" })}
           title="Justify"
+          light={light}
         >
           <AlignJustifyIcon />
         </ToolBtn>
 
-        <Sep />
+        <Sep light={light} />
 
         {/* Lists */}
         <ToolBtn
           onClick={() => editor.chain().focus().toggleBulletList().run()}
           active={editor.isActive("bulletList")}
           title="Bullet List"
+          light={light}
         >
           <BulletListIcon />
         </ToolBtn>
@@ -219,17 +245,19 @@ export default function RichTextEditor({
           onClick={() => editor.chain().focus().toggleOrderedList().run()}
           active={editor.isActive("orderedList")}
           title="Numbered List"
+          light={light}
         >
           <NumberedListIcon />
         </ToolBtn>
 
-        <Sep />
+        <Sep light={light} />
 
         {/* Blockquote */}
         <ToolBtn
           onClick={() => editor.chain().focus().toggleBlockquote().run()}
           active={editor.isActive("blockquote")}
           title="Blockquote"
+          light={light}
         >
           <BlockquoteIcon />
         </ToolBtn>
@@ -239,6 +267,7 @@ export default function RichTextEditor({
           onClick={handleSetLink}
           active={editor.isActive("link")}
           title="Insert / Edit Link"
+          light={light}
         >
           <LinkIcon />
         </ToolBtn>
@@ -247,7 +276,7 @@ export default function RichTextEditor({
       {/* ── Content area ── */}
       <EditorContent
         editor={editor}
-        className="prose-editor px-5 py-4 text-sm text-slate-200 leading-relaxed"
+        className={`prose-editor px-5 py-4 text-sm leading-relaxed ${light ? "text-slate-800" : "text-slate-200"}`}
         style={{ minHeight }}
       />
 
@@ -256,26 +285,26 @@ export default function RichTextEditor({
         .prose-editor .tiptap {
           outline: none;
           min-height: ${minHeight}px;
-          color: #cbd5e1;
+          color: ${light ? "#1e293b" : "#cbd5e1"};
           font-size: 0.8rem;
           line-height: 1.75;
         }
         .prose-editor .tiptap p.is-editor-empty:first-child::before {
           content: attr(data-placeholder);
           float: left;
-          color: #475569;
+          color: ${light ? "#94a3b8" : "#475569"};
           pointer-events: none;
           height: 0;
         }
-        .prose-editor .tiptap h1 { font-size: 1.4rem; font-weight: 900; color: #f1f5f9; margin: 0.75em 0 0.35em; line-height: 1.2; }
-        .prose-editor .tiptap h2 { font-size: 1.15rem; font-weight: 800; color: #e2e8f0; margin: 0.7em 0 0.3em; }
-        .prose-editor .tiptap h3 { font-size: 0.95rem; font-weight: 700; color: #cbd5e1; margin: 0.65em 0 0.25em; }
+        .prose-editor .tiptap h1 { font-size: 1.4rem; font-weight: 900; color: ${light ? "#0f172a" : "#f1f5f9"}; margin: 0.75em 0 0.35em; line-height: 1.2; }
+        .prose-editor .tiptap h2 { font-size: 1.15rem; font-weight: 800; color: ${light ? "#1e293b" : "#e2e8f0"}; margin: 0.7em 0 0.3em; }
+        .prose-editor .tiptap h3 { font-size: 0.95rem; font-weight: 700; color: ${light ? "#334155" : "#cbd5e1"}; margin: 0.65em 0 0.25em; }
         .prose-editor .tiptap p  { margin: 0.4em 0; }
-        .prose-editor .tiptap strong { color: #f1f5f9; font-weight: 700; }
-        .prose-editor .tiptap em { color: #94a3b8; }
-        .prose-editor .tiptap s  { color: #64748b; }
+        .prose-editor .tiptap strong { color: ${light ? "#0f172a" : "#f1f5f9"}; font-weight: 700; }
+        .prose-editor .tiptap em { color: ${light ? "#475569" : "#94a3b8"}; }
+        .prose-editor .tiptap s  { color: ${light ? "#94a3b8" : "#64748b"}; }
         .prose-editor .tiptap u  { text-decoration-color: #3b82f6; }
-        .prose-editor .tiptap a  { color: #60a5fa; text-decoration: underline; text-underline-offset: 2px; }
+        .prose-editor .tiptap a  { color: #2563eb; text-decoration: underline; text-underline-offset: 2px; }
         .prose-editor .tiptap ul { list-style-type: disc; padding-left: 1.4em; margin: 0.4em 0; }
         .prose-editor .tiptap ol { list-style-type: decimal; padding-left: 1.4em; margin: 0.4em 0; }
         .prose-editor .tiptap li { margin: 0.15em 0; }
@@ -283,9 +312,9 @@ export default function RichTextEditor({
           border-left: 3px solid #3b82f6;
           padding-left: 1em;
           margin: 0.6em 0;
-          color: #94a3b8;
+          color: ${light ? "#475569" : "#94a3b8"};
           font-style: italic;
-          background: rgba(59,130,246,0.06);
+          background: ${light ? "rgba(59,130,246,0.04)" : "rgba(59,130,246,0.06)"};
           border-radius: 0 0.5rem 0.5rem 0;
         }
         /* Text alignment */

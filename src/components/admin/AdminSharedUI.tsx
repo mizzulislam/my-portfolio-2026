@@ -49,6 +49,7 @@ export function AdminDropdown({
   placeholder = "Select an option",
   className = "",
   size = "normal",
+  light = false,
 }: {
   value: string;
   onChange: (value: string) => void;
@@ -56,6 +57,7 @@ export function AdminDropdown({
   placeholder?: string;
   className?: string;
   size?: "normal" | "compact";
+  light?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -79,13 +81,19 @@ export function AdminDropdown({
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className={`w-full flex items-center justify-between gap-3 bg-slate-900/80 border ${
-          open ? "border-blue-500/50 ring-4 ring-blue-500/10" : "border-white/10"
-        } rounded-2xl text-slate-200 cursor-pointer transition-all duration-200 hover:border-white/20 ${
+        className={`w-full flex items-center justify-between gap-3 border transition-all duration-200 cursor-pointer ${
+          light
+            ? open
+              ? "bg-white border-blue-500 ring-4 ring-blue-500/10 text-slate-900"
+              : "bg-white border-slate-200 text-slate-900 hover:border-slate-350"
+            : open
+              ? "bg-slate-900/80 border-blue-500/50 ring-4 ring-blue-500/10 text-slate-200"
+              : "bg-slate-900/80 border-white/10 text-slate-200 hover:border-white/20"
+        } ${
           isCompact ? "h-11 px-3 text-xs" : "h-14 px-5 text-sm"
         }`}
       >
-        <span className={value ? "text-slate-200" : "text-slate-500"}>
+        <span className={value ? (light ? "text-slate-900" : "text-slate-200") : "text-slate-400"}>
           {selectedLabel}
         </span>
         <motion.span
@@ -93,7 +101,7 @@ export function AdminDropdown({
           transition={{ duration: 0.2 }}
           className="shrink-0"
         >
-          <ChevronDown size={isCompact ? 14 : 16} className="text-slate-400" />
+          <ChevronDown size={isCompact ? 14 : 16} className={light ? "text-slate-500" : "text-slate-400"} />
         </motion.span>
       </button>
 
@@ -104,7 +112,11 @@ export function AdminDropdown({
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -6, scale: 0.98 }}
             transition={{ duration: 0.15, ease: "easeOut" }}
-            className="absolute z-[200] left-0 right-0 mt-2 bg-slate-900/95 backdrop-blur-xl border border-white/10 rounded-2xl overflow-hidden shadow-2xl shadow-black/50"
+            className={`absolute z-[200] left-0 right-0 mt-2 border rounded-2xl overflow-hidden shadow-2xl ${
+              light
+                ? "bg-white border-slate-200 shadow-slate-200/50"
+                : "bg-slate-900/95 border-white/10 shadow-black/50"
+            }`}
           >
             {options.map((opt) => (
               <li key={opt.value}>
@@ -115,13 +127,17 @@ export function AdminDropdown({
                     isCompact ? "px-3 py-2 text-xs" : "px-5 py-3 text-sm"
                   } font-medium transition-all duration-150 ${
                     opt.value === value
-                      ? "bg-blue-600/20 text-blue-300"
-                      : "text-slate-300 hover:bg-white/5 hover:text-white"
+                      ? light
+                        ? "bg-blue-50 text-blue-600"
+                        : "bg-blue-600/20 text-blue-300"
+                      : light
+                        ? "text-slate-700 hover:bg-slate-50 hover:text-slate-950"
+                        : "text-slate-300 hover:bg-white/5 hover:text-white"
                   }`}
                 >
                   {opt.label}
                   {opt.value === value && (
-                    <Check size={12} className="text-blue-400 shrink-0" />
+                    <Check size={12} className="text-blue-500 shrink-0" />
                   )}
                 </button>
               </li>
@@ -208,11 +224,13 @@ export function ImageUpload({
   onChange,
   label = "Upload Image",
   resetKey,
+  light = false,
 }: {
   value: string;
   onChange: (url: string) => void;
   label?: string;
   resetKey?: number;
+  light?: boolean;
 }) {
   const [uploading, setUploading] = useState(false);
   const [preview, setPreview] = useState(value);
@@ -262,7 +280,7 @@ export function ImageUpload({
     } finally {
       setUploading(false);
     }
-  };;
+  };
 
   return (
     <div className="mb-4">
@@ -275,7 +293,9 @@ export function ImageUpload({
       />
 
       {preview ? (
-        <div className="relative w-full h-32 rounded-2xl overflow-hidden border border-white/10 group">
+        <div className={`relative w-full h-32 rounded-2xl overflow-hidden border group ${
+          light ? "border-slate-200 bg-white" : "border-white/10 bg-transparent"
+        }`}>
           <img
             src={preview}
             alt="preview"
@@ -284,7 +304,7 @@ export function ImageUpload({
           <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-all flex items-center justify-center gap-3">
             <button
               onClick={() => inputRef.current?.click()}
-              className="px-4 py-2 bg-blue-600 text-white rounded-xl text-xs font-bold"
+              className="px-4 py-2 bg-blue-600 text-white rounded-xl text-xs font-bold cursor-pointer"
             >
               {uploading ? "Uploading..." : "Ganti Gambar"}
             </button>
@@ -293,7 +313,7 @@ export function ImageUpload({
                 setPreview("");
                 onChange("");
               }}
-              className="px-4 py-2 bg-red-500/20 border border-red-500/30 text-red-400 rounded-xl text-xs font-bold"
+              className="px-4 py-2 bg-red-500/20 border border-red-500/30 text-red-400 rounded-xl text-xs font-bold cursor-pointer"
             >
               Hapus
             </button>
@@ -301,9 +321,14 @@ export function ImageUpload({
         </div>
       ) : (
         <button
+          type="button"
           onClick={() => inputRef.current?.click()}
           disabled={uploading}
-          className="w-full h-32 rounded-2xl border-2 border-dashed border-white/10 hover:border-blue-500/50 hover:bg-blue-500/5 transition-all flex flex-col items-center justify-center gap-2 text-slate-500 hover:text-blue-400 disabled:opacity-50"
+          className={`w-full h-32 rounded-2xl border-2 border-dashed transition-all flex flex-col items-center justify-center gap-2 text-slate-500 hover:text-blue-400 disabled:opacity-50 cursor-pointer ${
+            light
+              ? "border-slate-200 hover:border-blue-500/50 hover:bg-blue-500/5 bg-slate-50/50 text-slate-400 hover:text-blue-600"
+              : "border-white/10 hover:border-blue-500/50 hover:bg-blue-500/5 bg-transparent text-slate-500 hover:text-blue-400"
+          }`}
         >
           {uploading ? (
             <>

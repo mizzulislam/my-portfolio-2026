@@ -3,7 +3,8 @@ import React from "react";
 import { motion } from "motion/react";
 import { 
   ArrowLeft, Check, Trash2, Image as ImageIcon, Plus, GripVertical, 
-  FileText, Columns, Table, Film, AlignLeft, Eye, ChevronDown, ChevronUp, Link as LinkIcon, Layers
+  FileText, Columns, Table, Film, AlignLeft, Eye, ChevronDown, ChevronUp, Link as LinkIcon, Layers,
+  ChevronLeft, ChevronRight
 } from "lucide-react";
 import { toast } from "react-hot-toast";
 import { Project } from "@/src/types/project";
@@ -523,13 +524,13 @@ function SortableBlockWrapper({ id, onDelete, onDuplicate, children }: { id: str
   };
 
   return (
-    <div ref={setNodeRef} style={style} className="relative group border border-white/5 bg-slate-900/40 p-6 rounded-2xl transition-all hover:border-blue-500/20 hover:bg-slate-900/70">
+    <div ref={setNodeRef} style={style} className="relative group border border-slate-100 bg-slate-50/70 p-6 rounded-2xl transition-all hover:border-slate-200 hover:bg-slate-50 text-slate-900 shadow-sm">
       {/* Drag & Action Header */}
-      <div className="flex items-center justify-between mb-4 border-b border-white/5 pb-3">
+      <div className="flex items-center justify-between mb-4 border-b border-slate-100 pb-3">
         <div 
           {...attributes} 
           {...listeners} 
-          className="flex items-center gap-2 cursor-grab active:cursor-grabbing text-slate-500 hover:text-white rounded-lg hover:bg-white/5 py-1 px-2.5 transition-all"
+          className="flex items-center gap-2 cursor-grab active:cursor-grabbing text-slate-400 hover:text-slate-700 hover:bg-slate-200/40 rounded-lg py-1 px-2.5 transition-all"
           title="Drag to reorder"
         >
           <GripVertical size={14} />
@@ -539,14 +540,14 @@ function SortableBlockWrapper({ id, onDelete, onDuplicate, children }: { id: str
           <button
             type="button"
             onClick={onDuplicate}
-            className="text-[9px] font-bold uppercase tracking-wider bg-white/5 hover:bg-white/10 text-slate-300 py-1 px-2.5 rounded-md transition-all"
+            className="text-[9px] font-bold uppercase tracking-wider bg-slate-200/60 hover:bg-slate-200 text-slate-600 py-1 px-2.5 rounded-md transition-all cursor-pointer"
           >
             Duplicate
           </button>
           <button
             type="button"
             onClick={onDelete}
-            className="text-[9px] font-bold uppercase tracking-wider bg-red-950/40 hover:bg-red-900/60 text-red-400 py-1 px-2.5 rounded-md transition-all"
+            className="text-[9px] font-bold uppercase tracking-wider bg-red-50 hover:bg-red-100 text-red-600 py-1 px-2.5 rounded-md transition-all cursor-pointer"
           >
             Delete
           </button>
@@ -678,6 +679,7 @@ export default function ProjectDetailManager({ projectId, onBack }: ProjectDetai
   
   // Step Wizard State
   const [step, setStep] = useState<"edit" | "preview">("edit");
+  const [rightSidebarOpen, setRightSidebarOpen] = useState(true);
 
   // Accordion active index helper in preview mode
   const [activeAccordionIdx, setActiveAccordionIdx] = useState<{ [blockId: string]: number | null }>({});
@@ -1447,105 +1449,153 @@ export default function ProjectDetailManager({ projectId, onBack }: ProjectDetai
 
   // WIZARD EDIT MODE
   return (
-    <div className="space-y-10 animate-fade-in">
-      <div className="flex items-center justify-between gap-4 border-b border-white/5 pb-5">
-        {/* Left: title block */}
-        <div className="min-w-0 flex-1">
-          <p className="text-[9px] font-bold text-slate-500 uppercase tracking-[0.18em]">Editor Proyek</p>
-          <h3 className="text-white font-black text-xs tracking-wide truncate leading-tight">
-            {project?.title}
-          </h3>
+    <div className={`transition-all duration-300 relative ${rightSidebarOpen ? "md:pr-80" : "pr-0"}`}>
+      <div className="space-y-8 animate-fade-in pb-20">
+        <div className="flex items-center justify-between gap-4 border-b border-white/5 pb-5">
+          {/* Left: title block */}
+          <div className="min-w-0 flex-1">
+            <p className="text-[9px] font-bold text-slate-500 uppercase tracking-[0.18em]">Editor Proyek</p>
+            <h3 className="text-white font-black text-xs tracking-wide truncate leading-tight">
+              {project?.title}
+            </h3>
+          </div>
+          {/* Right: back button + review button */}
+          <div className="flex items-center gap-2 shrink-0">
+            <AdminBtn variant="secondary" onClick={onBack}>
+              <ArrowLeft size={13} /> Kembali ke Proyek
+            </AdminBtn>
+            <AdminBtn variant="primary" onClick={() => setStep("preview")}>
+              <Eye size={13} /> Review Tampilan
+            </AdminBtn>
+          </div>
         </div>
-        {/* Right: back button + review button */}
-        <div className="flex items-center gap-2 shrink-0">
-          <AdminBtn variant="secondary" onClick={onBack}>
-            <ArrowLeft size={13} /> Kembali ke Proyek
-          </AdminBtn>
-          <AdminBtn variant="primary" onClick={() => setStep("preview")}>
-            <Eye size={13} /> Review Tampilan
-          </AdminBtn>
-        </div>
-      </div>
 
-      {/* Editor Main Content Builder - Full Width card layout */}
-      <div className="w-full space-y-6">
-        <AdminCard title="No-Code Page Blocks Builder" icon={ImageIcon}>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-            {/* Template Presets Composite Selector */}
-            <div className="p-4 rounded-xl bg-slate-950/60 border border-white/5">
-              <label className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-400 mb-3 block">
-                Terapkan Preset Gabungan Blok UX (UX Layout Presets)
-              </label>
-              <div className="grid grid-cols-3 gap-2">
-                <button
-                  type="button"
-                  onClick={() => applyUXLayoutStack("standard")}
-                  className="flex items-center justify-center gap-2 py-2 px-3 rounded-xl font-bold text-[9px] uppercase tracking-wider border border-white/5 text-slate-400 hover:text-white hover:bg-white/5 transition-all"
-                >
-                  Standard
-                </button>
-                <button
-                  type="button"
-                  onClick={() => applyUXLayoutStack("showcase")}
-                  className="flex items-center justify-center gap-2 py-2 px-3 rounded-xl font-bold text-[9px] uppercase tracking-wider border border-white/5 text-slate-400 hover:text-white hover:bg-white/5 transition-all"
-                >
-                  Showcase
-                </button>
-                <button
-                  type="button"
-                  onClick={() => applyUXLayoutStack("tech")}
-                  className="flex items-center justify-center gap-2 py-2 px-3 rounded-xl font-bold text-[9px] uppercase tracking-wider border border-white/5 text-slate-400 hover:text-white hover:bg-white/5 transition-all"
-                >
-                  Tech
-                </button>
-              </div>
-            </div>
-
-            {/* Project Specs Layout Control Selector */}
-            <div className="p-4 rounded-xl bg-slate-950/60 border border-white/5">
-              <label className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-400 mb-3 block">
-                Tata Letak Card "Project Specs" (Specs Layout)
-              </label>
-              <div className="grid grid-cols-3 gap-2">
-                <button
-                  type="button"
-                  onClick={() => setSpecsLayout("right")}
-                  className={`flex items-center justify-center gap-2 py-2 px-3 rounded-xl font-bold text-[9px] uppercase tracking-wider border transition-all ${
-                    specsLayout === "right"
-                      ? "border-blue-500/30 text-blue-400 bg-blue-500/10 font-black"
-                      : "border-white/5 text-slate-400 hover:text-white hover:bg-white/5"
-                  }`}
-                >
-                  Kanan
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setSpecsLayout("left")}
-                  className={`flex items-center justify-center gap-2 py-2 px-3 rounded-xl font-bold text-[9px] uppercase tracking-wider border transition-all ${
-                    specsLayout === "left"
-                      ? "border-blue-500/30 text-blue-400 bg-blue-500/10 font-black"
-                      : "border-white/5 text-slate-400 hover:text-white hover:bg-white/5"
-                  }`}
-                >
-                  Kiri
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setSpecsLayout("hidden")}
-                  className={`flex items-center justify-center gap-2 py-2 px-3 rounded-xl font-bold text-[9px] uppercase tracking-wider border transition-all ${
-                    specsLayout === "hidden"
-                      ? "border-blue-500/30 text-blue-400 bg-blue-500/10 font-black"
-                      : "border-white/5 text-slate-400 hover:text-white hover:bg-white/5"
-                  }`}
-                >
-                  Sembunyi
-                </button>
-              </div>
-            </div>
+        {/* Template Presets Composite Selector (MS Word Style) */}
+        <div className="bg-slate-950/40 backdrop-blur-xl border border-white/5 rounded-3xl p-6 mb-8 text-left">
+          <div className="flex items-center gap-2 mb-4 pb-2 border-b border-white/5 text-xs font-black text-slate-400 uppercase tracking-widest">
+            <Layers className="text-blue-500" size={16} />
+            <span>Pilih Template Tata Letak UI (MS Word Preset)</span>
           </div>
 
-          {/* Blocks Drag Drop Sortable Wrapper */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+            {/* Template Card 1 (Blank/Standard) */}
+            <button
+              type="button"
+              onClick={() => applyUXLayoutStack("standard")}
+              className="group flex flex-col items-center bg-slate-900/30 hover:bg-slate-900 border border-white/5 hover:border-blue-500/30 rounded-2xl p-4 transition-all duration-300 text-center cursor-pointer"
+            >
+              <div className="aspect-[4/3] w-full bg-slate-950 rounded-xl mb-3 flex items-center justify-center p-4 border border-white/5 group-hover:border-blue-500/20 overflow-hidden relative">
+                <div className="w-16 h-20 bg-white rounded shadow-md p-2 flex flex-col gap-1.5">
+                  <div className="w-full h-2 bg-blue-500 rounded" />
+                  <div className="w-10 h-1 bg-slate-200 rounded" />
+                  <div className="w-full h-1 bg-slate-100 rounded" />
+                  <div className="w-full h-1 bg-slate-100 rounded" />
+                  <div className="w-full h-1 bg-slate-100 rounded" />
+                </div>
+              </div>
+              <p className="text-xs font-black uppercase tracking-wider text-slate-350 group-hover:text-white leading-none mb-1">
+                Blank / Standar
+              </p>
+              <span className="text-[9px] text-slate-500 group-hover:text-slate-400">
+                Template Dokumen Dasar
+              </span>
+            </button>
+
+            {/* Template Card 2 (Showcase/Grid Stack) */}
+            <button
+              type="button"
+              onClick={() => applyUXLayoutStack("showcase")}
+              className="group flex flex-col items-center bg-slate-900/30 hover:bg-slate-900 border border-white/5 hover:border-blue-500/30 rounded-2xl p-4 transition-all duration-300 text-center cursor-pointer"
+            >
+              <div className="aspect-[4/3] w-full bg-slate-950 rounded-xl mb-3 flex items-center justify-center p-4 border border-white/5 group-hover:border-blue-500/20 overflow-hidden relative">
+                <div className="w-16 h-20 bg-white rounded shadow-md p-2 flex flex-col gap-2">
+                  <div className="w-full h-2 bg-purple-500 rounded" />
+                  <div className="grid grid-cols-2 gap-1 flex-1">
+                    <div className="border border-slate-100 rounded p-0.5 flex flex-col gap-1">
+                      <div className="w-full h-1 bg-slate-200 rounded" />
+                      <div className="w-4 h-1 bg-slate-100 rounded" />
+                    </div>
+                    <div className="border border-slate-100 rounded p-0.5 flex flex-col gap-1">
+                      <div className="w-full h-1 bg-slate-200 rounded" />
+                      <div className="w-4 h-1 bg-slate-100 rounded" />
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <p className="text-xs font-black uppercase tracking-wider text-slate-355 group-hover:text-white leading-none mb-1">
+                Showcase / Grid Stack
+              </p>
+              <span className="text-[9px] text-slate-500 group-hover:text-slate-400">
+                Template Grid & Kolom
+              </span>
+            </button>
+
+            {/* Template Card 3 (Tech Stack / Carousel) */}
+            <button
+              type="button"
+              onClick={() => applyUXLayoutStack("tech")}
+              className="group flex flex-col items-center bg-slate-900/30 hover:bg-slate-900 border border-white/5 hover:border-blue-500/30 rounded-2xl p-4 transition-all duration-300 text-center cursor-pointer"
+            >
+              <div className="aspect-[4/3] w-full bg-slate-950 rounded-xl mb-3 flex items-center justify-center p-4 border border-white/5 group-hover:border-blue-500/20 overflow-hidden relative">
+                <div className="w-16 h-20 bg-white rounded shadow-md p-2 flex flex-col gap-1.5">
+                  <div className="w-full h-2 bg-emerald-500 rounded" />
+                  <div className="w-full h-3 border border-slate-100 rounded flex items-center justify-center text-[5px] text-slate-300 font-bold">
+                    [===]
+                  </div>
+                  <div className="w-full h-3 border border-slate-100 rounded flex flex-col gap-0.5 p-0.5">
+                    <div className="w-full h-1 bg-slate-100 rounded" />
+                    <div className="w-full h-1 bg-slate-100 rounded" />
+                  </div>
+                </div>
+              </div>
+              <p className="text-xs font-black uppercase tracking-wider text-slate-355 group-hover:text-white leading-none mb-1">
+                Tech Stack / Carousel
+              </p>
+              <span className="text-[9px] text-slate-500 group-hover:text-slate-400">
+                Template Tabel & Slider
+              </span>
+            </button>
+          </div>
+        </div>
+
+        {/* Project Specs Layout Selector inside main workspace */}
+        <div className="p-6 rounded-3xl bg-slate-900/40 border border-white/5 mb-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-left">
+          <div>
+            <h4 className="text-white font-bold text-xs uppercase tracking-wider">Tata Letak Card "Project Specs"</h4>
+            <p className="text-[10px] text-slate-500 mt-1">Mengatur posisi sidebar spesifikasi proyek di halaman detail.</p>
+          </div>
+          <div className="flex gap-2 w-full sm:w-auto shrink-0">
+            {(["right", "left", "hidden"] as const).map((layout) => (
+              <button
+                key={layout}
+                type="button"
+                onClick={() => setSpecsLayout(layout)}
+                className={`flex-1 sm:flex-none text-center py-2.5 px-5 rounded-xl font-bold text-[9px] uppercase tracking-wider border transition-all cursor-pointer ${
+                  specsLayout === layout
+                    ? "border-blue-500/30 text-blue-400 bg-blue-500/10 font-black"
+                    : "border-white/5 text-slate-400 hover:text-white hover:bg-white/5 bg-slate-950/40"
+                }`}
+              >
+                {layout === "right" ? "Kanan" : layout === "left" ? "Kiri" : "Sembunyi"}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Live Canvas Editor (Blank Document Style) */}
+        <div className="bg-white shadow-[0_20px_50px_rgba(0,0,0,0.35)] rounded-[2.5rem] border border-slate-200 text-slate-900 p-8 md:p-12 max-w-4xl mx-auto min-h-[800px] flex flex-col gap-6 transition-all text-left">
+          <div className="border-b border-slate-100 pb-6 mb-2">
+            <span className="text-[9px] font-black uppercase tracking-[0.2em] bg-blue-50 text-blue-600 px-3.5 py-1.5 rounded-lg border border-blue-200/50">
+              Live Canvas Page
+            </span>
+            <h2 className="text-2xl font-black text-slate-800 tracking-tight leading-snug mt-4">
+              {project?.title}
+            </h2>
+            <p className="text-slate-500 text-xs mt-2 leading-relaxed">
+              Tulis dokumen studi kasus proyek Anda secara visual di bawah. Anda dapat mengedit, menambah, dan menyusun ulang blok secara real-time.
+            </p>
+          </div>
+
           <DndContext
             sensors={sensors}
             collisionDetection={closestCenter}
@@ -1557,9 +1607,9 @@ export default function ProjectDetailManager({ projectId, onBack }: ProjectDetai
             >
               <div className="space-y-6">
                 {blocks.length === 0 ? (
-                  <div className="text-center py-20 border border-dashed border-white/10 rounded-2xl opacity-40">
-                    <Plus size={40} className="mx-auto mb-4 text-slate-500" />
-                    <p className="text-xs font-bold uppercase tracking-wider">Mulai tambahkan blok layout di bawah</p>
+                  <div className="text-center py-20 border border-dashed border-slate-200 rounded-2xl opacity-50 bg-slate-50 text-slate-400">
+                    <Plus size={40} className="mx-auto mb-4 text-slate-400" />
+                    <p className="text-xs font-bold uppercase tracking-wider">Kanvas Kosong. Silakan tambahkan elemen dari panel kanan.</p>
                   </div>
                 ) : (
                   blocks.map((block) => (
@@ -1571,25 +1621,25 @@ export default function ProjectDetailManager({ projectId, onBack }: ProjectDetai
                     >
                       {/* Type Indicator */}
                       <div className="flex items-center gap-2 mb-4">
-                        <span className="text-[8px] font-black uppercase tracking-[0.2em] bg-blue-600/20 text-blue-400 px-3 py-1 rounded-md border border-blue-500/10">
+                        <span className="text-[8px] font-black uppercase tracking-[0.2em] bg-blue-50 text-blue-600 px-3 py-1 rounded-md border border-blue-200/50">
                           {block.type}
                         </span>
                       </div>
 
-                      {/* Rendering dynamic editors based on block type */}
+                      {/* Rendering dynamic editors based on block type (Light themed inside white canvas) */}
                       {block.type === "text" && (
                         <div className="space-y-3">
                           <div className="flex items-center justify-between">
-                            <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block">
+                            <label className="text-[9px] font-bold text-slate-500 uppercase tracking-widest block">
                               {block.data.mode === "html" ? "HTML / Raw Code" : "Rich Text (WYSIWYG)"}
                             </label>
                             <button
                               type="button"
                               onClick={() => updateBlock(block.id, { mode: block.data.mode === "html" ? "rich" : "html" })}
-                              className="text-[8px] font-black uppercase tracking-widest px-2.5 py-1 rounded-md border transition-all"
+                              className="text-[8px] font-black uppercase tracking-widest px-2.5 py-1 rounded-md border transition-all cursor-pointer"
                               style={block.data.mode === "html"
-                                ? { borderColor: "rgba(59,130,246,0.3)", color: "#60a5fa", background: "rgba(59,130,246,0.08)" }
-                                : { borderColor: "rgba(255,255,255,0.1)", color: "#94a3b8", background: "rgba(255,255,255,0.04)" }
+                                ? { borderColor: "rgba(59,130,246,0.3)", color: "#2563eb", background: "rgba(59,130,246,0.05)" }
+                                : { borderColor: "rgba(0,0,0,0.1)", color: "#475569", background: "rgba(0,0,0,0.03)" }
                               }
                             >
                               {block.data.mode === "html" ? "Aa Ganti ke Rich Text" : "⟨/⟩ Ganti ke HTML"}
@@ -1603,10 +1653,10 @@ export default function ProjectDetailManager({ projectId, onBack }: ProjectDetai
                                 onChange={(e) => updateBlock(block.id, { html: e.target.value })}
                                 rows={5}
                                 placeholder="Masukkan teks HTML di sini, contoh: <h2>Judul</h2><p>Isi paragraf</p>"
-                                className="w-full bg-slate-950 border border-white/5 rounded-xl p-4 font-mono text-xs text-slate-300 focus:outline-none focus:border-blue-500/40 transition-all"
+                                className="w-full bg-white border border-slate-200 rounded-xl p-4 font-mono text-xs text-slate-900 focus:outline-none focus:border-blue-500/50 transition-all"
                               />
-                              <p className="text-[9px] text-slate-600 leading-relaxed">
-                                Mendukung tag HTML seperti <code className="text-blue-400/70">&lt;h2&gt;</code>, <code className="text-blue-400/70">&lt;p&gt;</code>, <code className="text-blue-400/70">&lt;ul&gt;</code>, <code className="text-blue-400/70">&lt;blockquote&gt;</code>, dll.
+                              <p className="text-[9px] text-slate-500 leading-relaxed">
+                                Mendukung tag HTML seperti <code className="text-blue-600/80">&lt;h2&gt;</code>, <code className="text-blue-600/80">&lt;p&gt;</code>, <code className="text-blue-600/80">&lt;ul&gt;</code>, <code className="text-blue-600/80">&lt;blockquote&gt;</code>, dll.
                               </p>
                             </>
                           ) : (
@@ -1614,6 +1664,7 @@ export default function ProjectDetailManager({ projectId, onBack }: ProjectDetai
                               value={block.data.html}
                               onChange={(html) => updateBlock(block.id, { html })}
                               placeholder="Tulis konten rich text di sini — gunakan toolbar di atas untuk format teks, heading, list, link, dan lainnya..."
+                              light={true}
                             />
                           )}
                         </div>
@@ -1622,12 +1673,13 @@ export default function ProjectDetailManager({ projectId, onBack }: ProjectDetai
                       {block.type === "divider" && (
                         <div className="grid grid-cols-2 gap-4">
                           <div>
-                            <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block mb-2">Style</label>
+                            <label className="text-[9px] font-bold text-slate-500 uppercase tracking-widest block mb-2">Style</label>
                             <AdminDropdown
                               value={block.data.style}
                               onChange={(v) => updateBlock(block.id, { style: v })}
                               size="compact"
                               className="h-11"
+                              light={true}
                               options={[
                                 { value: "line", label: "Solid Line" },
                                 { value: "dashed", label: "Dashed Line" },
@@ -1637,7 +1689,7 @@ export default function ProjectDetailManager({ projectId, onBack }: ProjectDetai
                             />
                           </div>
                           <div>
-                            <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block mb-2">Color Picker &amp; Code</label>
+                            <label className="text-[9px] font-bold text-slate-500 uppercase tracking-widest block mb-2">Color Picker &amp; Code</label>
                             <div className="flex items-center gap-2">
                               <CustomColorPicker
                                 value={block.data.color}
@@ -1648,7 +1700,7 @@ export default function ProjectDetailManager({ projectId, onBack }: ProjectDetai
                                 value={block.data.color}
                                 onChange={(e) => updateBlock(block.id, { color: e.target.value })}
                                 placeholder="e.g. rgba(255,255,255,0.1) or #3b82f6"
-                                className="flex-1 h-11 bg-slate-950 border border-white/5 rounded-xl px-3.5 text-xs text-slate-300 focus:outline-none focus:border-blue-500/40 font-mono"
+                                className="flex-1 h-11 bg-white border border-slate-200 rounded-xl px-3.5 text-xs text-slate-900 focus:outline-none focus:border-blue-500/50 font-mono"
                               />
                             </div>
                           </div>
@@ -1659,12 +1711,13 @@ export default function ProjectDetailManager({ projectId, onBack }: ProjectDetai
                         <div className="space-y-4">
                           <div className="grid grid-cols-2 gap-4">
                             <div>
-                              <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block mb-2">Media Type</label>
+                              <label className="text-[9px] font-bold text-slate-550 uppercase tracking-widest block mb-2">Media Type</label>
                               <AdminDropdown
                                 value={block.data.mediaType}
                                 onChange={(v) => updateBlock(block.id, { mediaType: v })}
                                 size="compact"
                                 className="h-11"
+                                light={true}
                                 options={[
                                   { value: "image", label: "Image" },
                                   { value: "video", label: "YouTube / Video Link" },
@@ -1672,22 +1725,23 @@ export default function ProjectDetailManager({ projectId, onBack }: ProjectDetai
                               />
                             </div>
                             <div>
-                              <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block mb-2">Media URL</label>
+                              <label className="text-[9px] font-bold text-slate-555 uppercase tracking-widest block mb-2">Media URL</label>
                               <input
                                 type="text"
                                 value={block.data.url}
                                 onChange={(e) => updateBlock(block.id, { url: e.target.value })}
                                 placeholder="Masukkan URL foto/video..."
-                                className="w-full h-11 bg-slate-950 border border-white/5 rounded-xl px-3.5 text-xs text-slate-300 focus:outline-none focus:border-blue-500/40"
+                                className="w-full h-11 bg-white border border-slate-200 rounded-xl px-3.5 text-xs text-slate-900 focus:outline-none focus:border-blue-500/50"
                               />
                             </div>
                           </div>
                           
                           {block.data.mediaType === "image" && (
                             <div>
-                              <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block mb-2">Upload Foto</label>
+                              <label className="text-[9px] font-bold text-slate-550 uppercase tracking-widest block mb-2">Upload Foto</label>
                               <ImageUpload
                                 value=""
+                                light={true}
                                 onChange={(url) => updateBlock(block.id, { url })}
                                 label="Upload Ke ImgBB &amp; Isi URL"
                               />
@@ -1695,13 +1749,13 @@ export default function ProjectDetailManager({ projectId, onBack }: ProjectDetai
                           )}
 
                           <div>
-                            <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block mb-2">Caption</label>
+                            <label className="text-[9px] font-bold text-slate-550 uppercase tracking-widest block mb-2">Caption</label>
                             <input
                               type="text"
                               value={block.data.caption}
                               onChange={(e) => updateBlock(block.id, { caption: e.target.value })}
                               placeholder="Tulis caption di sini..."
-                              className="w-full h-11 bg-slate-950 border border-white/5 rounded-xl px-3.5 text-xs text-slate-300 focus:outline-none focus:border-blue-500/40"
+                              className="w-full h-11 bg-white border border-slate-200 rounded-xl px-3.5 text-xs text-slate-900 focus:outline-none focus:border-blue-500/50"
                             />
                           </div>
                         </div>
@@ -1710,7 +1764,7 @@ export default function ProjectDetailManager({ projectId, onBack }: ProjectDetai
                       {block.type === "table" && (
                         <div className="space-y-4">
                           <div className="flex items-center justify-between">
-                            <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Table Controller</span>
+                            <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">Table Controller</span>
                             <div className="flex gap-2">
                               <button
                                 type="button"
@@ -1723,7 +1777,7 @@ export default function ProjectDetailManager({ projectId, onBack }: ProjectDetai
                                     rowHeights: newHeights
                                   });
                                 }}
-                                className="text-[9px] font-bold bg-white/5 hover:bg-white/10 text-slate-300 py-1 px-2.5 rounded-md"
+                                className="text-[9px] font-bold bg-slate-200/50 hover:bg-slate-200 text-slate-700 py-1 px-2.5 rounded-md cursor-pointer"
                               >
                                 + Row
                               </button>
@@ -1739,7 +1793,7 @@ export default function ProjectDetailManager({ projectId, onBack }: ProjectDetai
                                     columnWidths: newWidths
                                   });
                                 }}
-                                className="text-[9px] font-bold bg-white/5 hover:bg-white/10 text-slate-300 py-1 px-2.5 rounded-md"
+                                className="text-[9px] font-bold bg-slate-200/50 hover:bg-slate-200 text-slate-700 py-1 px-2.5 rounded-md cursor-pointer"
                               >
                                 + Column
                               </button>
@@ -1755,7 +1809,7 @@ export default function ProjectDetailManager({ projectId, onBack }: ProjectDetai
                                     });
                                   }
                                 }}
-                                className="text-[9px] font-bold bg-red-950/20 text-red-400 py-1 px-2.5 rounded-md"
+                                className="text-[9px] font-bold bg-red-50 text-red-600 py-1 px-2.5 rounded-md cursor-pointer"
                               >
                                 - Row
                               </button>
@@ -1775,7 +1829,7 @@ export default function ProjectDetailManager({ projectId, onBack }: ProjectDetai
                                     toast.error("Tabel harus memiliki minimal 1 kolom!");
                                   }
                                 }}
-                                className="text-[9px] font-bold bg-red-950/20 text-red-400 py-1 px-2.5 rounded-md"
+                                className="text-[9px] font-bold bg-red-50 text-red-600 py-1 px-2.5 rounded-md cursor-pointer"
                               >
                                 - Column
                               </button>
@@ -1783,14 +1837,15 @@ export default function ProjectDetailManager({ projectId, onBack }: ProjectDetai
                           </div>
 
                           {/* Row & Column Sizing Controls */}
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 rounded-xl bg-slate-950/60 border border-white/5">
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 rounded-xl bg-slate-50 border border-slate-100">
                             <div>
-                              <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block mb-2">Cell Padding (Tinggi Baris)</label>
+                              <label className="text-[9px] font-bold text-slate-550 uppercase tracking-widest block mb-2">Cell Padding (Tinggi Baris)</label>
                               <AdminDropdown
                                 value={block.data.cellPadding || "standard"}
                                 onChange={(v) => updateBlock(block.id, { cellPadding: v })}
                                 size="compact"
                                 className="h-11"
+                                light={true}
                                 options={[
                                   { value: "compact", label: "Compact (Padat)" },
                                   { value: "standard", label: "Standard" },
@@ -1799,23 +1854,23 @@ export default function ProjectDetailManager({ projectId, onBack }: ProjectDetai
                               />
                             </div>
                             <div>
-                              <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block mb-2">Custom Row Height</label>
+                              <label className="text-[9px] font-bold text-slate-550 uppercase tracking-widest block mb-2">Custom Row Height</label>
                               <input
                                 type="text"
                                 value={block.data.rowHeight || ""}
                                 onChange={(e) => updateBlock(block.id, { rowHeight: e.target.value })}
                                 placeholder="e.g. auto, 50px, 80px"
-                                className="w-full h-11 bg-slate-950 border border-white/5 rounded-xl px-3.5 text-xs text-slate-300 focus:outline-none focus:border-blue-500/40"
+                                className="w-full h-11 bg-white border border-slate-200 rounded-xl px-3.5 text-xs text-slate-900 focus:outline-none focus:border-blue-500/50"
                               />
                             </div>
 
                             {/* Column Widths Config */}
-                            <div className="col-span-1 md:col-span-2 space-y-2 pt-2 border-t border-white/5">
-                              <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block">Lebar Kolom (Column Widths)</label>
+                            <div className="col-span-1 md:col-span-2 space-y-2 pt-2 border-t border-slate-100">
+                              <label className="text-[9px] font-bold text-slate-555 uppercase tracking-widest block">Lebar Kolom (Column Widths)</label>
                               <div className="flex gap-2 flex-wrap">
                                 {block.data.headers.map((_: string, idx: number) => (
                                   <div key={idx} className="flex-1 min-w-[70px]">
-                                    <label className="text-[8px] font-black text-slate-500 uppercase block mb-1">Kolom {idx + 1}</label>
+                                    <label className="text-[8px] font-black text-slate-555 uppercase block mb-1">Kolom {idx + 1}</label>
                                     <input
                                       type="text"
                                       value={block.data.columnWidths?.[idx] || ""}
@@ -1825,7 +1880,7 @@ export default function ProjectDetailManager({ projectId, onBack }: ProjectDetai
                                         updateBlock(block.id, { columnWidths: newWidths });
                                       }}
                                       placeholder="auto, 30%, 150px"
-                                      className="w-full bg-slate-950 border border-white/5 rounded-lg p-2 text-[10px] text-slate-300 focus:outline-none focus:border-blue-500/40"
+                                      className="w-full bg-white border border-slate-200 rounded-lg p-2 text-[10px] text-slate-900 focus:outline-none focus:border-blue-500/50"
                                     />
                                   </div>
                                 ))}
@@ -1834,7 +1889,7 @@ export default function ProjectDetailManager({ projectId, onBack }: ProjectDetai
                           </div>
 
                           {/* Render inputs grid */}
-                          <div className="overflow-x-auto bg-slate-950/80 rounded-xl border border-white/5 p-4">
+                          <div className="overflow-x-auto bg-slate-100 rounded-xl border border-slate-200 p-4">
                             <table className="w-full border-collapse">
                               <thead>
                                 <tr>
@@ -1852,7 +1907,7 @@ export default function ProjectDetailManager({ projectId, onBack }: ProjectDetai
                                           newHeaders[idx] = e.target.value;
                                           updateBlock(block.id, { headers: newHeaders });
                                         }}
-                                        className="w-full bg-slate-900 border border-white/5 rounded-md p-1.5 text-[10px] font-bold text-blue-400 focus:outline-none"
+                                        className="w-full bg-white border border-slate-250 rounded-md p-1.5 text-[10px] font-bold text-blue-600 focus:outline-none"
                                       />
                                       {/* Vertical Drag Resizer Line */}
                                       <div
@@ -1881,7 +1936,7 @@ export default function ProjectDetailManager({ projectId, onBack }: ProjectDetai
                                             newRows[rowIdx][cellIdx] = e.target.value;
                                             updateBlock(block.id, { rows: newRows });
                                           }}
-                                          className="w-full bg-slate-900 border border-white/5 rounded-md p-1.5 text-[10px] text-slate-300 focus:outline-none"
+                                          className="w-full bg-white border border-slate-200 rounded-md p-1.5 text-[10px] text-slate-800 focus:outline-none"
                                         />
                                         {/* Horizontal Drag Resizer Line */}
                                         <div
@@ -1902,19 +1957,19 @@ export default function ProjectDetailManager({ projectId, onBack }: ProjectDetai
                       {block.type === "grid" && (
                         <div className="space-y-4">
                           <div className="flex items-center justify-between">
-                            <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Kolom Grid</label>
+                            <label className="text-[9px] font-bold text-slate-550 uppercase tracking-widest">Kolom Grid</label>
                             <div className="flex gap-2">
                               <button
                                 type="button"
                                 onClick={() => updateBlock(block.id, { columns: 2 })}
-                                className={`text-[9px] font-bold py-1 px-2.5 rounded ${block.data.columns === 2 ? 'bg-blue-600 text-white' : 'bg-white/5 text-slate-400'}`}
+                                className={`text-[9px] font-bold py-1 px-2.5 rounded cursor-pointer ${block.data.columns === 2 ? 'bg-blue-600 text-white' : 'bg-slate-200 text-slate-600'}`}
                               >
                                 2 Columns
                               </button>
                               <button
                                 type="button"
                                 onClick={() => updateBlock(block.id, { columns: 3 })}
-                                className={`text-[9px] font-bold py-1 px-2.5 rounded ${block.data.columns === 3 ? 'bg-blue-600 text-white' : 'bg-white/5 text-slate-400'}`}
+                                className={`text-[9px] font-bold py-1 px-2.5 rounded cursor-pointer ${block.data.columns === 3 ? 'bg-blue-600 text-white' : 'bg-slate-200 text-slate-600'}`}
                               >
                                 3 Columns
                               </button>
@@ -1922,11 +1977,11 @@ export default function ProjectDetailManager({ projectId, onBack }: ProjectDetai
                           </div>
 
                           {/* Grid items editor list */}
-                          <div className="space-y-4 pt-2 border-t border-white/5">
+                          <div className="space-y-4 pt-2 border-t border-slate-100">
                             {block.data.items.map((item: any, idx: number) => (
-                              <div key={idx} className="p-4 rounded-xl bg-slate-950/60 border border-white/5 space-y-3">
+                              <div key={idx} className="p-4 rounded-xl bg-white border border-slate-200 space-y-3 shadow-sm text-left">
                                 <div className="flex items-center justify-between">
-                                  <span className="text-[9px] font-black text-slate-500 uppercase">Item #{idx + 1}</span>
+                                  <span className="text-[9px] font-black text-slate-400 uppercase">Item #{idx + 1}</span>
                                   <button
                                     type="button"
                                     onClick={() => {
@@ -1936,7 +1991,7 @@ export default function ProjectDetailManager({ projectId, onBack }: ProjectDetai
                                         });
                                       }
                                     }}
-                                    className="text-[8px] font-bold text-red-400 hover:underline"
+                                    className="text-[8px] font-bold text-red-500 hover:underline cursor-pointer"
                                   >
                                     Remove Item
                                   </button>
@@ -1950,10 +2005,10 @@ export default function ProjectDetailManager({ projectId, onBack }: ProjectDetai
                                     updateBlock(block.id, { items: newItems });
                                   }}
                                   placeholder="Judul Poin..."
-                                  className="w-full h-10 bg-slate-900 border border-white/5 rounded-lg px-3 text-xs font-bold text-white focus:outline-none"
+                                  className="w-full h-10 bg-slate-50 border border-slate-200 rounded-lg px-3 text-xs font-bold text-slate-900 focus:outline-none"
                                 />
                                 <div>
-                                  <label className="text-[8px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Penjelasan detail (Rich Text)</label>
+                                  <label className="text-[8px] font-bold text-slate-550 uppercase tracking-widest block mb-1">Penjelasan detail (Rich Text)</label>
                                   <RichTextEditor
                                     value={item.content || ""}
                                     onChange={(html) => {
@@ -1963,6 +2018,7 @@ export default function ProjectDetailManager({ projectId, onBack }: ProjectDetai
                                     }}
                                     placeholder="Penjelasan detail..."
                                     minHeight={80}
+                                    light={true}
                                   />
                                 </div>
                               </div>
@@ -1975,7 +2031,7 @@ export default function ProjectDetailManager({ projectId, onBack }: ProjectDetai
                                   items: [...block.data.items, { title: "Poin Baru", content: "Penjelasan detail..." }]
                                 });
                               }}
-                              className="w-full py-2 bg-white/5 hover:bg-white/10 rounded-xl font-bold text-[9px] uppercase tracking-wider text-slate-300 hover:text-white transition-all border border-dashed border-white/10"
+                              className="w-full py-2 bg-slate-50 hover:bg-slate-100 rounded-xl font-bold text-[9px] uppercase tracking-wider text-slate-600 hover:text-slate-800 transition-all border border-dashed border-slate-250 cursor-pointer"
                             >
                               + Add Grid Item
                             </button>
@@ -1986,14 +2042,14 @@ export default function ProjectDetailManager({ projectId, onBack }: ProjectDetai
                       {block.type === "carousel" && (
                         <div className="space-y-4">
                           <div className="flex items-center justify-between">
-                            <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block">Images List</label>
+                            <label className="text-[9px] font-bold text-slate-550 uppercase tracking-widest block">Images List</label>
                             <span className="text-[9px] text-slate-500 font-mono">{(block.data.images || []).length} Foto</span>
                           </div>
                           
                           {block.data.images && block.data.images.length > 0 && (
                             <div className="grid grid-cols-3 gap-3">
                               {block.data.images.map((url: string, imgIdx: number) => (
-                                <div key={imgIdx} className="relative aspect-video rounded-xl overflow-hidden border border-white/10 group bg-slate-950">
+                                <div key={imgIdx} className="relative aspect-video rounded-xl overflow-hidden border border-slate-200 group bg-slate-50">
                                   <img src={url} alt="" className="w-full h-full object-cover" />
                                   <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                                     <button
@@ -2003,7 +2059,7 @@ export default function ProjectDetailManager({ projectId, onBack }: ProjectDetai
                                           images: block.data.images.filter((_: string, i: number) => i !== imgIdx)
                                         });
                                       }}
-                                      className="p-1.5 bg-red-600 hover:bg-red-700 rounded text-white"
+                                      className="p-1.5 bg-red-600 hover:bg-red-700 rounded text-white cursor-pointer"
                                     >
                                       <Trash2 size={12} />
                                     </button>
@@ -2013,8 +2069,7 @@ export default function ProjectDetailManager({ projectId, onBack }: ProjectDetai
                             </div>
                           )}
 
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2 border-t border-white/5">
-                            {/* Add Image from URL */}
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2 border-t border-slate-150">
                             <div className="mb-4">
                               <button
                                 type="button"
@@ -2027,7 +2082,7 @@ export default function ProjectDetailManager({ projectId, onBack }: ProjectDetai
                                     toast.success("Gambar berhasil ditambahkan dari URL!");
                                   }
                                 }}
-                                className="w-full h-32 rounded-2xl border-2 border-dashed border-white/10 hover:border-blue-500/50 hover:bg-blue-500/5 transition-all flex flex-col items-center justify-center gap-2 text-slate-500 hover:text-blue-400"
+                                className="w-full h-32 rounded-2xl border-2 border-dashed border-slate-200 hover:border-blue-500/50 hover:bg-blue-500/5 transition-all flex flex-col items-center justify-center gap-2 text-slate-400 hover:text-blue-600 bg-slate-50/50 cursor-pointer"
                               >
                                 <svg
                                   width="32"
@@ -2042,13 +2097,13 @@ export default function ProjectDetailManager({ projectId, onBack }: ProjectDetai
                                 <span className="text-xs font-bold uppercase tracking-widest">
                                   Tambah dari URL
                                 </span>
-                                <span className="text-[10px] text-slate-600">Alamat Web / External URL</span>
+                                <span className="text-[10px] text-slate-500">Alamat Web / External URL</span>
                               </button>
                             </div>
 
-                            {/* Upload Image with resetKey */}
                             <ImageUpload
                               value=""
+                              light={true}
                               resetKey={block.data.images?.length || 0}
                               onChange={(url) => {
                                 if (url) {
@@ -2066,13 +2121,13 @@ export default function ProjectDetailManager({ projectId, onBack }: ProjectDetai
 
                       {block.type === "accordion" && (
                         <div className="space-y-4">
-                          <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block">Accordion Items</label>
+                          <label className="text-[9px] font-bold text-slate-550 uppercase tracking-widest block">Accordion Items</label>
                           
                           <div className="space-y-4">
                             {block.data.items.map((item: any, idx: number) => (
-                              <div key={idx} className="p-4 rounded-xl bg-slate-950/60 border border-white/5 space-y-3">
+                              <div key={idx} className="p-4 rounded-xl bg-white border border-slate-200 space-y-3 shadow-sm text-left">
                                 <div className="flex items-center justify-between">
-                                  <span className="text-[9px] font-black text-slate-500 uppercase">Item #{idx + 1}</span>
+                                  <span className="text-[9px] font-black text-slate-400 uppercase">Item #{idx + 1}</span>
                                   <button
                                     type="button"
                                     onClick={() => {
@@ -2082,7 +2137,7 @@ export default function ProjectDetailManager({ projectId, onBack }: ProjectDetai
                                         });
                                       }
                                     }}
-                                    className="text-[8px] font-bold text-red-400 hover:underline"
+                                    className="text-[8px] font-bold text-red-500 hover:underline cursor-pointer"
                                   >
                                     Remove Item
                                   </button>
@@ -2096,10 +2151,10 @@ export default function ProjectDetailManager({ projectId, onBack }: ProjectDetai
                                     updateBlock(block.id, { items: newItems });
                                   }}
                                   placeholder="Judul Accordion (FAQ)..."
-                                  className="w-full h-10 bg-slate-900 border border-white/5 rounded-lg px-3 text-xs font-bold text-white focus:outline-none"
+                                  className="w-full h-10 bg-slate-50 border border-slate-200 rounded-lg px-3 text-xs font-bold text-slate-900 focus:outline-none"
                                 />
                                 <div>
-                                  <label className="text-[8px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Penjelasan accordion (Rich Text)</label>
+                                  <label className="text-[8px] font-bold text-slate-550 uppercase tracking-widest block mb-1">Penjelasan accordion (Rich Text)</label>
                                   <RichTextEditor
                                     value={item.content || ""}
                                     onChange={(html) => {
@@ -2109,6 +2164,7 @@ export default function ProjectDetailManager({ projectId, onBack }: ProjectDetai
                                     }}
                                     placeholder="Penjelasan accordion..."
                                     minHeight={80}
+                                    light={true}
                                   />
                                 </div>
                               </div>
@@ -2121,7 +2177,7 @@ export default function ProjectDetailManager({ projectId, onBack }: ProjectDetai
                                   items: [...block.data.items, { title: "Poin Baru FAQ", content: "Jawaban/detail FAQ..." }]
                                 });
                               }}
-                              className="w-full py-2 bg-white/5 hover:bg-white/10 rounded-xl font-bold text-[9px] uppercase tracking-wider text-slate-300 hover:text-white transition-all border border-dashed border-white/10"
+                              className="w-full py-2 bg-slate-50 hover:bg-slate-100 rounded-xl font-bold text-[9px] uppercase tracking-wider text-slate-600 hover:text-slate-800 transition-all border border-dashed border-slate-250 cursor-pointer"
                             >
                               + Add Accordion Item
                             </button>
@@ -2131,14 +2187,15 @@ export default function ProjectDetailManager({ projectId, onBack }: ProjectDetai
 
                       {block.type === "split-banner" && (
                         <div className="space-y-4">
-                          <div className="grid grid-cols-2 gap-4">
+                          <div className="grid grid-cols-2 gap-4 text-left">
                             <div>
-                              <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block mb-2">Media Layout</label>
+                              <label className="text-[9px] font-bold text-slate-550 uppercase tracking-widest block mb-2">Media Layout</label>
                               <AdminDropdown
                                 value={block.data.layout}
                                 onChange={(v) => updateBlock(block.id, { layout: v })}
                                 size="compact"
                                 className="h-11"
+                                light={true}
                                 options={[
                                   { value: "left", label: "Media Left / Text Right" },
                                   { value: "right", label: "Media Right / Text Left" },
@@ -2146,12 +2203,13 @@ export default function ProjectDetailManager({ projectId, onBack }: ProjectDetai
                               />
                             </div>
                             <div>
-                              <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block mb-2">Media Type</label>
+                              <label className="text-[9px] font-bold text-slate-550 uppercase tracking-widest block mb-2">Media Type</label>
                               <AdminDropdown
                                 value={block.data.mediaType}
                                 onChange={(v) => updateBlock(block.id, { mediaType: v })}
                                 size="compact"
                                 className="h-11"
+                                light={true}
                                 options={[
                                   { value: "image", label: "Image" },
                                   { value: "video", label: "Video URL (YouTube)" },
@@ -2160,48 +2218,50 @@ export default function ProjectDetailManager({ projectId, onBack }: ProjectDetai
                             </div>
                           </div>
 
-                          <div className="grid grid-cols-2 gap-4">
+                          <div className="grid grid-cols-2 gap-4 text-left">
                             <div className="col-span-2">
-                              <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block mb-2">Media URL</label>
+                              <label className="text-[9px] font-bold text-slate-555 uppercase tracking-widest block mb-2">Media URL</label>
                               <input
                                 type="text"
                                 value={block.data.mediaUrl}
                                 onChange={(e) => updateBlock(block.id, { mediaUrl: e.target.value })}
                                 placeholder="Masukkan URL foto/video..."
-                                className="w-full h-11 bg-slate-950 border border-white/5 rounded-xl px-3.5 text-xs text-slate-300 focus:outline-none focus:border-blue-500/40"
+                                className="w-full h-11 bg-white border border-slate-200 rounded-xl px-3.5 text-xs text-slate-900 focus:outline-none focus:border-blue-500/50"
                               />
                             </div>
                           </div>
                           
                           {block.data.mediaType === "image" && (
-                            <div>
-                              <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block mb-2">Upload Banner Image</label>
+                            <div className="text-left">
+                              <label className="text-[9px] font-bold text-slate-550 uppercase tracking-widest block mb-2">Upload Banner Image</label>
                               <ImageUpload
                                 value=""
+                                light={true}
                                 onChange={(mediaUrl) => updateBlock(block.id, { mediaUrl })}
                                 label="Upload Foto Banner"
                               />
                             </div>
                           )}
 
-                          <div className="space-y-3">
-                            <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block">Judul Banner</label>
+                          <div className="space-y-3 text-left">
+                            <label className="text-[9px] font-bold text-slate-500 uppercase tracking-widest block">Judul Banner</label>
                             <input
                               type="text"
                               value={block.data.title}
                               onChange={(e) => updateBlock(block.id, { title: e.target.value })}
                               placeholder="Judul Banner..."
-                              className="w-full bg-slate-950 border border-white/5 rounded-xl p-3 text-xs font-bold text-white focus:outline-none focus:border-blue-500/40"
+                              className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs font-bold text-slate-900 focus:outline-none focus:border-blue-500/50"
                             />
                           </div>
 
-                          <div className="space-y-3">
-                            <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block">Konten Banner (Rich Text)</label>
+                          <div className="space-y-3 text-left">
+                            <label className="text-[9px] font-bold text-slate-500 uppercase tracking-widest block">Konten Banner (Rich Text)</label>
                             <RichTextEditor
                               value={block.data.content || ""}
                               onChange={(html) => updateBlock(block.id, { content: html })}
                               placeholder="Tulis deskripsi penjelasan di sini..."
                               minHeight={100}
+                              light={true}
                             />
                           </div>
                         </div>
@@ -2212,75 +2272,180 @@ export default function ProjectDetailManager({ projectId, onBack }: ProjectDetai
               </div>
             </SortableContext>
           </DndContext>
-
-          {/* Quick Add Block Bar */}
-          <div className="mt-8 pt-6 border-t border-white/5">
-            <label className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-400 mb-4 block px-1">
-              + Tambah Blok Konten Baru (Insert Block Elements)
-            </label>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-              <button
-                type="button"
-                onClick={() => addBlock("text")}
-                className="flex items-center gap-2 bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white p-3 rounded-xl border border-white/5 text-[10px] font-bold transition-all"
-              >
-                <FileText size={14} className="text-blue-500 shrink-0" /> Teks / Rich Text
-              </button>
-              <button
-                type="button"
-                onClick={() => addBlock("media")}
-                className="flex items-center gap-2 bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white p-3 rounded-xl border border-white/5 text-[10px] font-bold transition-all"
-              >
-                <ImageIcon size={14} className="text-blue-500 shrink-0" /> Foto / Video
-              </button>
-              <button
-                type="button"
-                onClick={() => addBlock("grid")}
-                className="flex items-center gap-2 bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white p-3 rounded-xl border border-white/5 text-[10px] font-bold transition-all"
-              >
-                <Columns size={14} className="text-blue-500 shrink-0" /> Grid Kolom
-              </button>
-              <button
-                type="button"
-                onClick={() => addBlock("split-banner")}
-                className="flex items-center gap-2 bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white p-3 rounded-xl border border-white/5 text-[10px] font-bold transition-all"
-              >
-                <AlignLeft size={14} className="text-blue-500 shrink-0" /> Split Banner
-              </button>
-              <button
-                type="button"
-                onClick={() => addBlock("table")}
-                className="flex items-center gap-2 bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white p-3 rounded-xl border border-white/5 text-[10px] font-bold transition-all"
-              >
-                <Table size={14} className="text-blue-500 shrink-0" /> Tabel Data
-              </button>
-              <button
-                type="button"
-                onClick={() => addBlock("accordion")}
-                className="flex items-center gap-2 bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white p-3 rounded-xl border border-white/5 text-[10px] font-bold transition-all"
-              >
-                <ChevronDown size={14} className="text-blue-500 shrink-0" /> Accordion (FAQ)
-              </button>
-              <button
-                type="button"
-                onClick={() => addBlock("carousel")}
-                className="flex items-center gap-2 bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white p-3 rounded-xl border border-white/5 text-[10px] font-bold transition-all"
-              >
-                <Film size={14} className="text-blue-500 shrink-0" /> Galeri Slider
-              </button>
-              <button
-                type="button"
-                onClick={() => addBlock("divider")}
-                className="flex items-center gap-2 bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white p-3 rounded-xl border border-white/5 text-[10px] font-bold transition-all"
-              >
-                <LinkIcon size={14} className="text-blue-500 shrink-0" /> Divider Kustom
-              </button>
-            </div>
-          </div>
-
-        </AdminCard>
-
+        </div>
       </div>
+
+      {/* Floating Toggle button for Right Sidebar */}
+      <button
+        type="button"
+        onClick={() => setRightSidebarOpen(!rightSidebarOpen)}
+        className={`fixed right-0 top-1/2 -translate-y-1/2 z-50 w-8 h-16 rounded-l-2xl bg-blue-600 hover:bg-blue-700 text-white border-l border-t border-b border-blue-500/30 flex items-center justify-center shadow-2xl transition-all duration-300 cursor-pointer ${
+          rightSidebarOpen ? "mr-80" : "mr-0"
+        }`}
+        title={rightSidebarOpen ? "Sembunyikan Toolbar" : "Tampilkan Toolbar"}
+      >
+        {rightSidebarOpen ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
+      </button>
+
+      {/* Right Sidebar - Insert Block Elements */}
+      <aside 
+        className={`fixed right-0 top-0 h-screen z-40 bg-[#050a18]/95 backdrop-blur-2xl border-l border-white/5 flex flex-col transition-all duration-300 overflow-y-auto no-scrollbar pt-24 ${
+          rightSidebarOpen ? "w-80 px-6" : "w-0 p-0 overflow-hidden"
+        }`}
+      >
+        <div className="flex items-center justify-between mb-6 pb-3 border-b border-white/5 shrink-0 animate-fade-in">
+          <div>
+            <h4 className="text-white font-extrabold text-xs uppercase tracking-wider">
+              Insert Elements
+            </h4>
+            <span className="text-[9px] font-black text-blue-500/90 tracking-[0.2em] uppercase">
+              No-Code Blocks
+            </span>
+          </div>
+        </div>
+
+        <div className="flex-1 space-y-3 pb-8 text-left animate-fade-in">
+          <label className="text-[9px] font-bold text-slate-500 uppercase tracking-widest block mb-2">
+            Pilih Elemen untuk Ditambahkan:
+          </label>
+
+          <button
+            type="button"
+            onClick={() => addBlock("text")}
+            className="w-full flex items-center justify-between p-3.5 rounded-2xl bg-white/5 border border-white/5 text-left text-slate-300 hover:text-white hover:bg-blue-600 hover:border-blue-500/50 hover:shadow-lg hover:shadow-blue-500/10 transition-all duration-300 group cursor-pointer"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-xl bg-blue-500/10 group-hover:bg-white/20 flex items-center justify-center transition-all shrink-0">
+                <FileText size={16} className="text-blue-400 group-hover:text-white" />
+              </div>
+              <div>
+                <p className="text-xs font-black uppercase tracking-wider leading-none mb-1">Teks / Rich Text</p>
+                <span className="text-[9px] text-slate-500 group-hover:text-slate-200">Editor Paragraf WYSIWYG</span>
+              </div>
+            </div>
+            <Plus size={14} className="text-slate-500 group-hover:text-white" />
+          </button>
+
+          <button
+            type="button"
+            onClick={() => addBlock("media")}
+            className="w-full flex items-center justify-between p-3.5 rounded-2xl bg-white/5 border border-white/5 text-left text-slate-300 hover:text-white hover:bg-blue-600 hover:border-blue-500/50 hover:shadow-lg hover:shadow-blue-500/10 transition-all duration-300 group cursor-pointer"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-xl bg-blue-500/10 group-hover:bg-white/20 flex items-center justify-center transition-all shrink-0">
+                <ImageIcon size={16} className="text-blue-400 group-hover:text-white" />
+              </div>
+              <div>
+                <p className="text-xs font-black uppercase tracking-wider leading-none mb-1">Foto / Video</p>
+                <span className="text-[9px] text-slate-500 group-hover:text-slate-200">Kamera Media & Embed Link</span>
+              </div>
+            </div>
+            <Plus size={14} className="text-slate-500 group-hover:text-white" />
+          </button>
+
+          <button
+            type="button"
+            onClick={() => addBlock("grid")}
+            className="w-full flex items-center justify-between p-3.5 rounded-2xl bg-white/5 border border-white/5 text-left text-slate-300 hover:text-white hover:bg-blue-600 hover:border-blue-500/50 hover:shadow-lg hover:shadow-blue-500/10 transition-all duration-300 group cursor-pointer"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-xl bg-blue-500/10 group-hover:bg-white/20 flex items-center justify-center transition-all shrink-0">
+                <Columns size={16} className="text-blue-400 group-hover:text-white" />
+              </div>
+              <div>
+                <p className="text-xs font-black uppercase tracking-wider leading-none mb-1">Grid Kolom</p>
+                <span className="text-[9px] text-slate-500 group-hover:text-slate-200">Susunan Multi-kolom</span>
+              </div>
+            </div>
+            <Plus size={14} className="text-slate-500 group-hover:text-white" />
+          </button>
+
+          <button
+            type="button"
+            onClick={() => addBlock("split-banner")}
+            className="w-full flex items-center justify-between p-3.5 rounded-2xl bg-white/5 border border-white/5 text-left text-slate-300 hover:text-white hover:bg-blue-600 hover:border-blue-500/50 hover:shadow-lg hover:shadow-blue-500/10 transition-all duration-300 group cursor-pointer"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-xl bg-blue-500/10 group-hover:bg-white/20 flex items-center justify-center transition-all shrink-0">
+                <AlignLeft size={16} className="text-blue-400 group-hover:text-white" />
+              </div>
+              <div>
+                <p className="text-xs font-black uppercase tracking-wider leading-none mb-1">Split Banner</p>
+                <span className="text-[9px] text-slate-500 group-hover:text-slate-200">Banner Teks & Media</span>
+              </div>
+            </div>
+            <Plus size={14} className="text-slate-500 group-hover:text-white" />
+          </button>
+
+          <button
+            type="button"
+            onClick={() => addBlock("table")}
+            className="w-full flex items-center justify-between p-3.5 rounded-2xl bg-white/5 border border-white/5 text-left text-slate-300 hover:text-white hover:bg-blue-600 hover:border-blue-500/50 hover:shadow-lg hover:shadow-blue-500/10 transition-all duration-300 group cursor-pointer"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-xl bg-blue-500/10 group-hover:bg-white/20 flex items-center justify-center transition-all shrink-0">
+                <Table size={16} className="text-blue-400 group-hover:text-white" />
+              </div>
+              <div>
+                <p className="text-xs font-black uppercase tracking-wider leading-none mb-1">Tabel Data</p>
+                <span className="text-[9px] text-slate-500 group-hover:text-slate-200">Tabel Informasi Interaktif</span>
+              </div>
+            </div>
+            <Plus size={14} className="text-slate-500 group-hover:text-white" />
+          </button>
+
+          <button
+            type="button"
+            onClick={() => addBlock("accordion")}
+            className="w-full flex items-center justify-between p-3.5 rounded-2xl bg-white/5 border border-white/5 text-left text-slate-300 hover:text-white hover:bg-blue-600 hover:border-blue-500/50 hover:shadow-lg hover:shadow-blue-500/10 transition-all duration-300 group cursor-pointer"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-xl bg-blue-500/10 group-hover:bg-white/20 flex items-center justify-center transition-all shrink-0">
+                <ChevronDown size={16} className="text-blue-400 group-hover:text-white" />
+              </div>
+              <div>
+                <p className="text-xs font-black uppercase tracking-wider leading-none mb-1">Accordion (FAQ)</p>
+                <span className="text-[9px] text-slate-500 group-hover:text-slate-200">Daftar Lipat FAQ</span>
+              </div>
+            </div>
+            <Plus size={14} className="text-slate-500 group-hover:text-white" />
+          </button>
+
+          <button
+            type="button"
+            onClick={() => addBlock("carousel")}
+            className="w-full flex items-center justify-between p-3.5 rounded-2xl bg-white/5 border border-white/5 text-left text-slate-300 hover:text-white hover:bg-blue-600 hover:border-blue-500/50 hover:shadow-lg hover:shadow-blue-500/10 transition-all duration-300 group cursor-pointer"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-xl bg-blue-500/10 group-hover:bg-white/20 flex items-center justify-center transition-all shrink-0">
+                <Film size={16} className="text-blue-400 group-hover:text-white" />
+              </div>
+              <div>
+                <p className="text-xs font-black uppercase tracking-wider leading-none mb-1">Galeri Slider</p>
+                <span className="text-[9px] text-slate-500 group-hover:text-slate-200">Slider Carousel Gambar</span>
+              </div>
+            </div>
+            <Plus size={14} className="text-slate-500 group-hover:text-white" />
+          </button>
+
+          <button
+            type="button"
+            onClick={() => addBlock("divider")}
+            className="w-full flex items-center justify-between p-3.5 rounded-2xl bg-white/5 border border-white/5 text-left text-slate-300 hover:text-white hover:bg-blue-600 hover:border-blue-500/50 hover:shadow-lg hover:shadow-blue-500/10 transition-all duration-300 group cursor-pointer"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-xl bg-blue-500/10 group-hover:bg-white/20 flex items-center justify-center transition-all shrink-0">
+                <LinkIcon size={16} className="text-blue-400 group-hover:text-white" />
+              </div>
+              <div>
+                <p className="text-xs font-black uppercase tracking-wider leading-none mb-1">Divider Kustom</p>
+                <span className="text-[9px] text-slate-500 group-hover:text-slate-200">Garis Pembatas Layout</span>
+              </div>
+            </div>
+            <Plus size={14} className="text-slate-500 group-hover:text-white" />
+          </button>
+        </div>
+      </aside>
 
       {/* Custom Confirmation Modal */}
       <AdminConfirmModal
