@@ -381,6 +381,22 @@ export default function ProjectDetail({ isDark, setIsDark, lang, setLang }: Proj
       } catch (err) {
         console.error("JSON block parsing failed, falling back to HTML renderer:", err);
       }
+    } else if (trimmed.startsWith("{")) {
+      try {
+        const parsed = JSON.parse(trimmed);
+        const parsedBlocks = parsed.blocks || [];
+        if (Array.isArray(parsedBlocks)) {
+          return (
+            <div className="space-y-12">
+              {parsedBlocks.map((block: any) => (
+                <BlockRenderer key={block.id} block={block} isDark={isDark} />
+              ))}
+            </div>
+          );
+        }
+      } catch (err) {
+        console.error("JSON config parsing failed, falling back to HTML renderer:", err);
+      }
     }
 
     // Default HTML renderer fallback (backward compatibility)
