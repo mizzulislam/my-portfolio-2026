@@ -1,39 +1,25 @@
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
-
 export async function translateToIndonesian(text: string): Promise<string> {
   if (!text || text.trim() === "") return "";
 
-  if (GEMINI_API_KEY) {
-    try {
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`;
-      const prompt = `You are a professional translator. Translate the following English string into natural Indonesian. 
-Ensure that any HTML tags, styles, classes, and special identifiers (like hashtags) are preserved EXACTLY. Only translate the human readable text content.
-Do not add any explanations, markdown code blocks, or extra text. Return ONLY the translated string.
-
-String to translate:
-${text}`;
-
-      const response = await fetch(url, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: prompt }] }]
-        })
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        const result = data.candidates?.[0]?.content?.parts?.[0]?.text;
-        if (result) {
-          return result.trim();
+  // Primary: Free Google Translate API (No API key required, supports up to 5000 chars)
+  try {
+    const encoded = encodeURIComponent(text);
+    const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=id&dt=t&q=${encoded}`;
+    const response = await fetch(url);
+    if (response.ok) {
+      const data = await response.json();
+      if (data && data[0]) {
+        const translatedSegments = data[0].map((segment: any) => segment[0]).join("");
+        if (translatedSegments) {
+          return translatedSegments;
         }
       }
-    } catch (error) {
-      console.error("Gemini translation failed, falling back:", error);
     }
+  } catch (error) {
+    console.error("Google Translate free failed, falling back to MyMemory:", error);
   }
 
-  // Fallback to MyMemory
+  // Fallback: MyMemory API (Supports up to 500 chars)
   try {
     const encoded = encodeURIComponent(text);
     const response = await fetch(
@@ -55,55 +41,14 @@ export async function translateArrayToIndonesian(
 ): Promise<string[]> {
   if (!items || items.length === 0) return [];
 
-  if (GEMINI_API_KEY) {
-    try {
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`;
-      const prompt = `You are a professional translator. Translate the following list of English strings into natural Indonesian. 
-Ensure that any HTML tags, styles, classes, and special identifiers are preserved EXACTLY. Only translate the human readable text content.
-Do not add any explanations, markdown code blocks, or extra text. Return ONLY a valid JSON array of translated strings in the same order.
-
-Strings to translate:
-${JSON.stringify(items, null, 2)}`;
-
-      const response = await fetch(url, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: { responseMimeType: "application/json" }
-        })
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        const textRes = data.candidates?.[0]?.content?.parts?.[0]?.text;
-        if (textRes) {
-          const parsed = JSON.parse(textRes);
-          if (Array.isArray(parsed) && parsed.length === items.length) {
-            return parsed;
-          }
-        }
-      }
-    } catch (error) {
-      console.error("Gemini batch translation failed, falling back:", error);
-    }
-  }
-
-  // Fallback to MyMemory
+  // Translate all items in parallel using the primary function
   try {
-    const joined = items.join(" || ");
-    if (joined.length <= 500) {
-      const translated = await translateToIndonesian(joined);
-      return translated.split(" || ").map((s) => s.trim());
-    }
-    
-    // Translate individually to avoid 403 length limits
     const results = await Promise.all(
       items.map(item => translateToIndonesian(item))
     );
     return results;
   } catch (error) {
-    console.error("MyMemory batch translation failed:", error);
+    console.error("Batch translation failed:", error);
     return items;
   }
 }
