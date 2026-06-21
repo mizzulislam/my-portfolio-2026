@@ -337,7 +337,7 @@ function CustomColorPicker({ value, onChange }: { value: string; onChange: (val:
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className="w-12 h-12 rounded-xl bg-slate-950 hover:bg-slate-900 border border-white/5 hover:border-white/10 flex items-center justify-center shrink-0 transition-all relative overflow-hidden group shadow-md"
+        className="w-11 h-11 rounded-xl bg-slate-950 hover:bg-slate-900 border border-white/5 hover:border-white/10 flex items-center justify-center shrink-0 transition-all relative overflow-hidden group shadow-md"
         style={{
           backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='8' viewBox='0 0 8 8'%3E%3Crect width='4' height='4' fill='%23475569'/%3E%3Crect x='4' y='4' width='4' height='4' fill='%23475569'/%3E%3Crect x='4' width='4' height='4' fill='%231e293b'/%3E%3Crect y='4' width='4' height='4' fill='%231e293b'/%3E%3C/svg%3E")`
         }}
@@ -1627,6 +1627,7 @@ export default function ProjectDetailManager({ projectId, onBack }: ProjectDetai
                               value={block.data.style}
                               onChange={(v) => updateBlock(block.id, { style: v })}
                               size="compact"
+                              className="h-11"
                               options={[
                                 { value: "line", label: "Solid Line" },
                                 { value: "dashed", label: "Dashed Line" },
@@ -1647,7 +1648,7 @@ export default function ProjectDetailManager({ projectId, onBack }: ProjectDetai
                                 value={block.data.color}
                                 onChange={(e) => updateBlock(block.id, { color: e.target.value })}
                                 placeholder="e.g. rgba(255,255,255,0.1) or #3b82f6"
-                                className="flex-1 bg-slate-950 border border-white/5 rounded-xl p-3 text-xs text-slate-300 focus:outline-none focus:border-blue-500/40"
+                                className="flex-1 h-11 bg-slate-950 border border-white/5 rounded-xl px-3.5 text-xs text-slate-300 focus:outline-none focus:border-blue-500/40 font-mono"
                               />
                             </div>
                           </div>
@@ -1663,6 +1664,7 @@ export default function ProjectDetailManager({ projectId, onBack }: ProjectDetai
                                 value={block.data.mediaType}
                                 onChange={(v) => updateBlock(block.id, { mediaType: v })}
                                 size="compact"
+                                className="h-11"
                                 options={[
                                   { value: "image", label: "Image" },
                                   { value: "video", label: "YouTube / Video Link" },
@@ -1676,7 +1678,7 @@ export default function ProjectDetailManager({ projectId, onBack }: ProjectDetai
                                 value={block.data.url}
                                 onChange={(e) => updateBlock(block.id, { url: e.target.value })}
                                 placeholder="Masukkan URL foto/video..."
-                                className="w-full bg-slate-950 border border-white/5 rounded-xl p-3 text-xs text-slate-300 focus:outline-none focus:border-blue-500/40"
+                                className="w-full h-11 bg-slate-950 border border-white/5 rounded-xl px-3.5 text-xs text-slate-300 focus:outline-none focus:border-blue-500/40"
                               />
                             </div>
                           </div>
@@ -1699,7 +1701,7 @@ export default function ProjectDetailManager({ projectId, onBack }: ProjectDetai
                               value={block.data.caption}
                               onChange={(e) => updateBlock(block.id, { caption: e.target.value })}
                               placeholder="Tulis caption di sini..."
-                              className="w-full bg-slate-950 border border-white/5 rounded-xl p-3 text-xs text-slate-300 focus:outline-none focus:border-blue-500/40"
+                              className="w-full h-11 bg-slate-950 border border-white/5 rounded-xl px-3.5 text-xs text-slate-300 focus:outline-none focus:border-blue-500/40"
                             />
                           </div>
                         </div>
@@ -1788,6 +1790,7 @@ export default function ProjectDetailManager({ projectId, onBack }: ProjectDetai
                                 value={block.data.cellPadding || "standard"}
                                 onChange={(v) => updateBlock(block.id, { cellPadding: v })}
                                 size="compact"
+                                className="h-11"
                                 options={[
                                   { value: "compact", label: "Compact (Padat)" },
                                   { value: "standard", label: "Standard" },
@@ -1802,7 +1805,7 @@ export default function ProjectDetailManager({ projectId, onBack }: ProjectDetai
                                 value={block.data.rowHeight || ""}
                                 onChange={(e) => updateBlock(block.id, { rowHeight: e.target.value })}
                                 placeholder="e.g. auto, 50px, 80px"
-                                className="w-full bg-slate-950 border border-white/5 rounded-xl p-3 text-xs text-slate-300 focus:outline-none focus:border-blue-500/40"
+                                className="w-full h-11 bg-slate-950 border border-white/5 rounded-xl px-3.5 text-xs text-slate-300 focus:outline-none focus:border-blue-500/40"
                               />
                             </div>
 
@@ -1947,7 +1950,7 @@ export default function ProjectDetailManager({ projectId, onBack }: ProjectDetai
                                     updateBlock(block.id, { items: newItems });
                                   }}
                                   placeholder="Judul Poin..."
-                                  className="w-full bg-slate-900 border border-white/5 rounded-lg p-2 text-xs font-bold text-white focus:outline-none"
+                                  className="w-full h-10 bg-slate-900 border border-white/5 rounded-lg px-3 text-xs font-bold text-white focus:outline-none"
                                 />
                                 <div>
                                   <label className="text-[8px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Penjelasan detail (Rich Text)</label>
@@ -2078,7 +2081,7 @@ export default function ProjectDetailManager({ projectId, onBack }: ProjectDetai
                                     updateBlock(block.id, { items: newItems });
                                   }}
                                   placeholder="Judul Accordion (FAQ)..."
-                                  className="w-full bg-slate-900 border border-white/5 rounded-lg p-2 text-xs font-bold text-white focus:outline-none"
+                                  className="w-full h-10 bg-slate-900 border border-white/5 rounded-lg px-3 text-xs font-bold text-white focus:outline-none"
                                 />
                                 <div>
                                   <label className="text-[8px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Penjelasan accordion (Rich Text)</label>
@@ -2120,6 +2123,7 @@ export default function ProjectDetailManager({ projectId, onBack }: ProjectDetai
                                 value={block.data.layout}
                                 onChange={(v) => updateBlock(block.id, { layout: v })}
                                 size="compact"
+                                className="h-11"
                                 options={[
                                   { value: "left", label: "Media Left / Text Right" },
                                   { value: "right", label: "Media Right / Text Left" },
@@ -2132,6 +2136,7 @@ export default function ProjectDetailManager({ projectId, onBack }: ProjectDetai
                                 value={block.data.mediaType}
                                 onChange={(v) => updateBlock(block.id, { mediaType: v })}
                                 size="compact"
+                                className="h-11"
                                 options={[
                                   { value: "image", label: "Image" },
                                   { value: "video", label: "Video URL (YouTube)" },
@@ -2148,7 +2153,7 @@ export default function ProjectDetailManager({ projectId, onBack }: ProjectDetai
                                 value={block.data.mediaUrl}
                                 onChange={(e) => updateBlock(block.id, { mediaUrl: e.target.value })}
                                 placeholder="Masukkan URL foto/video..."
-                                className="w-full bg-slate-950 border border-white/5 rounded-xl p-3 text-xs text-slate-300 focus:outline-none focus:border-blue-500/40"
+                                className="w-full h-11 bg-slate-950 border border-white/5 rounded-xl px-3.5 text-xs text-slate-300 focus:outline-none focus:border-blue-500/40"
                               />
                             </div>
                           </div>
