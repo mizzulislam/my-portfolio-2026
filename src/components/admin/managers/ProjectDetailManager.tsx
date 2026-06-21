@@ -832,7 +832,7 @@ export default function ProjectDetailManager({ projectId, onBack }: ProjectDetai
 
         {/* Dynamic 1:1 Page Rendering Layout matching Frontend */}
         {specsLayout === "hidden" ? (
-          <div className="max-w-4xl mx-auto p-8 md:p-12 rounded-3xl border border-white/5 bg-[#020617] shadow-2xl">
+          <div className="w-full p-8 md:p-12 rounded-3xl border border-white/5 bg-[#020617] shadow-2xl">
             {renderPreviewContent()}
           </div>
         ) : specsLayout === "left" ? (

@@ -575,7 +575,7 @@ export default function ProjectDetail({ isDark, setIsDark, lang, setLang }: Proj
 
         {/* Main Content Layout Grid */}
         {specsLayout === "hidden" ? (
-          <div className="max-w-4xl mx-auto space-y-12">
+          <div className="w-full space-y-12">
             <div className={`p-8 md:p-12 rounded-3xl border ${
               isDark ? "bg-[#0b1329]/30 border-white/5" : "bg-white border-slate-200 shadow-lg"
             }`}>
