@@ -50,12 +50,12 @@ export default function AdminLayout({
           isCollapsed ? "w-20 px-3 pt-6" : "w-72 pt-6 px-6"
         }`}
       >
-        <div className={`flex items-center mb-6 gap-3 px-1 pt-2 ${isCollapsed ? "justify-center" : ""}`}>
+        <div className={`flex items-center mb-6 gap-3.5 px-1 pt-2 ${isCollapsed ? "justify-center" : ""}`}>
           <button
             onClick={() => setIsCollapsed(!isCollapsed)}
             onMouseEnter={() => setIsLogoHovered(true)}
             onMouseLeave={() => setIsLogoHovered(false)}
-            className="w-10 h-10 rounded-xl bg-blue-600 hover:bg-blue-700 text-white flex items-center justify-center shadow-lg shadow-blue-500/30 transition-all shrink-0 cursor-pointer"
+            className="w-11 h-11 rounded-xl bg-blue-600 hover:bg-blue-700 text-white flex items-center justify-center shadow-lg shadow-blue-500/30 transition-all shrink-0 cursor-pointer"
             title={isCollapsed ? "Expand Sidebar" : "Collapse Sidebar"}
           >
             {isLogoHovered ? (
@@ -66,11 +66,11 @@ export default function AdminLayout({
           </button>
 
           {!isCollapsed && (
-            <div className="overflow-hidden">
-              <h2 className="font-black text-lg tracking-tighter text-white uppercase leading-none truncate">
+            <div className="flex flex-col justify-center text-left pl-0.5">
+              <h2 className="font-extrabold text-lg tracking-wider text-white uppercase leading-tight">
                 Admin
               </h2>
-              <span className="text-[10px] font-bold text-blue-500 tracking-[0.2em] uppercase whitespace-nowrap">
+              <span className="text-[9px] font-black text-blue-500/90 tracking-[0.25em] uppercase whitespace-nowrap leading-none mt-0.5">
                 Control Center
               </span>
             </div>
